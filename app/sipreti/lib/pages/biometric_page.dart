@@ -42,7 +42,7 @@ class _BiometricPageState extends State<BiometricPage> {
 
   Future<void> _loadModel() async {
     try {
-      _interpreter = await Interpreter.fromAsset('assets/model/mobilefacenet.tflite');
+      _interpreter = await Interpreter.fromAsset('model/mobilefacenet.tflite');
     } catch (e) {
       debugPrint("Error loading model: $e");
     }
