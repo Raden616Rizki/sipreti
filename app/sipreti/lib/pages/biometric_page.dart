@@ -86,6 +86,12 @@ class _BiometricPageState extends State<BiometricPage> {
       debugPrint('Vektor Wajah Presensi: $embeddings');
 
       _showCapturedImageDialog(showError: false);
+
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/attendance');
+        }
+      });
     } else {
       _showCapturedImageDialog(showError: true);
     }

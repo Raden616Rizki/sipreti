@@ -211,25 +211,53 @@ class DashboardPageState extends State<DashboardPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Expanded(
-                              child: _buildButton(
-                                  "Check In", Icons.login, Colors.blue)),
+                            child: _buildButton(
+                              text: "Check In",
+                              icon: Icons.login,
+                              iconColor: Colors.blue,
+                              onTap: () {
+                                Navigator.pushNamed(context, '/biometric');
+                              },
+                            ),
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
-                              child: _buildButton(
-                                  "Check Out", Icons.logout, Colors.blue)),
+                            child: _buildButton(
+                              text: "Check Out",
+                              icon: Icons.logout,
+                              iconColor: Colors.blue,
+                              onTap: () {
+                                Navigator.pushNamed(context, '/biometric');
+                              },
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Expanded(
-                              child: _buildButton(
-                                  "Laporan", Icons.insert_chart, Colors.blue)),
+                            child: _buildButton(
+                              text: "Laporan",
+                              icon: Icons.insert_chart,
+                              iconColor: Colors.blue,
+                              onTap: () {
+                                Navigator.pushNamed(context, '/');
+                              },
+                            ),
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
-                              child: _buildButton(
-                                  "Data Pegawai", Icons.people, Colors.blue)),
+                            child: _buildButton(
+                              text: "Data Pegawai",
+                              icon: Icons.people,
+                              iconColor: Colors.blue,
+                              onTap: () {
+                                Navigator.pushNamed(context, '/');
+                              },
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -312,29 +340,35 @@ class DashboardPageState extends State<DashboardPage> {
   }
 }
 
-Widget _buildButton(String text, IconData icon, Color iconColor) {
-  return Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      boxShadow: const [
-        BoxShadow(color: Colors.black12, blurRadius: 5),
-      ],
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: iconColor),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
+Widget _buildButton({
+  required String text,
+  required IconData icon,
+  required Color iconColor,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: iconColor),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }

@@ -8,7 +8,7 @@ import 'package:sipreti/pages/nip_page.dart';
 import 'package:sipreti/pages/option_page.dart';
 
 Future<void> main() async {
-  const initialRoute = '/biometric';
+  const initialRoute = '/option';
 
   runApp(MaterialApp(
     initialRoute: initialRoute,

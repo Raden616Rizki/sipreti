@@ -165,7 +165,9 @@ class _AttendancePageState extends State<AttendancePage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/');
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -184,7 +186,9 @@ class _AttendancePageState extends State<AttendancePage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/');
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               padding: const EdgeInsets.symmetric(vertical: 12),

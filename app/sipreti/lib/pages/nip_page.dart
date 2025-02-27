@@ -86,7 +86,9 @@ class NIPPageState extends State<NIPPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/form');
+                      },
                       child: const Text(
                         "LOAD NIP",
                         style: TextStyle(fontSize: 18, color: Colors.white),

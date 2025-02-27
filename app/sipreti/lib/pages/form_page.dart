@@ -162,7 +162,9 @@ class FormPageState extends State<FormPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/');
+                      },
                       child: const Text(
                         "DAFTAR SEKARANG",
                         style: TextStyle(fontSize: 18, color: Colors.white),

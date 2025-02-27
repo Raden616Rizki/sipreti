@@ -63,7 +63,9 @@ class OptionPage extends StatelessWidget {
                       shadowColor: Colors.black,
                       elevation: 5,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/nip');
+                    },
                     child: const Text(
                       "DAFTAR",
                       style: TextStyle(fontSize: 18, color: Colors.blue),
@@ -84,7 +86,9 @@ class OptionPage extends StatelessWidget {
                       shadowColor: Colors.black,
                       elevation: 5,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/');
+                    },
                     child: const Text(
                       "MASUK",
                       style: TextStyle(fontSize: 18, color: Colors.white),
