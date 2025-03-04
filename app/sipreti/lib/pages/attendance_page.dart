@@ -146,7 +146,9 @@ class _AttendancePageState extends State<AttendancePage> {
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/biometric');
+                            },
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               side: const BorderSide(color: Colors.blue),
