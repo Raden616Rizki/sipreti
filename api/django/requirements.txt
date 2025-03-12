@@ -1,2 +1,9 @@
 django==3.0.2
-pymsql
+pymysql
+pandas
+pillow
+tensorflow
+mtcnn
+numpy
+requests
+opencv-python-headless
