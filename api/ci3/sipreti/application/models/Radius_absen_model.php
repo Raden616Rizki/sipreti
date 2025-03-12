@@ -37,7 +37,7 @@ class Radius_absen_model extends CI_Model
 		if ($onlyActive) {
 			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
 		}
-		return $this->db->count_all_results('radius_absen');
+		return $this->db->count_all_results($this->table);
 	}
 
 	// get data with limit and search
@@ -49,7 +49,7 @@ class Radius_absen_model extends CI_Model
 			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
 		}
 		$this->db->limit($limit, $start);
-		return $this->db->get('radius_absen')->result();
+		return $this->db->get($this->table)->result();
 	}
 
 	// insert data
