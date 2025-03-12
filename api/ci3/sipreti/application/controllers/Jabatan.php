@@ -135,7 +135,7 @@ class Jabatan extends CI_Controller
 
 		if ($row) {
 			$data = array(
-				'deleted_at' => date('Y-m-d H:i:s'), // Set otomatis saat delete (soft delete)
+				'deleted_at' => date('Y-m-d H:i:s'),
 			);
 
 			$this->Jabatan_model->update($id, $data);
