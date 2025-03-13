@@ -1,2 +1,4 @@
 /venv
 /sipreti/sipreti/settings.py
+/sipreti/assets/auth
+/sipreti/assets/testing
