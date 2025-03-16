@@ -30,13 +30,6 @@ def load_tflite_model():
     return interpreter
 
 # Fungsi ekstraksi vektor wajah dari Google Drive tanpa menyimpan file lokal
-import os
-import cv2
-import numpy as np
-from io import BytesIO
-from PIL import Image
-from mtcnn import MTCNN
-
 def face_extraction(folder_id, id_pegawai):
     try:
         service = get_drive_service()
@@ -85,22 +78,23 @@ def face_extraction(folder_id, id_pegawai):
                 face_crop_resized = face_crop_resized.astype(np.float32) / 255.0  # Normalisasi
                 face_crop_resized = np.expand_dims(face_crop_resized, axis=0)  # Tambahkan batch dimension
 
-                # Simpan gambar hasil crop secara lokal
-                cropped_image_path = os.path.join(save_dir, f"face_{i+1}.jpg")
-                Image.fromarray(face_crop).save(cropped_image_path)
-
                 # Ekstraksi fitur wajah dengan MobileFaceNet
                 input_details = interpreter.get_input_details()
                 output_details = interpreter.get_output_details()
                 interpreter.set_tensor(input_details[0]['index'], face_crop_resized)
                 interpreter.invoke()
                 vector = interpreter.get_tensor(output_details[0]['index'])[0]  # Hasil vektor wajah
-                vector = np.round(vector, 8).tolist() # Pembulatan 8 angka dibelakang koma
+                # vector = np.round(vector, 8).tolist() # Pembulatan 8 angka dibelakang koma
+                vector = [round(float(v), 8) for v in vector] # Pembulatan 8 angka dibelakang koma
 
                 # Simpan vektor hasil ekstraksi
                 vectors.append(vector)  # Konversi ke list agar mudah disimpan
 
                 print(f"Vektor wajah berhasil diekstrak dan disimpan untuk {file_name}")
+                
+                # Simpan gambar hasil crop secara lokal
+                cropped_image_path = os.path.join(save_dir, f"face_{i+1}.jpg")
+                Image.fromarray(face_crop).save(cropped_image_path)
 
             except Exception as img_err:
                 print(f"Kesalahan dalam memproses gambar {file_name}: {img_err}")
