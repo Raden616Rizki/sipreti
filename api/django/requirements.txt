@@ -2,9 +2,8 @@ django==3.0.2
 pymysql
 pandas
 pillow
-tensorflow
+tensorflow==2.4.4
 mtcnn
-numpy
 requests
 opencv-python-headless
 google-api-python-client

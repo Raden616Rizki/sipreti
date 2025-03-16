@@ -1,15 +1,9 @@
-import os
 import csv
-import requests
-import numpy as np
-import cv2
-# import tensorflow as tf
-from django.conf import settings
+import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-# from mtcnn import MTCNN
 from .models import VektorPegawai
-from .utils import download_images, extract_folder_id
+from .face_verification.extraction import face_extraction, extract_folder_id
 
 @csrf_exempt
 def upload_csv(request):
@@ -31,13 +25,23 @@ def upload_csv(request):
                 print(f"URL folder tidak valid: {folder_url}")
                 continue
 
-            # Download gambar
-            image_paths = download_images(folder_id, id_pegawai)
-            if image_paths:
-                print(f"Berhasil mengunduh {len(image_paths)} gambar untuk ID pegawai {id_pegawai}")
-            else:
-                print(f"Tidak ada gambar yang diunduh untuk ID pegawai {id_pegawai}")
+            # Ekstraksi vektor wajah
+            vectors = face_extraction(folder_id, id_pegawai)
+            if vectors:
+                print(f"Berhasil mengekstrak {len(vectors)} vektor wajah untuk ID pegawai {id_pegawai}")
 
+                # Simpan ke database
+                for vector in vectors:
+                    VektorPegawai.objects.create(
+                        id_pegawai=id_pegawai,
+                        face_embeddings=json.dumps(vector),  # Simpan sebagai JSON string
+                        url_foto="-"
+                    )
+                print(f"Vektor wajah berhasil disimpan di database untuk ID pegawai {id_pegawai}")
+
+            else:
+                print(f"Tidak ada vektor wajah yang diekstrak untuk ID pegawai {id_pegawai}")
+                return JsonResponse({'message': 'Data tidak berhasil diproses'}, status=500)
 
         return JsonResponse({'message': 'Data berhasil diproses'}, status=200)
 

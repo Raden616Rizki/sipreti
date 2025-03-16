@@ -1,23 +1,19 @@
 import os
 import re
-# import cv2
-# import numpy as np
-import requests
 import datetime
-# import tensorflow as tf
-import pandas as pd
-from PIL import Image
+import concurrent.futures
 from io import BytesIO
 from django.conf import settings
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from PIL import Image
 
-# Path penyimpanan gambar
+# Path ke kredensial Google Drive API
 GOOGLE_CREDENTIALS_FILE = os.path.join(settings.BASE_DIR, 'assets/auth/credentials.json')
 ASSETS_DIR = os.path.join(settings.BASE_DIR, 'assets/images/pegawai')
 os.makedirs(ASSETS_DIR, exist_ok=True)
 
-# Authenticate with Google Drive API
+# Fungsi autentikasi ke Google Drive API
 def get_drive_service():
     credentials = service_account.Credentials.from_service_account_file(
         GOOGLE_CREDENTIALS_FILE,
