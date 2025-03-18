@@ -70,6 +70,18 @@ class Pegawai_model extends CI_Model
 		$this->db->delete($this->table);
 	}
 
+	public function get_by_nip($nip)
+	{
+		$this->db->where('nip', $nip);
+		$this->db->where('deleted_at IS NULL');
+		$query = $this->db->get('pegawai');
+
+		if ($query->num_rows() > 0) {
+			return $query->row();
+		} else {
+			return null;
+		}
+	}
 }
 
 /* End of file Pegawai_model.php */

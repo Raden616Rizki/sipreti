@@ -166,6 +166,46 @@ class Pegawai extends CI_Controller
 		}
 	}
 
+	public function validate_nip()
+	{
+		$nip = $this->input->get('nip', TRUE);
+
+		if (!$nip) {
+			$response = array(
+				'status' => 400,
+				'message' => 'NIP harus disertakan dalam request.'
+			);
+			$this->output
+				->set_content_type('application/json')
+				->set_status_header(400)
+				->set_output(json_encode($response));
+			return;
+		}
+
+		$pegawai = $this->Pegawai_model->get_by_nip($nip);
+
+		if ($pegawai) {
+			$response = array(
+				'status' => 200,
+				'message' => 'NIP ditemukan.',
+				'data' => $pegawai
+			);
+			$this->output
+				->set_content_type('application/json')
+				->set_status_header(200)
+				->set_output(json_encode($response));
+		} else {
+			$response = array(
+				'status' => 404,
+				'message' => 'NIP tidak dikenali.'
+			);
+			$this->output
+				->set_content_type('application/json')
+				->set_status_header(404)
+				->set_output(json_encode($response));
+		}
+	}
+
 	public function _rules()
 	{
 		$this->form_validation->set_rules('id_jabatan', 'id jabatan', 'trim|required');
