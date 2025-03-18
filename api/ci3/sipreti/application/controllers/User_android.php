@@ -91,10 +91,12 @@ class User_android extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->create();
 		} else {
+			$hashedPassword = password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT);
+
 			$data = array(
 				'id_pegawai' => $this->input->post('id_pegawai', TRUE),
 				'username' => $this->input->post('username', TRUE),
-				'password' => $this->input->post('password', TRUE),
+				'password' => $hashedPassword,
 				'email' => $this->input->post('email', TRUE),
 				'no_hp' => $this->input->post('no_hp', TRUE),
 				'valid_hp' => $this->input->post('valid_hp', TRUE),
@@ -141,10 +143,12 @@ class User_android extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->update($this->input->post('id_user_android', TRUE));
 		} else {
+			$hashedPassword = password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT);
+
 			$data = array(
 				'id_pegawai' => $this->input->post('id_pegawai', TRUE),
 				'username' => $this->input->post('username', TRUE),
-				'password' => $this->input->post('password', TRUE),
+				'password' => $hashedPassword,
 				'email' => $this->input->post('email', TRUE),
 				'no_hp' => $this->input->post('no_hp', TRUE),
 				'valid_hp' => $this->input->post('valid_hp', TRUE),
@@ -163,11 +167,7 @@ class User_android extends CI_Controller
 		$row = $this->User_android_model->get_by_id($id);
 
 		if ($row) {
-			$data = array(
-				'deleted_at' => date('Y-m-d H:i:s'),
-			);
-
-			$this->User_android_model->update($id, $data);
+			$this->User_android_model->delete($id);
 			$this->session->set_flashdata('message', 'Delete Record Success');
 			redirect(site_url('user_android'));
 		} else {
@@ -175,6 +175,51 @@ class User_android extends CI_Controller
 			redirect(site_url('user_android'));
 		}
 	}
+
+	public function create_api()
+	{
+		$this->_rules();
+
+		if ($this->form_validation->run() == FALSE) {
+			$this->create();
+		} else {
+			$hashedPassword = password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT);
+
+			$data = array(
+				'id_pegawai' => $this->input->post('id_pegawai', TRUE),
+				'username' => $this->input->post('username', TRUE),
+				'password' => $hashedPassword,
+				'email' => $this->input->post('email', TRUE),
+				'no_hp' => $this->input->post('no_hp', TRUE),
+				'valid_hp' => $this->input->post('valid_hp', TRUE),
+				'imei' => $this->input->post('imei', TRUE),
+				'created_at' => date('Y-m-d H:i:s'),
+				'updated_at' => NULL,
+				'deleted_at' => NULL,
+			);
+
+			// Simpan ke database
+			$this->User_android_model->insert($data);
+
+			$response = array(
+				'status' => 200,
+				'message' => 'User berhasil ditambahkan',
+				'data' => array(
+					'username' => $this->input->post('username', TRUE),
+					'email' => $this->input->post('email', TRUE),
+					'no_hp' => $this->input->post('no_hp', TRUE),
+					'imei' => $this->input->post('imei', TRUE),
+					'valid_hp' => $this->input->post('valid_hp', TRUE),
+				)
+			);
+
+			$this->output
+				->set_content_type('application/json')
+				->set_status_header(200)
+				->set_output(json_encode($response));
+		}
+	}
+
 
 	public function _rules()
 	{

@@ -14,7 +14,6 @@
         <table class="table">
 	    <tr><td>Id Pegawai</td><td><?php echo $id_pegawai; ?></td></tr>
 	    <tr><td>Username</td><td><?php echo $username; ?></td></tr>
-	    <tr><td>Password</td><td><?php echo $password; ?></td></tr>
 	    <tr><td>Email</td><td><?php echo $email; ?></td></tr>
 	    <tr><td>No Hp</td><td><?php echo $no_hp; ?></td></tr>
 	    <tr><td>Valid Hp</td><td><?php echo $valid_hp; ?></td></tr>
