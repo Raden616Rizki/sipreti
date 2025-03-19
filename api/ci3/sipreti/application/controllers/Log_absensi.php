@@ -191,6 +191,104 @@ class Log_absensi extends CI_Controller
 		}
 	}
 
+	public function create_api()
+	{
+		$this->_rules();
+
+		if ($this->form_validation->run() == FALSE) {
+			$response = array(
+				'status' => 400,
+				'message' => validation_errors()
+			);
+		} else {
+			$id_pegawai = $this->input->post('id_pegawai', TRUE);
+			$timestamp = date('Ymd_His');
+
+			// Direktori penyimpanan berdasarkan id_pegawai
+			$upload_path = './uploads/' . $id_pegawai . '/';
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0777, true); // Buat folder jika belum ada
+			}
+
+			// Konfigurasi upload file
+			$config['upload_path'] = $upload_path;
+			$config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx';
+			$config['max_size'] = 2048; // Maksimal 2MB
+			$this->load->library('upload', $config);
+
+			$url_foto_presensi = NULL;
+			$url_dokumen = NULL;
+			$errors = [];
+
+			// Upload foto presensi jika ada
+			if (!empty($_FILES['url_foto_presensi']['name'])) {
+				$foto_ext = pathinfo($_FILES['url_foto_presensi']['name'], PATHINFO_EXTENSION);
+				$foto_filename = 'foto_' . $timestamp . '.' . $foto_ext;
+				$config['file_name'] = $foto_filename;
+				$this->upload->initialize($config);
+
+				if ($this->upload->do_upload('url_foto_presensi')) {
+					$url_foto_presensi = base_url('uploads/' . $id_pegawai . '/' . $foto_filename);
+				} else {
+					$errors[] = "Foto presensi: " . $this->upload->display_errors('', '');
+				}
+			}
+
+			// Upload dokumen jika ada
+			if (!empty($_FILES['url_dokumen']['name'])) {
+				$doc_ext = pathinfo($_FILES['url_dokumen']['name'], PATHINFO_EXTENSION);
+				$doc_filename = 'dokumen_' . $timestamp . '.' . $doc_ext;
+				$config['file_name'] = $doc_filename;
+				$this->upload->initialize($config);
+
+				if ($this->upload->do_upload('url_dokumen')) {
+					$url_dokumen = base_url('uploads/' . $id_pegawai . '/' . $doc_filename);
+				} else {
+					$errors[] = "Dokumen: " . $this->upload->display_errors('', '');
+				}
+			}
+
+			// Jika ada error saat upload, kembalikan response error
+			if (!empty($errors)) {
+				$response = array(
+					'status' => 400,
+					'message' => implode("; ", $errors)
+				);
+			} else {
+				$data = array(
+					'id_pegawai' => $id_pegawai,
+					'jenis_absensi' => $this->input->post('jenis_absensi', TRUE),
+					'check_mode' => $this->input->post('check_mode', TRUE),
+					'waktu_absensi' => $this->input->post('waktu_absensi', TRUE),
+					'lattitude' => $this->input->post('lattitude', TRUE),
+					'longitude' => $this->input->post('longitude', TRUE),
+					'nama_lokasi' => $this->input->post('nama_lokasi', TRUE),
+					'nama_kamera' => $this->input->post('nama_kamera', TRUE),
+					'url_foto_presensi' => $url_foto_presensi,
+					'url_dokumen' => $url_dokumen,
+					'created_at' => date('Y-m-d H:i:s'),
+					'updated_at' => NULL,
+					'deleted_at' => NULL,
+				);
+
+				// Simpan data ke database
+				$this->Log_absensi_model->insert($data);
+
+				$response = array(
+					'status' => 200,
+					'message' => 'Absensi berhasil disimpan',
+					'data' => $data
+				);
+			}
+		}
+
+		// Output response JSON
+		$this->output
+			->set_content_type('application/json')
+			->set_status_header($response['status'])
+			->set_output(json_encode($response));
+	}
+
 	public function _rules()
 	{
 		$this->form_validation->set_rules('id_pegawai', 'id pegawai', 'trim|required');
@@ -201,8 +299,8 @@ class Log_absensi extends CI_Controller
 		$this->form_validation->set_rules('longitude', 'longitude', 'trim|required|numeric');
 		$this->form_validation->set_rules('nama_lokasi', 'nama lokasi', 'trim|required');
 		$this->form_validation->set_rules('nama_kamera', 'nama kamera', 'trim|required');
-		$this->form_validation->set_rules('url_foto_presensi', 'url foto presensi', 'trim|required');
-		$this->form_validation->set_rules('url_dokumen', 'url dokumen', 'trim|required');
+		$this->form_validation->set_rules('url_foto_presensi', 'url foto presensi', 'trim');
+		$this->form_validation->set_rules('url_dokumen', 'url dokumen', 'trim');
 
 		$this->form_validation->set_rules('id_log_absensi', 'id_log_absensi', 'trim');
 		$this->form_validation->set_error_delimiters('<span class="text-danger">', '</span>');
