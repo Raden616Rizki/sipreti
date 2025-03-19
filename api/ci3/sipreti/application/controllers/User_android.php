@@ -220,6 +220,49 @@ class User_android extends CI_Controller
 		}
 	}
 
+	public function login_api()
+	{
+		$email = $this->input->post('email', TRUE);
+		$password = $this->input->post('password', TRUE);
+
+		// Cek apakah email tersedia di database
+		$user = $this->User_android_model->get_by_email($email);
+
+		if ($user) {
+			// Verifikasi password yang diinputkan dengan yang ada di database
+			if (password_verify($password, $user->password)) {
+				$response = array(
+					'status' => 200,
+					'message' => 'Login berhasil',
+					'data' => array(
+						'id_user_android' => $user->id_user_android,
+						'id_pegawai' => $user->id_pegawai,
+						'username' => $user->username,
+						'email' => $user->email,
+						'no_hp' => $user->no_hp,
+						'imei' => $user->imei,
+						'valid_hp' => $user->valid_hp,
+					)
+				);
+			} else {
+				$response = array(
+					'status' => 401,
+					'message' => 'Password salah'
+				);
+			}
+		} else {
+			$response = array(
+				'status' => 404,
+				'message' => 'Email tidak ditemukan'
+			);
+		}
+
+		$this->output
+			->set_content_type('application/json')
+			->set_status_header($response['status'])
+			->set_output(json_encode($response));
+	}
+
 
 	public function _rules()
 	{

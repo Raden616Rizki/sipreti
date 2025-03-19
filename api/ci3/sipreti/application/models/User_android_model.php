@@ -71,6 +71,11 @@ class User_android_model extends CI_Model
 		$this->db->delete($this->table);
 	}
 
+	public function get_by_email($email)
+	{
+		return $this->db->get_where('user_android', ['email' => $email])->row();
+	}
+
 }
 
 /* End of file User_android_model.php */
