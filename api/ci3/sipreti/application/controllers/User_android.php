@@ -236,12 +236,12 @@ class User_android extends CI_Controller
 					'message' => 'Login berhasil',
 					'data' => array(
 						'id_user_android' => $user->id_user_android,
-						'id_pegawai' => $user->id_pegawai,
+						// 'id_pegawai' => $user->id_pegawai,
 						'username' => $user->username,
 						'email' => $user->email,
 						'no_hp' => $user->no_hp,
-						'imei' => $user->imei,
-						'valid_hp' => $user->valid_hp,
+						// 'imei' => $user->imei,
+						// 'valid_hp' => $user->valid_hp,
 					)
 				);
 			} else {

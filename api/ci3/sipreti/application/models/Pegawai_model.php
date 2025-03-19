@@ -23,11 +23,49 @@ class Pegawai_model extends CI_Model
 	}
 
 	// get data by id
-	function get_by_id($id)
+	public function get_by_id($id)
 	{
-		$this->db->where($this->id, $id);
-		return $this->db->get($this->table)->row();
+		$this->db->select('
+        pegawai.*, 
+        jabatan.nama_jabatan,
+        unit_kerja.nama_unit_kerja, 
+        unit_kerja.alamat, 
+        unit_kerja.lattitude, 
+        unit_kerja.longitude,
+        radius_absen.ukuran, 
+        radius_absen.satuan
+    ');
+		$this->db->from('pegawai');
+		$this->db->join('jabatan', 'jabatan.id_jabatan = pegawai.id_jabatan', 'left');
+		$this->db->join('unit_kerja', 'unit_kerja.id_unit_kerja = pegawai.id_unit_kerja', 'left');
+		$this->db->join('radius_absen', 'radius_absen.id_radius = unit_kerja.id_radius', 'left');
+		$this->db->where('pegawai.id_pegawai', $id);
+		$this->db->where('pegawai.deleted_at IS NULL');
+		$pegawai = $this->db->get()->row_array();
+
+		if ($pegawai) {
+			$this->db->select('face_embeddings');
+			$this->db->from('vektor_pegawai');
+			$this->db->where('id_pegawai', $id);
+			$this->db->where('deleted_at IS NULL');
+			$query = $this->db->get();
+			$embeddings = [];
+
+			foreach ($query->result_array() as $row) {
+				$decoded = json_decode($row['face_embeddings'], true);
+				if (is_array($decoded)) {
+					$embeddings[] = $decoded;
+				}
+			}
+
+			$pegawai['face_embeddings'] = $embeddings;
+
+			return $pegawai;
+		}
+
+		return null;
 	}
+
 
 	// get total rows
 	function total_rows($q = NULL, $onlyActive = FALSE)

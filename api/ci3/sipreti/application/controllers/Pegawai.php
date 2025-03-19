@@ -46,24 +46,44 @@ class Pegawai extends CI_Controller
 	public function read($id)
 	{
 		$row = $this->Pegawai_model->get_by_id($id);
-		if ($row && empty($row->deleted_at)) {
+
+		if ($row && empty($row['deleted_at'])) {
 			$data = array(
-				'id_pegawai' => $row->id_pegawai,
-				'id_jabatan' => $row->id_jabatan,
-				'id_unit_kerja' => $row->id_unit_kerja,
-				'nip' => $row->nip,
-				'nama' => $row->nama,
-				'url_foto' => $row->url_foto,
-				'created_at' => $row->created_at,
-				'updated_at' => $row->updated_at,
-				'deleted_at' => $row->deleted_at,
+				'id_pegawai' => $row['id_pegawai'],
+				'nip' => $row['nip'],
+				'nama' => $row['nama'],
+				'url_foto' => $row['url_foto'],
+				// 'id_jabatan' => $row['id_jabatan'],
+				'nama_jabatan' => $row['nama_jabatan'],
+
+				// Data Unit Kerja
+				// 'id_unit_kerja' => $row['id_unit_kerja'],
+				'nama_unit_kerja' => $row['nama_unit_kerja'],
+				'alamat_unit_kerja' => $row['alamat'],
+				'lattitude' => $row['lattitude'],
+				'longitude' => $row['longitude'],
+
+				// Data Radius Absen
+				// 'id_radius' => $row['id_radius'],
+				'ukuran_radius' => $row['ukuran'],
+				'satuan_radius' => $row['satuan'],
+
+				// Data Face Embeddings sebagai array
+				'face_embeddings' => $row['face_embeddings'],
+
+				// 'created_at' => $row['created_at'],
+				// 'updated_at' => $row['updated_at'],
+				// 'deleted_at' => $row['deleted_at'],
 			);
-			$this->load->view('pegawai/pegawai_read', $data);
+
+			header('Content-Type: application/json');
+			echo json_encode($data);
 		} else {
-			$this->session->set_flashdata('message', 'Record Not Found');
+			$this->session->set_flashdata('message', 'Data pegawai tidak ditemukan');
 			redirect(site_url('pegawai'));
 		}
 	}
+
 
 	public function create()
 	{
