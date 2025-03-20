@@ -1,44 +1,16 @@
 // import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
-import 'package:sipreti/services/api_service.dart';
 
-class NIPPage extends StatefulWidget {
-  const NIPPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  NIPPageState createState() => NIPPageState();
+  LoginPageState createState() => LoginPageState();
 }
 
-class NIPPageState extends State<NIPPage> {
-  final TextEditingController _nipController = TextEditingController();
-  final ApiService _apiService = ApiService();
-
-  void _loadNIP() async {
-    String nip = _nipController.text.trim();
-    if (nip.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Masukkan NIP terlebih dahulu")),
-        );
-      }
-      return;
-    }
-
-    Map<String, dynamic> result = await _apiService.validateNip(nip);
-
-    if (!mounted) return;
-
-    if (result["error"] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"])),
-      );
-    } else {
-      debugPrint("Data Pegawai: $result");
-      if (mounted) {
-        Navigator.pushNamed(context, '/form');
-      }
-    }
-  }
+class LoginPageState extends State<LoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -77,19 +49,10 @@ class NIPPageState extends State<NIPPage> {
                 children: [
                   const SizedBox(height: 60),
                   const Text(
-                    "Buat Akun Baru",
+                    "Masuk",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    "Load Pegawai by NIP",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
                     ),
                   ),
                   const SizedBox(height: 25),
@@ -103,9 +66,9 @@ class NIPPageState extends State<NIPPage> {
                       ),
                     ),
                     child: TextField(
-                      controller: _nipController,
+                      controller: _emailController,
                       decoration: InputDecoration(
-                        hintText: "Masukkan NIP Baru / NIP Lama",
+                        hintText: "Email",
                         hintStyle: const TextStyle(
                           color: Colors.grey,
                           fontWeight: FontWeight.bold,
@@ -117,7 +80,41 @@ class NIPPageState extends State<NIPPage> {
                           borderSide: BorderSide.none,
                         ),
                         prefixIcon: const Icon(
-                          Icons.person,
+                          Icons.email,
+                          color: Colors.grey,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  Neumorphic(
+                    style: NeumorphicStyle(
+                      depth: -3,
+                      intensity: 0.6,
+                      color: Colors.grey[200],
+                      boxShape: NeumorphicBoxShape.roundRect(
+                        BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        hintText: "Password",
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock,
                           color: Colors.grey,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
@@ -139,9 +136,11 @@ class NIPPageState extends State<NIPPage> {
                         shadowColor: Colors.black,
                         elevation: 8,
                       ),
-                      onPressed: _loadNIP,
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/');
+                      },
                       child: const Text(
-                        "LOAD NIP",
+                        "MASUK",
                         style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),

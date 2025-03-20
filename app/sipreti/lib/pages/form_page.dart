@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
+import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 
 class FormPage extends StatefulWidget {
   const FormPage({super.key});
@@ -8,7 +9,12 @@ class FormPage extends StatefulWidget {
 }
 
 class FormPageState extends State<FormPage> {
-  final TextEditingController _nipController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _noTelephoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +24,13 @@ class FormPageState extends State<FormPage> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/pemkot_malang_bg_sm.png',
-              fit: BoxFit.cover,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Image.asset(
+                'assets/images/pemkot_malang_bg_sm.png',
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
             ),
           ),
           Positioned(
@@ -67,86 +77,171 @@ class FormPageState extends State<FormPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
+                  Neumorphic(
+                    style: NeumorphicStyle(
+                      depth: -3,
+                      intensity: 0.6,
+                      color: Colors.grey[200],
+                      boxShape: NeumorphicBoxShape.roundRect(
+                        BorderRadius.circular(10),
+                      ),
+                    ),
                     child: TextField(
-                      controller: _nipController,
+                      controller: _emailController,
                       decoration: InputDecoration(
                         hintText: "Email",
-                        hintStyle: const TextStyle(color: Colors.grey),
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.email,
+                          color: Colors.grey,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
+                  const SizedBox(height: 12),
+                  Neumorphic(
+                    style: NeumorphicStyle(
+                      depth: -3,
+                      intensity: 0.6,
+                      color: Colors.grey[200],
+                      boxShape: NeumorphicBoxShape.roundRect(
+                        BorderRadius.circular(10),
+                      ),
+                    ),
                     child: TextField(
-                      controller: _nipController,
+                      controller: _noTelephoneController,
                       decoration: InputDecoration(
                         hintText: "No. Telepon",
-                        hintStyle: const TextStyle(color: Colors.grey),
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.contacts,
+                          color: Colors.grey,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
+                  const SizedBox(height: 12),
+                  Neumorphic(
+                    style: NeumorphicStyle(
+                      depth: -3,
+                      intensity: 0.6,
+                      color: Colors.grey[200],
+                      boxShape: NeumorphicBoxShape.roundRect(
+                        BorderRadius.circular(10),
+                      ),
+                    ),
                     child: TextField(
-                      controller: _nipController,
+                      controller: _nameController,
                       decoration: InputDecoration(
                         hintText: "Nama Pegawai",
-                        hintStyle: const TextStyle(color: Colors.grey),
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.person,
+                          color: Colors.grey,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
+                  const SizedBox(height: 12),
+                  Neumorphic(
+                    style: NeumorphicStyle(
+                      depth: -3,
+                      intensity: 0.6,
+                      color: Colors.grey[200],
+                      boxShape: NeumorphicBoxShape.roundRect(
+                        BorderRadius.circular(10),
+                      ),
+                    ),
                     child: TextField(
-                      controller: _nipController,
+                      controller: _passwordController,
                       decoration: InputDecoration(
                         hintText: "Password",
-                        hintStyle: const TextStyle(color: Colors.grey),
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Colors.grey,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
+                  const SizedBox(height: 12),
+                  Neumorphic(
+                    style: NeumorphicStyle(
+                      depth: -3,
+                      intensity: 0.6,
+                      color: Colors.grey[200],
+                      boxShape: NeumorphicBoxShape.roundRect(
+                        BorderRadius.circular(10),
+                      ),
+                    ),
                     child: TextField(
-                      controller: _nipController,
+                      controller: _confirmPasswordController,
                       decoration: InputDecoration(
                         hintText: "Konfirmasi Password",
-                        hintStyle: const TextStyle(color: Colors.grey),
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Colors.grey,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
                         ),
                       ),
                     ),
@@ -161,6 +256,8 @@ class FormPageState extends State<FormPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                        shadowColor: Colors.black,
+                        elevation: 8,
                       ),
                       onPressed: () {
                         Navigator.pushNamed(context, '/');

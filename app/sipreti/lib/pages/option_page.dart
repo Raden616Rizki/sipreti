@@ -54,14 +54,35 @@ class OptionPage extends StatelessWidget {
                   width: widthScreen * 0.8,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      shadowColor: Colors.black,
+                      elevation: 8,
+                    ),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/login');
+                    },
+                    child: const Text(
+                      "MASUK",
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: widthScreen * 0.8,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: Colors.blue),
                       ),
                       shadowColor: Colors.black,
-                      elevation: 5,
+                      elevation: 8,
                     ),
                     onPressed: () {
                       Navigator.pushNamed(context, '/nip');
@@ -72,29 +93,6 @@ class OptionPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: widthScreen * 0.8,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: Colors.white),
-                      ),
-                      shadowColor: Colors.black,
-                      elevation: 5,
-                    ),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/');
-                    },
-                    child: const Text(
-                      "MASUK",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                )
               ],
             ),
           ),
