@@ -22,4 +22,68 @@ class ApiService {
       return {"error": true, "message": "Exception: $e"};
     }
   }
+
+  Future<Map<String, dynamic>> registerUser({
+    required String idPegawai,
+    required String username,
+    required String password,
+    required String email,
+    required String noHp,
+    required String imei,
+    required String validHp,
+  }) async {
+    final String url = "$baseUrl/user_android/create_api";
+
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      request.fields['id_pegawai'] = idPegawai;
+      request.fields['username'] = username;
+      request.fields['password'] = password;
+      request.fields['email'] = email;
+      request.fields['no_hp'] = noHp;
+      request.fields['imei'] = imei;
+      request.fields['valid_hp'] = validHp;
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      } else {
+        return {
+          "error": true,
+          "message": "Error: ${response.statusCode} - $responseBody"
+        };
+      }
+    } catch (e) {
+      return {"error": true, "message": "Exception: $e"};
+    }
+  }
+
+  Future<Map<String, dynamic>> loginUser({
+    required String email,
+    required String password,
+  }) async {
+    final String url = "$baseUrl/user_android/login_api";
+
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      request.fields['email'] = email;
+      request.fields['password'] = password;
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      } else {
+        return {
+          "error": true,
+          "message": "Error: ${response.statusCode} - $responseBody"
+        };
+      }
+    } catch (e) {
+      return {"error": true, "message": "Exception: $e"};
+    }
+  }
 }

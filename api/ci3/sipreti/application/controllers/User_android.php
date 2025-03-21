@@ -198,24 +198,34 @@ class User_android extends CI_Controller
 				'deleted_at' => NULL,
 			);
 
-			// Simpan ke database
-			$this->User_android_model->insert($data);
+			// Simpan ke database dan dapatkan ID-nya
+			$insert_id = $this->User_android_model->insert($data);
 
-			$response = array(
-				'status' => 200,
-				'message' => 'User berhasil ditambahkan',
-				'data' => array(
-					'username' => $this->input->post('username', TRUE),
-					'email' => $this->input->post('email', TRUE),
-					'no_hp' => $this->input->post('no_hp', TRUE),
-					'imei' => $this->input->post('imei', TRUE),
-					'valid_hp' => $this->input->post('valid_hp', TRUE),
-				)
-			);
+			// Ambil data yang sudah tersimpan di database berdasarkan ID
+			$user = $this->User_android_model->get_by_id($insert_id);
+
+			if ($user) {
+				$response = array(
+					'status' => 200,
+					'message' => 'User berhasil ditambahkan',
+					'data' => array(
+						'id_user_android' => $user->id_user_android,
+						'id_pegawai' => $user->id_pegawai,
+						'username' => $user->username,
+						'email' => $user->email,
+						'no_hp' => $user->no_hp,
+					)
+				);
+			} else {
+				$response = array(
+					'status' => 500,
+					'message' => 'Gagal mengambil data setelah insert'
+				);
+			}
 
 			$this->output
 				->set_content_type('application/json')
-				->set_status_header(200)
+				->set_status_header($response['status'])
 				->set_output(json_encode($response));
 		}
 	}
@@ -236,7 +246,7 @@ class User_android extends CI_Controller
 					'message' => 'Login berhasil',
 					'data' => array(
 						'id_user_android' => $user->id_user_android,
-						// 'id_pegawai' => $user->id_pegawai,
+						'id_pegawai' => $user->id_pegawai,
 						'username' => $user->username,
 						'email' => $user->email,
 						'no_hp' => $user->no_hp,

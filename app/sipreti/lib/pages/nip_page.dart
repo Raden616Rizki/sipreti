@@ -33,9 +33,17 @@ class NIPPageState extends State<NIPPage> {
         SnackBar(content: Text(result["message"])),
       );
     } else {
-      debugPrint("Data Pegawai: $result");
+      // debugPrint("Data Pegawai: $result");
       if (mounted) {
-        Navigator.pushNamed(context, '/form');
+        Navigator.pushNamed(
+          context,
+          '/form',
+          arguments: {
+            'id_pegawai': result['data']['id_pegawai'],
+            'nama': result['data']['nama'],
+            'nip': result['data']['nip'],
+          },
+        );
       }
     }
   }

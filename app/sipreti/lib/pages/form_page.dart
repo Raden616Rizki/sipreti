@@ -16,9 +16,38 @@ class FormPageState extends State<FormPage> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
+  int? idPegawai;
+  String? nama;
+  String? nip;
+
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
   @override
   Widget build(BuildContext context) {
     final double heightScreen = MediaQuery.of(context).size.height;
+    final Object? args = ModalRoute.of(context)?.settings.arguments;
+    final Map<String, dynamic>? data =
+        args is Map<String, dynamic> ? args : null;
+
+    if (data == null ||
+        !data.containsKey('id_pegawai') ||
+        !data.containsKey('nama') ||
+        !data.containsKey('nip')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/nip');
+      });
+
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final idPegawai = data['id_pegawai'];
+    final nama = data['nama'];
+    final nip = data['nip'];
+
+    debugPrint(idPegawai);
 
     return Scaffold(
       body: Stack(
@@ -60,17 +89,17 @@ class FormPageState extends State<FormPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    "AMAR BUDIMAN",
-                    style: TextStyle(
+                  Text(
+                    nama ?? "Nama tidak tersedia",
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
                   ),
-                  const Text(
-                    "NIP. 109088216612001290",
-                    style: TextStyle(
+                  Text(
+                    nip ?? "NIP tidak tersedia",
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.normal,
                       color: Colors.black,
@@ -110,7 +139,7 @@ class FormPageState extends State<FormPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Neumorphic(
                     style: NeumorphicStyle(
                       depth: -3,
@@ -190,6 +219,8 @@ class FormPageState extends State<FormPage> {
                     ),
                     child: TextField(
                       controller: _passwordController,
+                      obscureText:
+                          !_isPasswordVisible, // Mengatur visibilitas password
                       decoration: InputDecoration(
                         hintText: "Password",
                         hintStyle: const TextStyle(
@@ -205,6 +236,19 @@ class FormPageState extends State<FormPage> {
                         prefixIcon: const Icon(
                           Icons.lock,
                           color: Colors.grey,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 16,
@@ -224,6 +268,7 @@ class FormPageState extends State<FormPage> {
                     ),
                     child: TextField(
                       controller: _confirmPasswordController,
+                      obscureText: !_isConfirmPasswordVisible,
                       decoration: InputDecoration(
                         hintText: "Konfirmasi Password",
                         hintStyle: const TextStyle(
@@ -239,6 +284,20 @@ class FormPageState extends State<FormPage> {
                         prefixIcon: const Icon(
                           Icons.lock,
                           color: Colors.grey,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isConfirmPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isConfirmPasswordVisible =
+                                  !_isConfirmPasswordVisible;
+                            });
+                          },
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 16,

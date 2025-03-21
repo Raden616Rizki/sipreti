@@ -7,8 +7,13 @@ import 'package:sipreti/pages/form_page.dart';
 import 'package:sipreti/pages/login_page.dart';
 import 'package:sipreti/pages/nip_page.dart';
 import 'package:sipreti/pages/option_page.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('pegawai');
+
   runApp(const MyApp());
 }
 
@@ -21,7 +26,7 @@ class MyApp extends StatelessWidget {
       // debugShowCheckedModeBanner: false,
       title: 'Sipreti App',
       // initialRoute: '/location',
-      initialRoute: '/nip',
+      initialRoute: '/option',
       routes: {
         '/': (context) => const DashboardPage(),
         // '/location': (context) => const LocationPage(),
