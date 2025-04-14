@@ -12,6 +12,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
+  await Hive.openBox('userAndroid');
   await Hive.openBox('pegawai');
 
   runApp(const MyApp());
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
       // debugShowCheckedModeBanner: false,
       title: 'Sipreti App',
       // initialRoute: '/location',
-      initialRoute: '/option',
+      initialRoute: '/login',
       routes: {
         '/': (context) => const DashboardPage(),
         // '/location': (context) => const LocationPage(),

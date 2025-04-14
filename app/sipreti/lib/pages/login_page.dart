@@ -1,5 +1,6 @@
 // import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
+import 'package:sipreti/services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,6 +12,48 @@ class LoginPage extends StatefulWidget {
 class LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final ApiService _apiService = ApiService();
+  bool _isPasswordVisible = false;
+
+  void _loginUser() async {
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+    if (email.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Masukkan Email terlebih dahulu")),
+        );
+      }
+      return;
+    }
+
+    if (password.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Masukkan Password terlebih dahulu")),
+        );
+      }
+      return;
+    }
+
+    Map<String, dynamic> result = await _apiService.loginUser(email, password);
+
+    if (!mounted) return;
+
+    if (result["error"] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result["message"])),
+      );
+    } else {
+      debugPrint("Data User Android: $result");
+      Map<String, dynamic> dataPegawai =
+          await _apiService.getPegawai(result['data']['id_pegawai']);
+      debugPrint("Data Pegawai: $dataPegawai");
+      if (mounted) {
+        Navigator.pushNamed(context, '/');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +144,8 @@ class LoginPageState extends State<LoginPage> {
                     ),
                     child: TextField(
                       controller: _passwordController,
+                      obscureText:
+                          !_isPasswordVisible, // Mengatur visibilitas password
                       decoration: InputDecoration(
                         hintText: "Password",
                         hintStyle: const TextStyle(
@@ -116,6 +161,19 @@ class LoginPageState extends State<LoginPage> {
                         prefixIcon: const Icon(
                           Icons.lock,
                           color: Colors.grey,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           vertical: 16,
@@ -136,9 +194,10 @@ class LoginPageState extends State<LoginPage> {
                         shadowColor: Colors.black,
                         elevation: 8,
                       ),
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/');
-                      },
+                      onPressed: _loginUser,
+                      // onPressed: () {
+                      //   Navigator.pushNamed(context, '/');
+                      // },
                       child: const Text(
                         "MASUK",
                         style: TextStyle(fontSize: 18, color: Colors.white),
