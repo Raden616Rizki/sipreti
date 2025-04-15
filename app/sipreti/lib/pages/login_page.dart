@@ -1,6 +1,7 @@
 // import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:sipreti/services/api_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -45,10 +46,38 @@ class LoginPageState extends State<LoginPage> {
         SnackBar(content: Text(result["message"])),
       );
     } else {
-      debugPrint("Data User Android: $result");
+      final userData = result['data'];
+
+      var box = Hive.box('userAndroid');
+
+      await box.put('id_user_android', userData['id_user_android']);
+      await box.put('id_pegawai', userData['id_pegawai']);
+      await box.put('username', userData['username']);
+      await box.put('email', userData['email']);
+      await box.put('no_hp', userData['no_hp']);
+
+      debugPrint("User data saved to Hive successfully.");
+
       Map<String, dynamic> dataPegawai =
           await _apiService.getPegawai(result['data']['id_pegawai']);
-      debugPrint("Data Pegawai: $dataPegawai");
+      var pegawaiBox = Hive.box('pegawai');
+
+      await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
+      await pegawaiBox.put('nip', dataPegawai['nip']);
+      await pegawaiBox.put('nama', dataPegawai['nama']);
+      await pegawaiBox.put('url_foto', dataPegawai['url_foto']);
+      await pegawaiBox.put('nama_jabatan', dataPegawai['nama_jabatan']);
+      await pegawaiBox.put('nama_unit_kerja', dataPegawai['nama_unit_kerja']);
+      await pegawaiBox.put(
+          'alamat_unit_kerja', dataPegawai['alamat_unit_kerja']);
+      await pegawaiBox.put('lattitude', dataPegawai['lattitude']);
+      await pegawaiBox.put('longitude', dataPegawai['longitude']);
+      await pegawaiBox.put('ukuran_radius', dataPegawai['ukuran_radius']);
+      await pegawaiBox.put('satuan_radius', dataPegawai['satuan_radius']);
+      await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
+
+      debugPrint("Data pegawai berhasil disimpan ke Hive.");
+
       if (mounted) {
         Navigator.pushNamed(context, '/');
       }

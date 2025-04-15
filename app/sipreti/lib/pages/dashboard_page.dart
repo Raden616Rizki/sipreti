@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -8,6 +9,37 @@ class DashboardPage extends StatefulWidget {
 }
 
 class DashboardPageState extends State<DashboardPage> {
+  String? username;
+  String? email;
+  String? namaPegawai;
+  String? nip;
+  String? namaJabatan;
+  List<dynamic>? faceEmbeddings;
+
+  @override
+  void initState() {
+    super.initState();
+
+    var box = Hive.box('userAndroid');
+    var pegawaiBox = Hive.box('pegawai');
+
+    setState(() {
+      username = box.get('username');
+      email = box.get('email');
+
+      namaPegawai = pegawaiBox.get('nama');
+      nip = pegawaiBox.get('nip');
+      namaJabatan = pegawaiBox.get('nama_jabatan');
+      faceEmbeddings = pegawaiBox.get('face_embeddings');
+    });
+
+    debugPrint("Logged in user: $username, email: $email");
+    debugPrint("Nama Pegawai: $namaPegawai");
+    debugPrint("NIP: $nip");
+    debugPrint("Nama Jabatan: $namaJabatan");
+    debugPrint("Face Embeddings: $faceEmbeddings");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,35 +80,35 @@ class DashboardPageState extends State<DashboardPage> {
             height: 260,
             padding: const EdgeInsets.all(16),
             color: Colors.blue,
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 40,
                   backgroundImage:
                       AssetImage('assets/images/default_profile.png'),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
-                  "AMAR BUDIMAN",
-                  style: TextStyle(
+                  "$namaPegawai",
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  "NIP: 109088216612001290",
-                  style: TextStyle(fontSize: 12, color: Colors.white),
+                  "NIP: $nip",
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  "Kesekretariatan - Kepegawaian -\nAnalis Sumber Daya Manusia Aparatur",
+                  "$namaJabatan",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.white),
+                  style: const TextStyle(fontSize: 14, color: Colors.white),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
               ],
             ),
           ),
