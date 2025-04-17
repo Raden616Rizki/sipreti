@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // final String baseUrl = "http://127.0.0.1/sipreti";
-  final String baseUrl = "http://192.168.1.35/sipreti";
+  final String baseUrl = "http://192.168.100.11/sipreti";
 
   Future<Map<String, dynamic>> validateNip(String nip) async {
     final String url = "$baseUrl/pegawai/validate_nip?nip=$nip";

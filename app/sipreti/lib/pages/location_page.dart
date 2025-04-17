@@ -1,93 +1,99 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_map/flutter_map.dart';
-// import 'package:geolocator/geolocator.dart';
-// import 'package:latlong2/latlong.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
-// class LocationPage extends StatefulWidget {
-//   const LocationPage({super.key});
+class LocationPage extends StatefulWidget {
+  const LocationPage({super.key});
 
-//   @override
-//   State<LocationPage> createState() => _LocationPageState();
-// }
+  @override
+  State<LocationPage> createState() => _LocationPageState();
+}
 
-// class _LocationPageState extends State<LocationPage> {
-//   final MapController _mapController = MapController();
-//   LatLng? _currentPosition;
+class _LocationPageState extends State<LocationPage> {
+  LatLng? currentLocation;
 
-//   Future<void> _getCurrentLocation() async {
-//     bool serviceEnabled;
-//     LocationPermission permission;
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
 
-//     serviceEnabled = await Geolocator.isLocationServiceEnabled();
-//     if (!serviceEnabled) {
-//       return;
-//     }
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
 
-//     permission = await Geolocator.checkPermission();
-//     if (permission == LocationPermission.denied) {
-//       permission = await Geolocator.requestPermission();
-//       if (permission == LocationPermission.deniedForever) {
-//         return;
-//       }
-//     }
+    // Periksa apakah lokasi aktif
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Layanan lokasi tidak aktif')),
+      );
+      return;
+    }
 
-//     Position position = await Geolocator.getCurrentPosition(
-//       desiredAccuracy: LocationAccuracy.high,
-//     );
+    // Minta izin lokasi
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Izin lokasi ditolak')),
+        );
+        return;
+      }
+    }
 
-//     setState(() {
-//       _currentPosition = LatLng(position.latitude, position.longitude);
-//       _mapController.move(_currentPosition!, 15.0);
-//     });
-//   }
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Izin lokasi ditolak permanen')),
+      );
+      return;
+    }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text("Peta & Lokasi")),
-//       body: Stack(
-//         children: [
-//           FlutterMap(
-//             mapController: _mapController,
-//             options: MapOptions(
-//               initialCenter:
-//                   _currentPosition ?? const LatLng(-6.2088, 106.8456),
-//               initialZoom: 10,
-//             ),
-//             children: [
-//               TileLayer(
-//                 urlTemplate:
-//                     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-//                 subdomains: const ['a', 'b', 'c'],
-//               ),
-//               if (_currentPosition != null)
-//                 MarkerLayer(
-//                   markers: [
-//                     Marker(
-//                       point: _currentPosition!,
-//                       width: 50,
-//                       height: 50,
-//                       child: const Icon(
-//                         Icons.location_on,
-//                         color: Colors.red,
-//                         size: 40,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//             ],
-//           ),
-//           Positioned(
-//             bottom: 20,
-//             right: 20,
-//             child: FloatingActionButton(
-//               onPressed: _getCurrentLocation,
-//               child:
-//                   Image.asset('assets/images/focus-button.png', width: 30, height: 30),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+    // Dapatkan lokasi saat ini
+    Position position = await Geolocator.getCurrentPosition();
+    setState(() {
+      currentLocation = LatLng(position.latitude, position.longitude);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Lokasi Saya'),
+      ),
+      body: currentLocation == null
+          ? const Center(child: CircularProgressIndicator())
+          : FlutterMap(
+              options: MapOptions(
+                initialCenter: currentLocation!,
+                initialZoom: 16.0,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  subdomains: const ['a', 'b', 'c'],
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: currentLocation!,
+                      width: 80,
+                      height: 80,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.location_pin,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    );
+  }
+}

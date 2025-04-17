@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:sipreti/pages/biometric_page.dart';
 import 'package:sipreti/pages/dashboard_page.dart';
-// import 'package:sipreti/pages/location_page.dart';
+import 'package:sipreti/pages/location_page.dart';
 import 'package:sipreti/pages/attendance_page.dart';
 import 'package:sipreti/pages/form_page.dart';
 import 'package:sipreti/pages/login_page.dart';
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/': (context) => const DashboardPage(),
-        // '/location': (context) => const LocationPage(),
+        '/location': (context) => const LocationPage(),
         // '/biometric': (context) => const BiometricPage(),
         '/option': (context) => const OptionPage(),
         '/login': (context) => const LoginPage(),
