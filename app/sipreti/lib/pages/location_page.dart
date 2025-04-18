@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geocoding/geocoding.dart';
 
 class LocationPage extends StatefulWidget {
-  const LocationPage({super.key});
+  const LocationPage({Key? key}) : super(key: key);
 
   @override
   State<LocationPage> createState() => _LocationPageState();
@@ -14,6 +14,8 @@ class LocationPage extends StatefulWidget {
 class _LocationPageState extends State<LocationPage> {
   LatLng? currentLocation;
   String? currentAddress;
+
+  final mapController = MapController();
 
   @override
   void initState() {
@@ -32,7 +34,6 @@ class _LocationPageState extends State<LocationPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Izin lokasi ditolak')),
         );
-
         return;
       }
     }
@@ -73,6 +74,9 @@ class _LocationPageState extends State<LocationPage> {
       currentLocation = LatLng(position.latitude, position.longitude);
       currentAddress = "${place.street}, ${place.locality}, ${place.country}";
     });
+
+    // Pindahkan peta ke lokasi saat ini
+    mapController.move(currentLocation!, 16);
   }
 
   @override
@@ -108,13 +112,15 @@ class _LocationPageState extends State<LocationPage> {
         children: [
           Expanded(
             child: FlutterMap(
-              options: MapOptions(
-                initialCenter: currentLocation ?? const LatLng(0, 0),
-                initialZoom: 16,
+              mapController: mapController,
+              options: const MapOptions(
+                initialCenter: LatLng(0, 0),
+                initialZoom: 2,
               ),
               children: [
                 TileLayer(
-                  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  urlTemplate:
+                      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                   userAgentPackageName: 'com.example.app',
                 ),
                 if (currentLocation != null)
