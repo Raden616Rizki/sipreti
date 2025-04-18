@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geocoding/geocoding.dart';
 
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
@@ -12,6 +13,7 @@ class LocationPage extends StatefulWidget {
 
 class _LocationPageState extends State<LocationPage> {
   LatLng? currentLocation;
+  String? currentAddress;
 
   @override
   void initState() {
@@ -20,41 +22,56 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   Future<void> _getCurrentLocation() async {
-    bool serviceEnabled;
     LocationPermission permission;
 
-    // Periksa apakah lokasi aktif
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Layanan lokasi tidak aktif')),
-      );
-      return;
-    }
-
-    // Minta izin lokasi
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Izin lokasi ditolak')),
         );
+
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Izin lokasi ditolak permanen')),
       );
       return;
     }
 
-    // Dapatkan lokasi saat ini
-    Position position = await Geolocator.getCurrentPosition();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Layanan lokasi masih nonaktif')),
+        );
+        return;
+      }
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+
+    Placemark place = placemarks[0];
+
     setState(() {
       currentLocation = LatLng(position.latitude, position.longitude);
+      currentAddress = "${place.street}, ${place.locality}, ${place.country}";
     });
   }
 
@@ -62,38 +79,86 @@ class _LocationPageState extends State<LocationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lokasi Saya'),
+        backgroundColor: Colors.blue,
+        title: const Text(
+          "Verifikasi Wajah",
+          style: TextStyle(
+              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        automaticallyImplyLeading: false,
+        actions: [
+          Row(
+            children: [
+              Image.asset(
+                'assets/images/pemkot_malang_logo.png',
+                height: 32,
+              ),
+              const SizedBox(width: 8),
+              const CircleAvatar(
+                backgroundImage:
+                    AssetImage('assets/images/default_profile.png'),
+                radius: 16,
+              ),
+              const SizedBox(width: 10),
+            ],
+          ),
+        ],
       ),
-      body: currentLocation == null
-          ? const Center(child: CircularProgressIndicator())
-          : FlutterMap(
+      body: Column(
+        children: [
+          Expanded(
+            child: FlutterMap(
               options: MapOptions(
-                initialCenter: currentLocation!,
-                initialZoom: 16.0,
+                initialCenter: currentLocation ?? const LatLng(0, 0),
+                initialZoom: 16,
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
+                  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  userAgentPackageName: 'com.example.app',
                 ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: currentLocation!,
-                      width: 80,
-                      height: 80,
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.location_pin,
-                        color: Colors.red,
-                        size: 40,
+                if (currentLocation != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: currentLocation!,
+                        width: 60,
+                        height: 60,
+                        child: const Icon(
+                          Icons.location_pin,
+                          color: Colors.red,
+                          size: 40,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
+          ),
+          Card(
+            margin: const EdgeInsets.all(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      currentAddress ?? "Mengambil lokasi...",
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _getCurrentLocation,
+        child: const Icon(Icons.my_location),
+      ),
     );
   }
 }

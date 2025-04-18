@@ -248,7 +248,7 @@ class DashboardPageState extends State<DashboardPage> {
                               icon: Icons.login,
                               iconColor: Colors.blue,
                               onTap: () {
-                                Navigator.pushNamed(context, '/biometric');
+                                Navigator.pushNamed(context, '/location');
                               },
                             ),
                           ),
@@ -259,7 +259,7 @@ class DashboardPageState extends State<DashboardPage> {
                               icon: Icons.logout,
                               iconColor: Colors.blue,
                               onTap: () {
-                                Navigator.pushNamed(context, '/biometric');
+                                Navigator.pushNamed(context, '/location');
                               },
                             ),
                           ),
