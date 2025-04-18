@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
       // debugShowCheckedModeBanner: false,
       title: 'Sipreti App',
       initialRoute: '/location',
-      // initialRoute: '/login',
+      // initialRoute: '/login', 
       routes: {
         '/': (context) => const DashboardPage(),
         '/location': (context) => const LocationPage(),
