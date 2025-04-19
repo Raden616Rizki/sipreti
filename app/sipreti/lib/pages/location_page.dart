@@ -47,11 +47,11 @@ class _LocationPageState extends State<LocationPage> {
     );
 
     final place = placemarks.first;
-
     final userLocation = LatLng(position.latitude, position.longitude);
 
     const distance = Distance();
     final double jarak = distance(userLocation, kantorLocation);
+
     setState(() {
       currentLocation = userLocation;
       currentAddress =
@@ -68,7 +68,7 @@ class _LocationPageState extends State<LocationPage> {
       appBar: AppBar(
         backgroundColor: Colors.blue,
         title: const Text(
-          "Verifikasi Wajah",
+          "Lokasi Absen",
           style: TextStyle(
               fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
         ),
@@ -91,132 +91,177 @@ class _LocationPageState extends State<LocationPage> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: FlutterMap(
-              mapController: mapController,
-              options: const MapOptions(
-                initialCenter: LatLng(-7.9437612, 112.6143654),
-                initialZoom: 16,
+          // === PETA ===
+          FlutterMap(
+            mapController: mapController,
+            options: const MapOptions(
+              initialCenter: LatLng(-7.9437612, 112.6143654),
+              initialZoom: 16,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.app',
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
-                ),
-                CircleLayer(
-                  circles: [
-                    CircleMarker(
-                      point: kantorLocation,
-                      radius: radiusMeter,
-                      useRadiusInMeter: true,
-                      color: Colors.blue.withOpacity(0.2),
-                      borderColor: Colors.blue,
-                      borderStrokeWidth: 2,
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: kantorLocation,
+                    radius: radiusMeter,
+                    useRadiusInMeter: true,
+                    color: Colors.blue.withOpacity(0.2),
+                  ),
+                ],
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: kantorLocation,
+                    width: 40,
+                    height: 40,
+                    child: const Icon(
+                      Icons.location_pin,
+                      color: Colors.blue,
+                      size: 40,
                     ),
-                  ],
-                ),
-                MarkerLayer(
-                  markers: [
+                  ),
+                  if (currentLocation != null)
                     Marker(
-                      point: kantorLocation,
+                      point: currentLocation!,
                       width: 40,
                       height: 40,
                       child: const Icon(
                         Icons.location_pin,
-                        color: Colors.blue,
+                        color: Colors.red,
                         size: 40,
                       ),
                     ),
-                    if (currentLocation != null)
-                      Marker(
-                        point: currentLocation!,
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.location_pin,
-                          color: Colors.red,
-                          size: 40,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(16),
+
+          // === KETERANGAN PIN ===
+          Positioned(
+            top: 16,
+            right: 12,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Lokasi Anda",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text(
-                  currentAddress ?? "Mengambil lokasi...",
-                  style: const TextStyle(color: Colors.blue, fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: const Text("Kembali",
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: isWithinRadius
-                            ? () {
-                                Navigator.pushNamed(context, '/biometric');
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: const Text("Konfirmasi",
-                            style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                  ],
-                ),
+                _buildPinLegend(Icons.location_pin, "Lokasi Anda", Colors.red),
+                const SizedBox(height: 8),
+                _buildPinLegend(
+                    Icons.location_pin, "Lokasi Absen", Colors.blue),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _getCurrentLocation,
-        child: const Icon(Icons.my_location),
+
+      // === CARD BAWAH DENGAN ALAMAT & BUTTON ===
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Lokasi Anda",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 4),
+            Text(
+              currentAddress ?? "Mengambil lokasi...",
+              style: const TextStyle(color: Colors.blue, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text("Kembali",
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isWithinRadius
+                        ? () {
+                            Navigator.pushNamed(context, '/biometric');
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text("Konfirmasi",
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+
+      // === TOMBOL CARI LOKASI ===
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(bottom: 8, right: 8),
+        child: FloatingActionButton(
+          onPressed: _getCurrentLocation,
+          backgroundColor: Colors.white,
+          mini: true, // membuat tombol lebih kecil
+          child: const Icon(Icons.my_location, color: Colors.black),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  Widget _buildPinLegend(IconData icon, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 4),
+          Text(label,
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
