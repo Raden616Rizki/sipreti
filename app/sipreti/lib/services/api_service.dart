@@ -52,6 +52,7 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(responseBody);
       } else {
+        debugPrint("Error: ${response.statusCode} - $responseBody");
         return {
           "error": true,
           "message": "Error: ${response.statusCode} - $responseBody"

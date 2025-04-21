@@ -1,5 +1,6 @@
 // import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
+import 'package:sipreti/services/api_service.dart';
 
 class FormPage extends StatefulWidget {
   const FormPage({super.key});
@@ -17,11 +18,68 @@ class FormPageState extends State<FormPage> {
       TextEditingController();
 
   int? idPegawai;
-  String? nama;
-  String? nip;
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+
+  final ApiService apiService = ApiService();
+
+  void submitRegistration() async {
+    final email = _emailController.text.trim();
+    final username = _nameController.text.trim();
+    final noHp = _noTelephoneController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password dan Konfirmasi tidak cocok")),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final result = await apiService.registerUser(
+        idPegawai: idPegawai.toString(),
+        username: username,
+        password: password,
+        email: email,
+        noHp: noHp,
+        imei: "1234567890",
+        validHp: "1",
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        if (result['error'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Registrasi gagal')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registrasi berhasil!')),
+          );
+          Navigator.pushNamed(context, '/login');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +99,14 @@ class FormPageState extends State<FormPage> {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
+    } else {
+      setState(() {
+        idPegawai = int.tryParse(data['id_pegawai'].toString());
+      });
     }
 
-    final idPegawai = data['id_pegawai'];
     final nama = data['nama'];
     final nip = data['nip'];
-
-    debugPrint(idPegawai);
 
     return Scaffold(
       body: Stack(
@@ -219,8 +278,7 @@ class FormPageState extends State<FormPage> {
                     ),
                     child: TextField(
                       controller: _passwordController,
-                      obscureText:
-                          !_isPasswordVisible, // Mengatur visibilitas password
+                      obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
                         hintText: "Password",
                         hintStyle: const TextStyle(
@@ -318,9 +376,7 @@ class FormPageState extends State<FormPage> {
                         shadowColor: Colors.black,
                         elevation: 8,
                       ),
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/');
-                      },
+                      onPressed: submitRegistration,
                       child: const Text(
                         "DAFTAR SEKARANG",
                         style: TextStyle(fontSize: 18, color: Colors.white),
