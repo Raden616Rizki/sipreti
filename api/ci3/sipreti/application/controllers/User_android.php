@@ -181,27 +181,67 @@ class User_android extends CI_Controller
 		$this->_rules();
 
 		if ($this->form_validation->run() == FALSE) {
-			$this->create();
+			$this->create(); // Jika validasi form gagal
 		} else {
-			$hashedPassword = password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT);
+			$idPegawai = $this->input->post('id_pegawai', TRUE);
+			$username = $this->input->post('username', TRUE);
+			$email = $this->input->post('email', TRUE);
+			$noHp = $this->input->post('no_hp', TRUE);
+			$validHp = $this->input->post('valid_hp', TRUE);
+			$imei = $this->input->post('imei', TRUE);
+			$password = password_hash($this->input->post('password', TRUE), PASSWORD_BCRYPT);
 
+			// Cek jika id_pegawai sudah digunakan
+			$existingByPegawai = $this->User_android_model->get_by_id_pegawai($idPegawai);
+			if ($existingByPegawai) {
+				return $this->output
+					->set_content_type('application/json')
+					->set_status_header(409)
+					->set_output(json_encode([
+						'status' => 409,
+						'message' => 'ID Pegawai sudah digunakan'
+					]));
+			}
+
+			// Cek jika email sudah digunakan
+			$existingByEmail = $this->User_android_model->get_by_email($email);
+			if ($existingByEmail) {
+				return $this->output
+					->set_content_type('application/json')
+					->set_status_header(409)
+					->set_output(json_encode([
+						'status' => 409,
+						'message' => 'Email sudah digunakan'
+					]));
+			}
+
+			// Cek jika IMEI sudah digunakan
+			$existingByImei = $this->User_android_model->get_by_imei($imei);
+			if ($existingByImei) {
+				return $this->output
+					->set_content_type('application/json')
+					->set_status_header(409)
+					->set_output(json_encode([
+						'status' => 409,
+						'message' => 'IMEI sudah digunakan'
+					]));
+			}
+
+			// Data siap disimpan
 			$data = array(
-				'id_pegawai' => $this->input->post('id_pegawai', TRUE),
-				'username' => $this->input->post('username', TRUE),
-				'password' => $hashedPassword,
-				'email' => $this->input->post('email', TRUE),
-				'no_hp' => $this->input->post('no_hp', TRUE),
-				'valid_hp' => $this->input->post('valid_hp', TRUE),
-				'imei' => $this->input->post('imei', TRUE),
+				'id_pegawai' => $idPegawai,
+				'username' => $username,
+				'password' => $password,
+				'email' => $email,
+				'no_hp' => $noHp,
+				'valid_hp' => $validHp,
+				'imei' => $imei,
 				'created_at' => date('Y-m-d H:i:s'),
 				'updated_at' => NULL,
 				'deleted_at' => NULL,
 			);
 
-			// Simpan ke database dan dapatkan ID-nya
 			$insert_id = $this->User_android_model->insert($data);
-
-			// Ambil data yang sudah tersimpan di database berdasarkan ID
 			$user = $this->User_android_model->get_by_id($insert_id);
 
 			if ($user) {

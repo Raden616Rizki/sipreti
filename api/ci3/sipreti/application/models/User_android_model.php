@@ -72,9 +72,19 @@ class User_android_model extends CI_Model
 		$this->db->delete($this->table);
 	}
 
+	public function get_by_id_pegawai($idPegawai)
+	{
+		return $this->db->get_where('user_android', ['id_pegawai' => $idPegawai])->row();
+	}
+
 	public function get_by_email($email)
 	{
 		return $this->db->get_where('user_android', ['email' => $email])->row();
+	}
+
+	public function get_by_imei($imei)
+	{
+		return $this->db->get_where('user_android', ['imei' => $imei])->row();
 	}
 
 }
