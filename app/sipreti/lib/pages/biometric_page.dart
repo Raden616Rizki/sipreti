@@ -5,6 +5,8 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'dart:typed_data';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:sipreti/services/api_service.dart';
 
 class BiometricPage extends StatefulWidget {
   const BiometricPage({super.key});
@@ -19,12 +21,30 @@ class _BiometricPageState extends State<BiometricPage> {
   XFile? capturedImage;
   File? _croppedFace;
   Interpreter? _interpreter;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
     _loadModel();
+  }
+
+  Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
+    Map<String, dynamic> result = await _apiService.faceVerification(
+      idPegawai,
+      faceEmbeddings,
+    );
+
+    if (!mounted) return;
+
+    if (result["success"] == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
+      );
+    } else {
+      debugPrint(result.toString());
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -83,7 +103,12 @@ class _BiometricPageState extends State<BiometricPage> {
 
       final embeddings = await _getFaceEmbeddings(_croppedFace!);
 
-      debugPrint('Vektor Wajah Presensi: $embeddings');
+      var pegawaiBox = Hive.box('pegawai');
+
+      String idPegawai = pegawaiBox.get('id_pegawai');
+
+      debugPrint(idPegawai);
+      verifyFace(idPegawai.toString(), embeddings);
 
       _showCapturedImageDialog(showError: false);
 

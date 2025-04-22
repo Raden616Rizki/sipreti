@@ -19,7 +19,7 @@ class DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-
+ 
     var box = Hive.box('userAndroid');
     var pegawaiBox = Hive.box('pegawai');
 
@@ -32,12 +32,6 @@ class DashboardPageState extends State<DashboardPage> {
       namaJabatan = pegawaiBox.get('nama_jabatan');
       faceEmbeddings = pegawaiBox.get('face_embeddings');
     });
-
-    debugPrint("Logged in user: $username, email: $email");
-    debugPrint("Nama Pegawai: $namaPegawai");
-    debugPrint("NIP: $nip");
-    debugPrint("Nama Jabatan: $namaJabatan");
-    debugPrint("Face Embeddings: $faceEmbeddings");
   }
 
   @override

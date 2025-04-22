@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 class ApiService {
   // final String baseUrl = "http://127.0.0.1/sipreti";
   final String baseUrl = "http://192.168.100.11/sipreti";
+  final String baseUrlDjango = "http://192.168.100.11:8000/attendance";
+  // final String baseUrlDjango = "http://127.0.0.1:8000/attendance";
 
   Future<Map<String, dynamic>> validateNip(String nip) async {
     final String url = "$baseUrl/pegawai/validate_nip?nip=$nip";
@@ -101,6 +103,35 @@ class ApiService {
         return {
           "error": true,
           "message": "Error: ${response.statusCode} - ${response.body}"
+        };
+      }
+    } catch (e) {
+      return {"error": true, "message": "Exception: $e"};
+    }
+  }
+
+  Future<Map<String, dynamic>> faceVerification(
+    String idPegawai,
+    List<double> vektorPresensi,
+  ) async {
+    final String url = "$baseUrlDjango/face_verification";
+
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      request.fields['id_pegawai'] = idPegawai;
+      request.fields['vektor_presensi'] = jsonEncode(vektorPresensi);
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      debugPrint(responseBody);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      } else {
+        return {
+          "error": true,
+          "message": "Error: ${response.statusCode} - $responseBody"
         };
       }
     } catch (e) {
