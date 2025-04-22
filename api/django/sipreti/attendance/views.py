@@ -102,7 +102,7 @@ def face_verification(request):
     return JsonResponse({"error": "Metode tidak diizinkan"}, status=405)
 
 @csrf_exempt  
-def distance_comparasion(request):  
+def distance_comparasion(request):
     if request.method == "POST":
         try:
             # Parse the request JSON  
