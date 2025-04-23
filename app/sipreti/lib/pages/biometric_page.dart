@@ -102,6 +102,7 @@ class _BiometricPageState extends State<BiometricPage> {
       });
 
       final embeddings = await _getFaceEmbeddings(_croppedFace!);
+      debugPrint(embeddings.toString());
 
       var pegawaiBox = Hive.box('pegawai');
 

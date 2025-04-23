@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // final String baseUrl = "http://127.0.0.1/sipreti";
-  final String baseUrl = "http://192.168.100.11/sipreti";
-  final String baseUrlDjango = "http://192.168.100.11:8000/attendance";
+  final String baseUrl = "http://192.168.1.115/sipreti";
+  final String baseUrlDjango = "http://192.168.1.115:8000/attendance";
   // final String baseUrlDjango = "http://127.0.0.1:8000/attendance";
 
   Future<Map<String, dynamic>> validateNip(String nip) async {
@@ -114,28 +114,39 @@ class ApiService {
     String idPegawai,
     List<double> vektorPresensi,
   ) async {
-    final String url = "$baseUrlDjango/face_verification";
+    final String url = "$baseUrlDjango/face-verification/";
 
     try {
-      var request = http.MultipartRequest('POST', Uri.parse(url));
-      request.fields['id_pegawai'] = idPegawai;
-      request.fields['vektor_presensi'] = jsonEncode(vektorPresensi);
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'id_pegawai': idPegawai,
+          'vektor_presensi': vektorPresensi,
+        }),
+      );
 
-      var response = await request.send();
-      var responseBody = await response.stream.bytesToString();
-
-      debugPrint(responseBody);
+      debugPrint('Status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        return jsonDecode(responseBody);
+        return {
+          "error": false,
+          "data": jsonDecode(response.body),
+        };
       } else {
         return {
           "error": true,
-          "message": "Error: ${response.statusCode} - $responseBody"
+          "message": "Error: ${response.statusCode} - ${response.body}",
         };
       }
     } catch (e) {
-      return {"error": true, "message": "Exception: $e"};
+      return {
+        "error": true,
+        "message": "Exception: $e",
+      };
     }
   }
 }

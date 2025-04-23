@@ -57,6 +57,7 @@ def face_verification(request):
         try:
             # Parsing request JSON
             data = json.loads(request.body)
+            
             id_pegawai = data.get("id_pegawai")
             vektor_presensi = np.array(data.get("vektor_presensi"), dtype=np.float32)
 
