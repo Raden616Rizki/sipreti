@@ -157,6 +157,11 @@ class _BiometricPageState extends State<BiometricPage> {
     _interpreter?.run(reshapedInput, output);
 
     return output[0];
+
+    // List<double> roundedOutput =
+    //     output[0].map((e) => double.parse(e.toStringAsFixed(8))).toList();
+
+    // return roundedOutput;
   }
 
   Future<Float32List> _loadAndNormalizeImage(File faceImage) async {
@@ -173,9 +178,9 @@ class _BiometricPageState extends State<BiometricPage> {
         final g = img.getGreen(pixel);
         final b = img.getBlue(pixel);
 
-        input[index++] = r.toDouble();
-        input[index++] = g.toDouble();
-        input[index++] = b.toDouble();
+        input[index++] = r.toDouble() / 255.0;
+        input[index++] = g.toDouble() / 255.0;
+        input[index++] = b.toDouble() / 255.0;
       }
     }
 

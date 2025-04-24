@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // final String baseUrl = "http://127.0.0.1/sipreti";
-  final String baseUrl = "http://192.168.1.115/sipreti";
-  final String baseUrlDjango = "http://192.168.1.115:8000/attendance";
+  final String baseUrl = "http://192.168.1.51/sipreti";
+  final String baseUrlDjango = "http://192.168.1.51:8000/attendance";
   // final String baseUrlDjango = "http://127.0.0.1:8000/attendance";
 
   Future<Map<String, dynamic>> validateNip(String nip) async {

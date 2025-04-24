@@ -31,6 +31,7 @@ class DashboardPageState extends State<DashboardPage> {
       nip = pegawaiBox.get('nip');
       namaJabatan = pegawaiBox.get('nama_jabatan');
       faceEmbeddings = pegawaiBox.get('face_embeddings');
+      debugPrint(faceEmbeddings.toString());
     });
   }
 
