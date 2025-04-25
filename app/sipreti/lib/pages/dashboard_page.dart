@@ -19,7 +19,7 @@ class DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
- 
+
     var box = Hive.box('userAndroid');
     var pegawaiBox = Hive.box('pegawai');
 
@@ -31,7 +31,7 @@ class DashboardPageState extends State<DashboardPage> {
       nip = pegawaiBox.get('nip');
       namaJabatan = pegawaiBox.get('nama_jabatan');
       faceEmbeddings = pegawaiBox.get('face_embeddings');
-      debugPrint(faceEmbeddings.toString());
+      // debugPrint(faceEmbeddings.toString());
     });
   }
 

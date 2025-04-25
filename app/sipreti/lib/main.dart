@@ -26,8 +26,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       // debugShowCheckedModeBanner: false,
       title: 'Sipreti App',
-      initialRoute: '/option',
-      // initialRoute: '/biometric',
+      // initialRoute: '/option',
+      initialRoute: '/biometric',
       routes: {
         '/': (context) => const DashboardPage(),
         '/location': (context) => const LocationPage(),

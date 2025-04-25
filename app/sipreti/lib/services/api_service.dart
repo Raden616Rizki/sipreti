@@ -76,7 +76,7 @@ class ApiService {
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
 
-      debugPrint(responseBody);
+      // debugPrint(responseBody);
 
       if (response.statusCode == 200) {
         return jsonDecode(responseBody);

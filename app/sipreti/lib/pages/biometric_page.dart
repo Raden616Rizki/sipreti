@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
-import 'dart:typed_data';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sipreti/services/api_service.dart';
 
@@ -23,11 +24,39 @@ class _BiometricPageState extends State<BiometricPage> {
   Interpreter? _interpreter;
   final ApiService _apiService = ApiService();
 
+  bool _showInstructionCard = true;
+  bool _cameraButtonEnabled = false;
+  late FaceDetector _faceDetector;
+  bool _isProcessing = false;
+
+  final List<String> instructions = [
+    "Kedipkan mata",
+    "Tersenyum ke Kamera",
+    "Menoleh ke Kiri",
+    "Menoleh ke Kanan"
+  ];
+
+  late String currentInstruction;
+
   @override
   void initState() {
     super.initState();
     _initializeCamera();
     _loadModel();
+    _faceDetector = FaceDetector(
+      options: FaceDetectorOptions(
+        enableClassification: true,
+        enableLandmarks: true,
+        enableTracking: true,
+        performanceMode: FaceDetectorMode.fast,
+      ),
+    );
+    _selectRandomInstruction();
+  }
+
+  void _selectRandomInstruction() {
+    final random = Random();
+    currentInstruction = instructions[random.nextInt(instructions.length)];
   }
 
   Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
@@ -47,6 +76,103 @@ class _BiometricPageState extends State<BiometricPage> {
     }
   }
 
+  InputImageRotation _rotationFromCamera(int sensorOrientation) {
+    switch (sensorOrientation) {
+      case 90:
+        return InputImageRotation.rotation90deg;
+      case 180:
+        return InputImageRotation.rotation180deg;
+      case 270:
+        return InputImageRotation.rotation270deg;
+      case 0:
+      default:
+        return InputImageRotation.rotation0deg;
+    }
+  }
+
+  Future<void> _processCameraImage(CameraImage image) async {
+    if (_isProcessing || !_showInstructionCard) return;
+    _isProcessing = true;
+
+    try {
+      final WriteBuffer allBytes = WriteBuffer();
+      for (var plane in image.planes) {
+        allBytes.putUint8List(plane.bytes);
+      }
+
+      final bytes = allBytes.done().buffer.asUint8List();
+      final Size imageSize =
+          Size(image.width.toDouble(), image.height.toDouble());
+      final imageRotation =
+          _rotationFromCamera(_cameraController!.description.sensorOrientation);
+
+      final inputImage = InputImage.fromBytes(
+        bytes: bytes,
+        inputImageData: InputImageData(
+          size: imageSize,
+          imageRotation: imageRotation,
+          inputImageFormat: InputImageFormat.nv21,
+          planeData: image.planes
+              .map(
+                (plane) => InputImagePlaneMetadata(
+                  bytesPerRow: plane.bytesPerRow,
+                  height: plane.height,
+                  width: plane.width,
+                ),
+              )
+              .toList(),
+        ),
+      );
+
+      final List<Face> faces = await _faceDetector.processImage(inputImage);
+
+      if (faces.isNotEmpty) {
+        final face = faces.first;
+
+        switch (currentInstruction) {
+          case "Kedipkan mata":
+            if ((face.leftEyeOpenProbability ?? 1.0) < 0.2 &&
+                (face.rightEyeOpenProbability ?? 1.0) < 0.2) {
+              _onInstructionCompleted();
+            }
+            break;
+          case "Tersenyum ke Kamera":
+            if ((face.smilingProbability ?? 0.0) > 0.7) {
+              _onInstructionCompleted();
+            }
+            break;
+          case "Menoleh ke Kiri":
+            if ((face.headEulerAngleY ?? 0.0) > 20) {
+              _onInstructionCompleted();
+            }
+            break;
+          case "Menoleh ke Kanan":
+            if ((face.headEulerAngleY ?? 0.0) < -20) {
+              _onInstructionCompleted();
+            }
+            break;
+        }
+      }
+    } catch (e) {
+      debugPrint("Face processing error: $e");
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
+  void _onInstructionCompleted() async {
+    setState(() {
+      _showInstructionCard = false;
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+    _cameraController?.stopImageStream();
+
+    setState(() {
+      _cameraButtonEnabled = true;
+    });
+  }
+
   Future<void> _initializeCamera() async {
     cameras = await availableCameras();
     if (cameras != null && cameras!.isNotEmpty) {
@@ -56,6 +182,7 @@ class _BiometricPageState extends State<BiometricPage> {
       );
 
       await _cameraController!.initialize();
+      _cameraController!.startImageStream(_processCameraImage);
       setState(() {});
     }
   }
@@ -66,6 +193,14 @@ class _BiometricPageState extends State<BiometricPage> {
     } catch (e) {
       debugPrint("Error loading model: $e");
     }
+  }
+
+  double euclideanDistance(List<double> e1, List<double> e2) {
+    double sum = 0.0;
+    for (int i = 0; i < e1.length; i++) {
+      sum += pow((e1[i] - e2[i]), 2);
+    }
+    return sqrt(sum);
   }
 
   Future<void> _captureImage() async {
@@ -107,8 +242,27 @@ class _BiometricPageState extends State<BiometricPage> {
       var pegawaiBox = Hive.box('pegawai');
 
       String idPegawai = pegawaiBox.get('id_pegawai');
+      List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
 
-      debugPrint(idPegawai);
+      debugPrint(faceEmbeddings.toString());
+
+      List<dynamic> distances = [];
+
+      for (int i = 0; i < faceEmbeddings.length; i++) {
+        List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
+        double distance = euclideanDistance(embeddings, storedEmbedding);
+        distances.add(distance);
+      }
+
+      debugPrint('Semua jarak kedekatan: $distances');
+
+      int closestIndex =
+          distances.indexOf(distances.reduce((a, b) => a < b ? a : b));
+
+      double minDistance = distances[closestIndex];
+
+      debugPrint('Jarak terdekat: $minDistance di index: $closestIndex');
+
       verifyFace(idPegawai.toString(), embeddings);
 
       _showCapturedImageDialog(showError: false);
@@ -156,12 +310,12 @@ class _BiometricPageState extends State<BiometricPage> {
 
     _interpreter?.run(reshapedInput, output);
 
-    return output[0];
+    // return output[0];
 
-    // List<double> roundedOutput =
-    //     output[0].map((e) => double.parse(e.toStringAsFixed(8))).toList();
+    List<double> roundedOutput =
+        output[0].map((e) => double.parse(e.toStringAsFixed(8))).toList();
 
-    // return roundedOutput;
+    return roundedOutput;
   }
 
   Future<Float32List> _loadAndNormalizeImage(File faceImage) async {
@@ -245,60 +399,77 @@ class _BiometricPageState extends State<BiometricPage> {
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: const Text(
-          "Verifikasi Wajah",
-          style: TextStyle(
-              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        automaticallyImplyLeading: false,
-        actions: [
-          Row(
-            children: [
-              Image.asset(
-                'assets/images/pemkot_malang_logo.png',
-                height: 32,
-              ),
-              const SizedBox(width: 8),
-              const CircleAvatar(
-                backgroundImage:
-                    AssetImage('assets/images/default_profile.png'),
-                radius: 16,
-              ),
-              const SizedBox(width: 10),
-            ],
+        appBar: AppBar(
+          backgroundColor: Colors.blue,
+          title: const Text(
+            "Verifikasi Wajah",
+            style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          if (_cameraController != null &&
-              _cameraController!.value.isInitialized)
-            SizedBox(
-              width: screenWidth,
-              height: screenHeight,
-              child: AspectRatio(
-                aspectRatio: _cameraController!.value.aspectRatio,
-                child: CameraPreview(_cameraController!),
-              ),
-            )
-          else
-            const Center(child: CircularProgressIndicator()),
-          Positioned(
-            bottom: 50,
-            left: screenWidth / 2 - 30,
-            child: GestureDetector(
-              onTap: _captureImage,
-              child: Image.asset(
-                'assets/images/camera_button.png',
-                width: 80,
-                height: 80,
-              ),
+          automaticallyImplyLeading: false,
+          actions: [
+            Row(
+              children: [
+                Image.asset(
+                  'assets/images/pemkot_malang_logo.png',
+                  height: 32,
+                ),
+                const SizedBox(width: 8),
+                const CircleAvatar(
+                  backgroundImage:
+                      AssetImage('assets/images/default_profile.png'),
+                  radius: 16,
+                ),
+                const SizedBox(width: 10),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+        body: Stack(
+          children: [
+            if (_cameraController != null &&
+                _cameraController!.value.isInitialized)
+              SizedBox(
+                width: screenWidth,
+                height: screenHeight,
+                child: AspectRatio(
+                  aspectRatio: _cameraController!.value.aspectRatio,
+                  child: CameraPreview(_cameraController!),
+                ),
+              )
+            else
+              const Center(child: CircularProgressIndicator()),
+            if (_showInstructionCard)
+              Center(
+                child: Card(
+                  color: Colors.white.withOpacity(0.8),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      currentInstruction,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            if (_cameraButtonEnabled)
+              Positioned(
+                bottom: 50,
+                left: screenWidth / 2 - 40,
+                child: GestureDetector(
+                  onTap: _captureImage,
+                  child: Image.asset(
+                    'assets/images/camera_button.png',
+                    width: 80,
+                    height: 80,
+                  ),
+                ),
+              ),
+          ],
+        ));
   }
 }
