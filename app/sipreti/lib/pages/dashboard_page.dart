@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -203,11 +204,11 @@ class DashboardPageState extends State<DashboardPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Align(
+                                Align(
                                   alignment: Alignment.topLeft,
                                   child: Text(
-                                    "Index Presensi Januari",
-                                    style: TextStyle(
+                                    "Index Presensi ${DateFormat('MMMM').format(DateTime.now())}",
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFFABABAB),
                                     ),
@@ -242,7 +243,11 @@ class DashboardPageState extends State<DashboardPage> {
                               text: "Check In",
                               icon: Icons.login,
                               iconColor: Colors.blue,
-                              onTap: () {
+                              onTap: () async {
+                                final presensiBox =
+                                    await Hive.openBox('presensi');
+                                await presensiBox.put('check_mode', 0);
+                                if (!context.mounted) return;
                                 Navigator.pushNamed(context, '/location');
                               },
                             ),
@@ -253,7 +258,11 @@ class DashboardPageState extends State<DashboardPage> {
                               text: "Check Out",
                               icon: Icons.logout,
                               iconColor: Colors.blue,
-                              onTap: () {
+                              onTap: () async {
+                                final presensiBox =
+                                    await Hive.openBox('presensi');
+                                await presensiBox.put('check_mode', 1);
+                                if (!context.mounted) return;
                                 Navigator.pushNamed(context, '/location');
                               },
                             ),

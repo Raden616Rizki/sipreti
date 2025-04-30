@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:hive/hive.dart';
+// import 'package:intl/intl.dart';
 
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
@@ -17,14 +19,34 @@ class _LocationPageState extends State<LocationPage> {
   LatLng? currentLocation;
   String? currentAddress;
 
-  final LatLng kantorLocation = const LatLng(-7.9437612, 112.6143654);
-  final double radiusMeter = 1280.0;
+  LatLng kantorLocation = const LatLng(-7.9437612, 112.6143654);
+  double radiusMeter = 1280.0;
   bool isWithinRadius = false;
 
   @override
   void initState() {
     super.initState();
+    loadPegawaiData();
     _getCurrentLocation();
+  }
+
+  Future<void> loadPegawaiData() async {
+    final pegawaiBox = await Hive.openBox('pegawai');
+
+    final double latitude =
+        double.tryParse(pegawaiBox.get('lattitude')?.toString() ?? '') ??
+            -7.9437612;
+    final double longitude =
+        double.tryParse(pegawaiBox.get('longitude')?.toString() ?? '') ??
+            112.6143654;
+    final double radius =
+        double.tryParse(pegawaiBox.get('ukuran_radius')?.toString() ?? '') ??
+            1280.0;
+
+    setState(() {
+      kantorLocation = LatLng(latitude, longitude);
+      radiusMeter = radius;
+    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -62,6 +84,35 @@ class _LocationPageState extends State<LocationPage> {
     mapController.move(currentLocation!, 17);
   }
 
+  Future<void> saveAttendance({
+    required String currentAddress,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final presensiBox = await Hive.openBox('presensi');
+    // final checkMode = presensiBox.get('check_mode');
+    // debugPrint(checkMode.toString());
+
+    final DateTime now = DateTime.now();
+    // final String tanggal = DateFormat('d MMMM y').format(now);
+
+    debugPrint(now.toString());
+    // debugPrint(tanggal);
+    debugPrint(currentAddress);
+    debugPrint(latitude.toString());
+    debugPrint(longitude.toString());
+
+    await presensiBox.put('nama_lokasi', currentAddress);
+    await presensiBox.put('lattitude', latitude);
+    await presensiBox.put('longitude', longitude);
+    // await presensiBox.put('tanggal_presensi', tanggal);
+    await presensiBox.put('waktu_absensi', now);
+
+    // if (mounted) {
+    //   Navigator.pushNamed(context, '/biometric');
+    // }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,7 +144,6 @@ class _LocationPageState extends State<LocationPage> {
       ),
       body: Stack(
         children: [
-          // === PETA ===
           FlutterMap(
             mapController: mapController,
             options: const MapOptions(
@@ -142,8 +192,6 @@ class _LocationPageState extends State<LocationPage> {
               ),
             ],
           ),
-
-          // === KETERANGAN PIN ===
           Positioned(
             top: 16,
             right: 12,
@@ -158,8 +206,6 @@ class _LocationPageState extends State<LocationPage> {
           ),
         ],
       ),
-
-      // === CARD BAWAH DENGAN ALAMAT & BUTTON ===
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -205,8 +251,12 @@ class _LocationPageState extends State<LocationPage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: isWithinRadius
-                        ? () {
-                            Navigator.pushNamed(context, '/biometric');
+                        ? () async {
+                            await saveAttendance(
+                              currentAddress: currentAddress!,
+                              latitude: currentLocation!.latitude,
+                              longitude: currentLocation!.longitude,
+                            );
                           }
                         : null,
                     style: ElevatedButton.styleFrom(
@@ -225,14 +275,12 @@ class _LocationPageState extends State<LocationPage> {
           ],
         ),
       ),
-
-      // === TOMBOL CARI LOKASI ===
       floatingActionButton: Container(
         margin: const EdgeInsets.only(bottom: 8, right: 8),
         child: FloatingActionButton(
           onPressed: _getCurrentLocation,
           backgroundColor: Colors.white,
-          mini: true, // membuat tombol lebih kecil
+          mini: true,
           child: const Icon(Icons.my_location, color: Colors.black),
         ),
       ),

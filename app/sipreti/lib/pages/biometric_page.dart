@@ -223,6 +223,7 @@ class _BiometricPageState extends State<BiometricPage> {
       options: FaceDetectorOptions(
         enableContours: true,
         enableClassification: true,
+        performanceMode: FaceDetectorMode.accurate,
       ),
     );
 
@@ -236,7 +237,12 @@ class _BiometricPageState extends State<BiometricPage> {
         _croppedFace = croppedFace;
       });
 
+      final Stopwatch extractionTime = Stopwatch()..start();
+
       final embeddings = await _getFaceEmbeddings(_croppedFace!);
+      extractionTime.stop();
+      debugPrint(
+          'Time taken for Extraction: ${extractionTime.elapsedMicroseconds} µs');
       debugPrint(embeddings.toString());
 
       var pegawaiBox = Hive.box('pegawai');
@@ -246,7 +252,8 @@ class _BiometricPageState extends State<BiometricPage> {
 
       debugPrint(faceEmbeddings.toString());
 
-      List<dynamic> distances = [];
+      final Stopwatch localCalculation = Stopwatch()..start();
+      List<double> distances = [];
 
       for (int i = 0; i < faceEmbeddings.length; i++) {
         List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
@@ -254,16 +261,33 @@ class _BiometricPageState extends State<BiometricPage> {
         distances.add(distance);
       }
 
+      localCalculation.stop();
+      debugPrint('Local Euclidean Distance: $euclideanDistance');
+      debugPrint(
+          'Time taken for Local Euclidean Distance: ${localCalculation.elapsedMicroseconds} µs');
+
       debugPrint('Semua jarak kedekatan: $distances');
 
-      int closestIndex =
-          distances.indexOf(distances.reduce((a, b) => a < b ? a : b));
+      // Cek apakah ada jarak di bawah threshold (misal 1.0)
+      const double threshold = 1.0;
+      bool verifikasi = distances.any((d) => d < threshold);
 
-      double minDistance = distances[closestIndex];
+      String message =
+          verifikasi ? "Wajah terverifikasi" : "Wajah tidak terverifikasi";
+      int value = verifikasi ? 1 : 0;
 
-      debugPrint('Jarak terdekat: $minDistance di index: $closestIndex');
+      // Tampilkan hasil akhir
+      debugPrint('Jarak Kedekatan: $distances');
+      debugPrint('message: $message');
+      debugPrint('Value: $value');
+
+      final Stopwatch cloudCalculation = Stopwatch()..start();
 
       verifyFace(idPegawai.toString(), embeddings);
+
+      debugPrint('Cloud Euclidean Distance: $cloudCalculation');
+      debugPrint(
+          'Time taken for Cloud Euclidean Distance: ${cloudCalculation.elapsedMicroseconds} µs');
 
       _showCapturedImageDialog(showError: false);
 
@@ -442,7 +466,7 @@ class _BiometricPageState extends State<BiometricPage> {
             if (_showInstructionCard)
               Center(
                 child: Card(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.blue,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: Padding(
@@ -450,7 +474,10 @@ class _BiometricPageState extends State<BiometricPage> {
                     child: Text(
                       currentInstruction,
                       style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),

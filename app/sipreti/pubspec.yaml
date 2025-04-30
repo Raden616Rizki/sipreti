@@ -50,6 +50,7 @@ dependencies:
   flutter_neumorphic_plus: ^3.4.0
   http: ^1.1.2
   vector_math: ^2.1.4
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
