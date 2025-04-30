@@ -10,16 +10,16 @@ class AttendancePage extends StatefulWidget {
 }
 
 class _AttendancePageState extends State<AttendancePage> {
-  late String namaLokasi;
-  late double latitude;
-  late double longitude;
-  late DateTime waktuAbsensi;
-  late String jamAbsensi;
-  late int checkMode;
+  late String namaLokasi = '';
+  double? latitude;
+  double? longitude;
+  late DateTime waktuAbsensi = DateTime.now();
+  String? jamAbsensi;
+  int? checkMode;
   final int jenisAbsensi = 0;
-  late int faceStatus;
-  late String tanggal;
-  late String hari;
+  int? faceStatus;
+  late String tanggal = '';
+  late String hari = '';
 
   @override
   void initState() {
