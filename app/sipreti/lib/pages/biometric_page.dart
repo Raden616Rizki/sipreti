@@ -7,7 +7,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sipreti/services/api_service.dart';
+// import 'package:sipreti/services/api_service.dart';
 
 class BiometricPage extends StatefulWidget {
   const BiometricPage({super.key});
@@ -22,7 +22,7 @@ class _BiometricPageState extends State<BiometricPage> {
   XFile? capturedImage;
   File? _croppedFace;
   Interpreter? _interpreter;
-  final ApiService _apiService = ApiService();
+  // final ApiService _apiService = ApiService();
 
   bool _showInstructionCard = true;
   bool _cameraButtonEnabled = false;
@@ -59,22 +59,22 @@ class _BiometricPageState extends State<BiometricPage> {
     currentInstruction = instructions[random.nextInt(instructions.length)];
   }
 
-  Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
-    Map<String, dynamic> result = await _apiService.faceVerification(
-      idPegawai,
-      faceEmbeddings,
-    );
+  // Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
+  //   Map<String, dynamic> result = await _apiService.faceVerification(
+  //     idPegawai,
+  //     faceEmbeddings,
+  //   );
 
-    if (!mounted) return;
+  //   if (!mounted) return;
 
-    if (result["success"] == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
-      );
-    } else {
-      debugPrint(result.toString());
-    }
-  }
+  //   if (result["success"] == false) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
+  //     );
+  //   } else {
+  //     debugPrint(result.toString());
+  //   }
+  // }
 
   InputImageRotation _rotationFromCamera(int sensorOrientation) {
     switch (sensorOrientation) {
@@ -247,7 +247,7 @@ class _BiometricPageState extends State<BiometricPage> {
 
       var pegawaiBox = Hive.box('pegawai');
 
-      String idPegawai = pegawaiBox.get('id_pegawai');
+      // String idPegawai = pegawaiBox.get('id_pegawai');
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
 
       debugPrint(faceEmbeddings.toString());
@@ -281,15 +281,16 @@ class _BiometricPageState extends State<BiometricPage> {
       debugPrint('message: $message');
       debugPrint('Value: $value');
 
-      final Stopwatch cloudCalculation = Stopwatch()..start();
+      final presensiBox = await Hive.openBox('presensi');
+      await presensiBox.put('face_status', value);
 
-      verifyFace(idPegawai.toString(), embeddings);
+      // final Stopwatch cloudCalculation = Stopwatch()..start();
 
-      debugPrint('Cloud Euclidean Distance: $cloudCalculation');
-      debugPrint(
-          'Time taken for Cloud Euclidean Distance: ${cloudCalculation.elapsedMicroseconds} µs');
+      // verifyFace(idPegawai.toString(), embeddings);
 
-      _showCapturedImageDialog(showError: false);
+      // debugPrint('Cloud Euclidean Distance: $cloudCalculation');
+      // debugPrint(
+      //     'Time taken for Cloud Euclidean Distance: ${cloudCalculation.elapsedMicroseconds} µs');
 
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
@@ -297,7 +298,7 @@ class _BiometricPageState extends State<BiometricPage> {
         }
       });
     } else {
-      _showCapturedImageDialog(showError: true);
+      _showCapturedImageDialog();
     }
 
     faceDetector.close();
@@ -365,44 +366,29 @@ class _BiometricPageState extends State<BiometricPage> {
     return input;
   }
 
-  void _showCapturedImageDialog({required bool showError}) {
+  void _showCapturedImageDialog() {
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: showError
-              ? Colors.red.withOpacity(0.5)
-              : Colors.green.withOpacity(0.5),
+          backgroundColor: Colors.red.withOpacity(0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+          child: const Padding(
+            padding: EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (showError)
-                  const Text(
-                    "No face detected, please try again.",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
-                    textAlign: TextAlign.center,
-                  )
-                else if (_croppedFace != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: SizedBox(
-                      width: 200,
-                      height: 200,
-                      child: Image.file(
-                        _croppedFace!,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                Text(
+                  "No face detected, please try again.",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
                   ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),

@@ -96,11 +96,11 @@ class _LocationPageState extends State<LocationPage> {
     final DateTime now = DateTime.now();
     // final String tanggal = DateFormat('d MMMM y').format(now);
 
-    debugPrint(now.toString());
+    // debugPrint(now.toString());
     // debugPrint(tanggal);
-    debugPrint(currentAddress);
-    debugPrint(latitude.toString());
-    debugPrint(longitude.toString());
+    // debugPrint(currentAddress);
+    // debugPrint(latitude.toString());
+    // debugPrint(longitude.toString());
 
     await presensiBox.put('nama_lokasi', currentAddress);
     await presensiBox.put('lattitude', latitude);
@@ -108,9 +108,9 @@ class _LocationPageState extends State<LocationPage> {
     // await presensiBox.put('tanggal_presensi', tanggal);
     await presensiBox.put('waktu_absensi', now);
 
-    // if (mounted) {
-    //   Navigator.pushNamed(context, '/biometric');
-    // }
+    if (mounted) {
+      Navigator.pushNamed(context, '/biometric');
+    }
   }
 
   @override

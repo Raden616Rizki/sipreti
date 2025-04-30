@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -8,6 +10,41 @@ class AttendancePage extends StatefulWidget {
 }
 
 class _AttendancePageState extends State<AttendancePage> {
+  late String namaLokasi;
+  late double latitude;
+  late double longitude;
+  late DateTime waktuAbsensi;
+  late String jamAbsensi;
+  late int checkMode;
+  final int jenisAbsensi = 0;
+  late int faceStatus;
+  late String tanggal;
+  late String hari;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPresensiData();
+  }
+
+  Future<void> _loadPresensiData() async {
+    final presensiBox = await Hive.openBox('presensi');
+
+    setState(() {
+      namaLokasi =
+          presensiBox.get('nama_lokasi', defaultValue: 'Tidak diketahui');
+      latitude = presensiBox.get('lattitude', defaultValue: 0.0);
+      longitude = presensiBox.get('longitude', defaultValue: 0.0);
+      waktuAbsensi =
+          presensiBox.get('waktu_absensi', defaultValue: DateTime.now());
+      jamAbsensi = DateFormat('HH:mm').format(waktuAbsensi);
+      checkMode = presensiBox.get('check_mode', defaultValue: 0);
+      faceStatus = presensiBox.get('face_status', defaultValue: 0);
+      tanggal = DateFormat('d MMMM y').format(waktuAbsensi);
+      hari = DateFormat('EEEE').format(waktuAbsensi);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,68 +102,81 @@ class _AttendancePageState extends State<AttendancePage> {
                       fit: BoxFit.cover,
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.all(16),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.bookmark, color: Colors.black),
-                            SizedBox(width: 10),
+                            const Icon(Icons.bookmark, color: Colors.black),
+                            const SizedBox(width: 10),
                             Text(
-                              "Absensi Reguler",
-                              style: TextStyle(
+                              jenisAbsensi == 0
+                                  ? "Absensi Reguler"
+                                  : "Absensi Dinas",
+                              style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(Icons.calendar_today, color: Colors.black),
-                            SizedBox(width: 10),
+                            const Icon(Icons.calendar_today,
+                                color: Colors.black),
+                            const SizedBox(width: 10),
                             Text(
-                              "Kamis, 02 Januari 2025",
-                              style: TextStyle(fontSize: 16),
+                              "$hari, $tanggal",
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(Icons.access_time, color: Colors.black),
-                            SizedBox(width: 10),
+                            const Icon(Icons.access_time, color: Colors.black),
+                            const SizedBox(width: 10),
                             Text(
-                              "17.23 WIB",
-                              style: TextStyle(fontSize: 16),
+                              "$jamAbsensi WIB",
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(Icons.location_on, color: Colors.black),
-                            SizedBox(width: 10),
+                            const Icon(Icons.location_on, color: Colors.black),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                "KANTOR WALIKOTA MALANG, Jalan Majapahit, RW. 08, KEL. KIDUL DALEM, KOTA MALANG, Bareng, Malang, Jawa Timur, 65119, Indonesia",
-                                style: TextStyle(fontSize: 14),
+                                namaLokasi,
+                                style: const TextStyle(fontSize: 14),
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(Icons.emoji_emotions, color: Colors.green),
-                            SizedBox(width: 10),
+                            Icon(
+                              faceStatus == 1
+                                  ? Icons.emoji_emotions
+                                  : Icons.mood_bad,
+                              color:
+                                  faceStatus == 1 ? Colors.green : Colors.red,
+                            ),
+                            const SizedBox(width: 10),
                             Text(
-                              "Data Valid",
+                              faceStatus == 1
+                                  ? "Data Valid"
+                                  : "Data Tidak Valid",
                               style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    faceStatus == 1 ? Colors.green : Colors.red,
+                              ),
                             ),
                           ],
                         ),
@@ -163,27 +213,35 @@ class _AttendancePageState extends State<AttendancePage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            child: const Text(
-                              "SELESAI CHECK OUT",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                          ),
-                        ),
+                        faceStatus == 1
+                            ? Column(
+                                children: [
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pushNamed(context, '/');
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        "SELESAI CHECK OUT",
+                                        style: TextStyle(
+                                            fontSize: 16, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
                         const SizedBox(height: 10),
                         SizedBox(
                           width: double.infinity,
