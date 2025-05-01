@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:camera/camera.dart';
+import 'dart:io';
 
 class AttendancePage extends StatefulWidget {
-  const AttendancePage({super.key});
+  final XFile? capturedImage;
+
+  const AttendancePage({super.key, required this.capturedImage});
 
   @override
   State<AttendancePage> createState() => _AttendancePageState();
@@ -29,6 +34,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
   Future<void> _loadPresensiData() async {
     final presensiBox = await Hive.openBox('presensi');
+    await initializeDateFormatting('id_ID', null);
 
     setState(() {
       namaLokasi =
@@ -40,8 +46,8 @@ class _AttendancePageState extends State<AttendancePage> {
       jamAbsensi = DateFormat('HH:mm').format(waktuAbsensi);
       checkMode = presensiBox.get('check_mode', defaultValue: 0);
       faceStatus = presensiBox.get('face_status', defaultValue: 0);
-      tanggal = DateFormat('d MMMM y').format(waktuAbsensi);
-      hari = DateFormat('EEEE').format(waktuAbsensi);
+      tanggal = DateFormat('d MMMM y', 'id_ID').format(waktuAbsensi);
+      hari = DateFormat('EEEE', 'id_ID').format(waktuAbsensi);
     });
   }
 
@@ -95,12 +101,19 @@ class _AttendancePageState extends State<AttendancePage> {
                       topLeft: Radius.circular(10),
                       topRight: Radius.circular(10),
                     ),
-                    child: Image.asset(
-                      'assets/images/default_profile.png',
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
-                    ),
+                    child: widget.capturedImage != null
+                        ? Image.file(
+                            File(widget.capturedImage!.path),
+                            width: double.infinity,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            'assets/images/default_profile.png',
+                            width: double.infinity,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(16),

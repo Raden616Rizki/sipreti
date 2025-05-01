@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:sipreti/pages/attendance_page.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
@@ -294,7 +295,14 @@ class _BiometricPageState extends State<BiometricPage> {
 
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/attendance');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AttendancePage(
+                capturedImage: capturedImage,
+              ),
+            ),
+          );
         }
       });
     } else {
