@@ -1,11 +1,12 @@
+import 'dart:io';
 import 'dart:convert';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
   // final String baseUrl = "http://127.0.0.1/sipreti";
-  final String baseUrl = "http://192.168.1.51/sipreti";
-  final String baseUrlDjango = "http://192.168.1.51:8000/attendance";
+  final String baseUrl = "http://192.168.1.81/sipreti";
+  final String baseUrlDjango = "http://34.143.219.253:8000/attendance";
   // final String baseUrlDjango = "http://127.0.0.1:8000/attendance";
 
   Future<Map<String, dynamic>> validateNip(String nip) async {
@@ -128,10 +129,8 @@ class ApiService {
         }),
       );
 
-      debugPrint('Status: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
+        debugPrint(response.body);
         return {
           "error": false,
           "data": jsonDecode(response.body),
@@ -147,6 +146,58 @@ class ApiService {
         "error": true,
         "message": "Exception: $e",
       };
+    }
+  }
+
+  Future<Map<String, dynamic>> storeAttendance({
+    required int jenisAbsensi,
+    required int idPegawai,
+    required int checkMode,
+    required String waktuAbsensi,
+    required double latitude,
+    required double longitude,
+    required String namaLokasi,
+    required String namaKamera,
+    required File fotoPresensi,
+    File? dokumen,
+  }) async {
+    final String url = "$baseUrl/log_absensi/create_api";
+
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      request.fields['jenis_absensi'] = jenisAbsensi.toString();
+      request.fields['id_pegawai'] = idPegawai.toString();
+      request.fields['check_mode'] = checkMode.toString();
+      request.fields['waktu_absensi'] = waktuAbsensi;
+      request.fields['lattitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
+      request.fields['nama_lokasi'] = namaLokasi;
+      request.fields['nama_kamera'] = namaKamera;
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+            'url_foto_presensi', fotoPresensi.path),
+      );
+
+      if (dokumen != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('url_dokumen', dokumen.path),
+        );
+      }
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      } else {
+        return {
+          "error": true,
+          "message": "Error: ${response.statusCode} - $responseBody"
+        };
+      }
+    } catch (e) {
+      return {"error": true, "message": "Exception: $e"};
     }
   }
 }
