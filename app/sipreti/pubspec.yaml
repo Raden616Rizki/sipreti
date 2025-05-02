@@ -51,6 +51,8 @@ dependencies:
   http: ^1.1.2
   vector_math: ^2.1.4
   intl: ^0.20.2
+  device_info_plus: ^9.1.2
+  flutter_device_imei: ^0.0.4
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,9 @@
 // import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:sipreti/services/api_service.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_device_imei/flutter_device_imei.dart';
+import 'dart:io';
 
 class FormPage extends StatefulWidget {
   const FormPage({super.key});
@@ -45,19 +48,37 @@ class FormPageState extends State<FormPage> {
     );
 
     try {
+      String imei = "Unknown";
+      String validHp = "Unknown";
+
+      final deviceInfo = DeviceInfoPlugin();
+
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        validHp = "${androidInfo.manufacturer} ${androidInfo.model}";
+
+        if (androidInfo.version.sdkInt < 29) {
+          imei = await FlutterDeviceImei.instance.getIMEI() ?? "Unknown";
+        } else {
+          imei = androidInfo.id;
+        }
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        validHp = "${iosInfo.name} ${iosInfo.model}";
+        imei = iosInfo.identifierForVendor ?? "Unknown";
+      }
+
       final result = await apiService.registerUser(
         idPegawai: idPegawai.toString(),
         username: username,
         password: password,
         email: email,
         noHp: noHp,
-        imei: "1234567890",
-        validHp: "1",
+        imei: imei,
+        validHp: validHp,
       );
 
-      if (mounted) {
-        Navigator.pop(context);
-      }
+      if (mounted) Navigator.pop(context);
 
       if (mounted) {
         if (result['error'] == true) {
