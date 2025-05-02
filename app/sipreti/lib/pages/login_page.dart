@@ -17,6 +17,12 @@ class LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
 
   void _loginUser() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
     if (email.isEmpty) {

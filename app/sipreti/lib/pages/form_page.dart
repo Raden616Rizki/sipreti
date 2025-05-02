@@ -55,6 +55,7 @@ class FormPageState extends State<FormPage> {
 
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
+        debugPrint(androidInfo.toString());
         validHp = "${androidInfo.manufacturer} ${androidInfo.model}";
 
         if (androidInfo.version.sdkInt < 29) {

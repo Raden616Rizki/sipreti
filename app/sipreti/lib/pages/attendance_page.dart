@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:camera/camera.dart';
 import 'dart:io';
+import 'package:sipreti/services/api_service.dart';
 
 class AttendancePage extends StatefulWidget {
   final XFile? capturedImage;
@@ -25,11 +26,62 @@ class _AttendancePageState extends State<AttendancePage> {
   int? faceStatus;
   late String tanggal = '';
   late String hari = '';
+  final ApiService apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _loadPresensiData();
+  }
+
+  void submitAttendance() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    var pegawaiBox = Hive.box('pegawai');
+
+    String idPegawai = pegawaiBox.get('id_pegawai');
+
+    final File fotoFile = File(widget.capturedImage!.path);
+
+    try {
+      final result = await apiService.storeAttendance(
+        jenisAbsensi: 0,
+        idPegawai: int.parse(idPegawai),
+        checkMode: checkMode!,
+        waktuAbsensi: waktuAbsensi.toString(),
+        latitude: latitude!,
+        longitude: longitude!,
+        namaLokasi: namaLokasi,
+        namaKamera: "Kamera Depan",
+        fotoPresensi: fotoFile,
+      );
+
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        if (result['error'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Presensi gagal')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Presensi berhasil!')),
+          );
+          Navigator.pushNamed(context, '/');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _loadPresensiData() async {
@@ -56,9 +108,9 @@ class _AttendancePageState extends State<AttendancePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        title: const Text(
-          "Check Out",
-          style: TextStyle(
+        title: Text(
+          checkMode == 0 ? "Check In" : "Check Out",
+          style: const TextStyle(
               fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         leading: IconButton(
@@ -233,9 +285,7 @@ class _AttendancePageState extends State<AttendancePage> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pushNamed(context, '/');
-                                      },
+                                      onPressed: submitAttendance,
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.blue,
                                         padding: const EdgeInsets.symmetric(

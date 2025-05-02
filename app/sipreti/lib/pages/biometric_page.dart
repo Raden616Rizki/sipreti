@@ -8,7 +8,7 @@ import 'package:sipreti/pages/attendance_page.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
-// import 'package:sipreti/services/api_service.dart';
+import 'package:sipreti/services/api_service.dart';
 
 class BiometricPage extends StatefulWidget {
   const BiometricPage({super.key});
@@ -23,7 +23,7 @@ class _BiometricPageState extends State<BiometricPage> {
   XFile? capturedImage;
   File? _croppedFace;
   Interpreter? _interpreter;
-  // final ApiService _apiService = ApiService();
+  final ApiService _apiService = ApiService();
 
   bool _showInstructionCard = true;
   bool _cameraButtonEnabled = false;
@@ -60,22 +60,22 @@ class _BiometricPageState extends State<BiometricPage> {
     currentInstruction = instructions[random.nextInt(instructions.length)];
   }
 
-  // Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
-  //   Map<String, dynamic> result = await _apiService.faceVerification(
-  //     idPegawai,
-  //     faceEmbeddings,
-  //   );
+  Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
+    Map<String, dynamic> result = await _apiService.faceVerification(
+      idPegawai,
+      faceEmbeddings,
+    );
 
-  //   if (!mounted) return;
+    if (!mounted) return;
 
-  //   if (result["success"] == false) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
-  //     );
-  //   } else {
-  //     debugPrint(result.toString());
-  //   }
-  // }
+    if (result["success"] == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
+      );
+    } else {
+      debugPrint(result.toString());
+    }
+  }
 
   InputImageRotation _rotationFromCamera(int sensorOrientation) {
     switch (sensorOrientation) {
@@ -220,6 +220,12 @@ class _BiometricPageState extends State<BiometricPage> {
   }
 
   Future<void> _detectAndCropFace(XFile image) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    
     final faceDetector = FaceDetector(
       options: FaceDetectorOptions(
         enableContours: true,
@@ -242,16 +248,21 @@ class _BiometricPageState extends State<BiometricPage> {
 
       final embeddings = await _getFaceEmbeddings(_croppedFace!);
       extractionTime.stop();
-      debugPrint(
-          'Time taken for Extraction: ${extractionTime.elapsedMicroseconds} µs');
-      debugPrint(embeddings.toString());
+      // debugPrint(
+      //     'Time taken for Extraction: ${extractionTime.elapsedMicroseconds} µs');
+
+      debugPrint('Time taken for Extraction: '
+          '${extractionTime.elapsedMicroseconds} µs | '
+          '${extractionTime.elapsedMilliseconds} ms | '
+          '${(extractionTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+      // debugPrint(embeddings.toString());
 
       var pegawaiBox = Hive.box('pegawai');
 
-      // String idPegawai = pegawaiBox.get('id_pegawai');
+      String idPegawai = pegawaiBox.get('id_pegawai');
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
 
-      debugPrint(faceEmbeddings.toString());
+      // debugPrint(faceEmbeddings.toString());
 
       final Stopwatch localCalculation = Stopwatch()..start();
       List<double> distances = [];
@@ -264,13 +275,16 @@ class _BiometricPageState extends State<BiometricPage> {
 
       localCalculation.stop();
       debugPrint('Local Euclidean Distance: $euclideanDistance');
-      debugPrint(
-          'Time taken for Local Euclidean Distance: ${localCalculation.elapsedMicroseconds} µs');
-
+      // debugPrint(
+      //     'Time taken for Local Euclidean Distance: ${localCalculation.elapsedMicroseconds} µs');
+      debugPrint('Time taken for Local Euclidean Distance: '
+          '${localCalculation.elapsedMicroseconds} µs | '
+          '${localCalculation.elapsedMilliseconds} ms | '
+          '${(localCalculation.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
       debugPrint('Semua jarak kedekatan: $distances');
 
-      // Cek apakah ada jarak di bawah threshold (misal 1.0)
-      const double threshold = 1.0;
+      // Cek apakah ada jarak di bawah threshold (misal 0.8)
+      const double threshold = 0.8;
       bool verifikasi = distances.any((d) => d < threshold);
 
       String message =
@@ -285,13 +299,17 @@ class _BiometricPageState extends State<BiometricPage> {
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.put('face_status', value);
 
-      // final Stopwatch cloudCalculation = Stopwatch()..start();
+      final Stopwatch cloudCalculation = Stopwatch()..start();
 
-      // verifyFace(idPegawai.toString(), embeddings);
+      await verifyFace(idPegawai.toString(), embeddings);
 
-      // debugPrint('Cloud Euclidean Distance: $cloudCalculation');
+      debugPrint('Cloud Euclidean Distance: $cloudCalculation');
       // debugPrint(
       //     'Time taken for Cloud Euclidean Distance: ${cloudCalculation.elapsedMicroseconds} µs');
+      debugPrint('Time taken for Cloud Euclidean Distance: '
+          '${cloudCalculation.elapsedMicroseconds} µs | '
+          '${cloudCalculation.elapsedMilliseconds} ms | '
+          '${(cloudCalculation.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
 
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
