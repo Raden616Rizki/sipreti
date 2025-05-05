@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:sipreti/services/api_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -15,7 +16,7 @@ class DashboardPageState extends State<DashboardPage> {
   String? namaPegawai;
   String? nip;
   String? namaJabatan;
-  List<dynamic>? faceEmbeddings;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -31,15 +32,68 @@ class DashboardPageState extends State<DashboardPage> {
       namaPegawai = pegawaiBox.get('nama');
       nip = pegawaiBox.get('nip');
       namaJabatan = pegawaiBox.get('nama_jabatan');
-      faceEmbeddings = pegawaiBox.get('face_embeddings');
-      // debugPrint(faceEmbeddings.toString());
     });
+  }
+
+  Future<void> updatePegawaiData() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    var pegawaiBox = Hive.box('pegawai');
+    String idPegawai = pegawaiBox.get('id_pegawai');
+
+    Map<String, dynamic> dataPegawai = await _apiService.getPegawai(idPegawai);
+
+    if (mounted) {
+      if (dataPegawai["error"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(dataPegawai["message"])),
+        );
+      } else {
+        // await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
+        await pegawaiBox.put('nip', dataPegawai['nip']);
+        await pegawaiBox.put('nama', dataPegawai['nama']);
+        await pegawaiBox.put('url_foto', dataPegawai['url_foto']);
+        await pegawaiBox.put('nama_jabatan', dataPegawai['nama_jabatan']);
+        await pegawaiBox.put('nama_unit_kerja', dataPegawai['nama_unit_kerja']);
+        await pegawaiBox.put(
+            'alamat_unit_kerja', dataPegawai['alamat_unit_kerja']);
+        await pegawaiBox.put('lattitude', dataPegawai['lattitude']);
+        await pegawaiBox.put('longitude', dataPegawai['longitude']);
+        await pegawaiBox.put('ukuran_radius', dataPegawai['ukuran_radius']);
+        await pegawaiBox.put('satuan_radius', dataPegawai['satuan_radius']);
+        await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Data Pegawai Berhasil Diperbarui')),
+          );
+
+          Navigator.pushNamed(context, '/');
+        }
+      }
+    }
+  }
+
+  Future<void> logout(BuildContext context) async {
+    final userBox = await Hive.openBox('userAndroid');
+    final pegawaiBox = await Hive.openBox('pegawai');
+
+    await userBox.clear();
+    await pegawaiBox.clear();
+
+    if (!context.mounted) return;
+    Navigator.pushReplacementNamed(context, '/option');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0ECEC),
+      drawer: _buildDrawer(context),
       appBar: AppBar(
         backgroundColor: Colors.blue,
         title: const Text(
@@ -47,9 +101,13 @@ class DashboardPageState extends State<DashboardPage> {
           style: TextStyle(
               fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () {},
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
         ),
         actions: [
           Row(
@@ -316,6 +374,124 @@ class DashboardPageState extends State<DashboardPage> {
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Pesan"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Akun"),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.64,
+      child: Drawer(
+        backgroundColor: Colors.black87,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: Colors.blue,
+              width: double.infinity,
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 20,
+                    backgroundImage:
+                        AssetImage('assets/images/default_profile.png'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "$namaPegawai",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.only(top: 24),
+                children: [
+                  ListTile(
+                    leading:
+                        const Icon(Icons.calendar_today, color: Colors.white),
+                    title: const Text("Riwayat",
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () => Navigator.pushNamed(context, '/riwayat'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.chat, color: Colors.white),
+                    title: const Text("Pesan",
+                        style: TextStyle(color: Colors.white)),
+                    onTap: () => Navigator.pushNamed(context, '/pesan'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.sync, color: Colors.white),
+                    title: const Text("Perbarui Data",
+                        style: TextStyle(color: Colors.white)),
+                    onTap: updatePegawaiData,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              // margin: const EdgeInsets.only(bottom: 64),
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                ),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Colors.white),
+                title:
+                    const Text("Keluar", style: TextStyle(color: Colors.white)),
+                onTap: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        title: const Text('Konfirmasi'),
+                        content: const Text('Apakah Anda yakin ingin keluar?'),
+                        actions: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            child: const Text('Batal',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.red,
+                            ),
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            child: const Text('Keluar',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+
+                  if (!context.mounted) return;
+
+                  if (confirm == true) {
+                    logout(context);
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

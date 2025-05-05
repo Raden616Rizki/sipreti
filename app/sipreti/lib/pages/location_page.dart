@@ -39,13 +39,13 @@ class _LocationPageState extends State<LocationPage> {
     final double longitude =
         double.tryParse(pegawaiBox.get('longitude')?.toString() ?? '') ??
             112.6143654;
-    // final double radius =
-    //     double.tryParse(pegawaiBox.get('ukuran_radius')?.toString() ?? '') ??
-    //         1280.0;
+    final double radius =
+        double.tryParse(pegawaiBox.get('ukuran_radius')?.toString() ?? '') ??
+            1280.0;
 
     setState(() {
       kantorLocation = LatLng(latitude, longitude);
-      // radiusMeter = radius;
+      radiusMeter = radius;
     });
   }
 

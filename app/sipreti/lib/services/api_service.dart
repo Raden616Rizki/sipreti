@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // final String baseUrl = "http://127.0.0.1/sipreti";
-  final String baseUrl = "http://192.168.1.81/sipreti";
+  final String baseUrl = "http://192.168.1.62/sipreti";
   final String baseUrlDjango = "http://34.143.219.253:8000/attendance";
   // final String baseUrlDjango = "http://127.0.0.1:8000/attendance";
 

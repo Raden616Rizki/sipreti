@@ -8,7 +8,7 @@ import 'package:sipreti/pages/attendance_page.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sipreti/services/api_service.dart';
+// import 'package:sipreti/services/api_service.dart';
 
 class BiometricPage extends StatefulWidget {
   const BiometricPage({super.key});
@@ -23,7 +23,7 @@ class _BiometricPageState extends State<BiometricPage> {
   XFile? capturedImage;
   File? _croppedFace;
   Interpreter? _interpreter;
-  final ApiService _apiService = ApiService();
+  // final ApiService _apiService = ApiService();
 
   bool _showInstructionCard = true;
   bool _cameraButtonEnabled = false;
@@ -60,22 +60,22 @@ class _BiometricPageState extends State<BiometricPage> {
     currentInstruction = instructions[random.nextInt(instructions.length)];
   }
 
-  Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
-    Map<String, dynamic> result = await _apiService.faceVerification(
-      idPegawai,
-      faceEmbeddings,
-    );
+  // Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
+  //   Map<String, dynamic> result = await _apiService.faceVerification(
+  //     idPegawai,
+  //     faceEmbeddings,
+  //   );
 
-    if (!mounted) return;
+  //   if (!mounted) return;
 
-    if (result["success"] == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
-      );
-    } else {
-      debugPrint(result.toString());
-    }
-  }
+  //   if (result["success"] == false) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
+  //     );
+  //   } else {
+  //     debugPrint(result.toString());
+  //   }
+  // }
 
   InputImageRotation _rotationFromCamera(int sensorOrientation) {
     switch (sensorOrientation) {
@@ -178,7 +178,7 @@ class _BiometricPageState extends State<BiometricPage> {
     cameras = await availableCameras();
     if (cameras != null && cameras!.isNotEmpty) {
       _cameraController = CameraController(
-        cameras![1],
+        cameras![0],
         ResolutionPreset.high,
       );
 
@@ -225,7 +225,7 @@ class _BiometricPageState extends State<BiometricPage> {
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-    
+
     final faceDetector = FaceDetector(
       options: FaceDetectorOptions(
         enableContours: true,
@@ -259,7 +259,7 @@ class _BiometricPageState extends State<BiometricPage> {
 
       var pegawaiBox = Hive.box('pegawai');
 
-      String idPegawai = pegawaiBox.get('id_pegawai');
+      // String idPegawai = pegawaiBox.get('id_pegawai');
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
 
       // debugPrint(faceEmbeddings.toString());
@@ -299,17 +299,17 @@ class _BiometricPageState extends State<BiometricPage> {
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.put('face_status', value);
 
-      final Stopwatch cloudCalculation = Stopwatch()..start();
+      // final Stopwatch cloudCalculation = Stopwatch()..start();
 
-      await verifyFace(idPegawai.toString(), embeddings);
+      // await verifyFace(idPegawai.toString(), embeddings);
 
-      debugPrint('Cloud Euclidean Distance: $cloudCalculation');
+      // debugPrint('Cloud Euclidean Distance: $cloudCalculation');
       // debugPrint(
       //     'Time taken for Cloud Euclidean Distance: ${cloudCalculation.elapsedMicroseconds} µs');
-      debugPrint('Time taken for Cloud Euclidean Distance: '
-          '${cloudCalculation.elapsedMicroseconds} µs | '
-          '${cloudCalculation.elapsedMilliseconds} ms | '
-          '${(cloudCalculation.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+      // debugPrint('Time taken for Cloud Euclidean Distance: '
+      //     '${cloudCalculation.elapsedMicroseconds} µs | '
+      //     '${cloudCalculation.elapsedMilliseconds} ms | '
+      //     '${(cloudCalculation.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
 
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {

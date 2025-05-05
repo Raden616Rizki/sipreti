@@ -61,6 +61,8 @@ class _AttendancePageState extends State<AttendancePage> {
       );
 
       if (mounted) Navigator.pop(context);
+      final presensiBox = await Hive.openBox('presensi');
+      await presensiBox.clear();
 
       if (mounted) {
         if (result['error'] == true) {

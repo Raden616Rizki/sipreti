@@ -22,7 +22,7 @@ class LoginPageState extends State<LoginPage> {
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-    
+
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
     if (email.isEmpty) {
@@ -64,28 +64,43 @@ class LoginPageState extends State<LoginPage> {
 
       debugPrint("User data saved to Hive successfully.");
 
-      Map<String, dynamic> dataPegawai =
-          await _apiService.getPegawai(result['data']['id_pegawai']);
-      var pegawaiBox = Hive.box('pegawai');
-
-      await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
-      await pegawaiBox.put('nip', dataPegawai['nip']);
-      await pegawaiBox.put('nama', dataPegawai['nama']);
-      await pegawaiBox.put('url_foto', dataPegawai['url_foto']);
-      await pegawaiBox.put('nama_jabatan', dataPegawai['nama_jabatan']);
-      await pegawaiBox.put('nama_unit_kerja', dataPegawai['nama_unit_kerja']);
-      await pegawaiBox.put(
-          'alamat_unit_kerja', dataPegawai['alamat_unit_kerja']);
-      await pegawaiBox.put('lattitude', dataPegawai['lattitude']);
-      await pegawaiBox.put('longitude', dataPegawai['longitude']);
-      await pegawaiBox.put('ukuran_radius', dataPegawai['ukuran_radius']);
-      await pegawaiBox.put('satuan_radius', dataPegawai['satuan_radius']);
-      await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
-
-      debugPrint("Data pegawai berhasil disimpan ke Hive.");
+      await getPegawaiData(userData['id_pegawai']);
 
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Berhasil Masuk')),
+        );
         Navigator.pushNamed(context, '/');
+      }
+    }
+  }
+
+  Future<void> getPegawaiData(String idPegawai) async {
+    Map<String, dynamic> dataPegawai = await _apiService.getPegawai(idPegawai);
+
+    if (mounted) {
+      if (dataPegawai["error"] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(dataPegawai["message"])),
+        );
+      } else {
+        var pegawaiBox = Hive.box('pegawai');
+
+        await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
+        await pegawaiBox.put('nip', dataPegawai['nip']);
+        await pegawaiBox.put('nama', dataPegawai['nama']);
+        await pegawaiBox.put('url_foto', dataPegawai['url_foto']);
+        await pegawaiBox.put('nama_jabatan', dataPegawai['nama_jabatan']);
+        await pegawaiBox.put('nama_unit_kerja', dataPegawai['nama_unit_kerja']);
+        await pegawaiBox.put(
+            'alamat_unit_kerja', dataPegawai['alamat_unit_kerja']);
+        await pegawaiBox.put('lattitude', dataPegawai['lattitude']);
+        await pegawaiBox.put('longitude', dataPegawai['longitude']);
+        await pegawaiBox.put('ukuran_radius', dataPegawai['ukuran_radius']);
+        await pegawaiBox.put('satuan_radius', dataPegawai['satuan_radius']);
+        await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
+
+        debugPrint("Data pegawai berhasil disimpan ke Hive.");
       }
     }
   }

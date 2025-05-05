@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sipreti/pages/biometric_page.dart';
 import 'package:sipreti/pages/dashboard_page.dart';
-import 'package:sipreti/pages/location_page.dart';
-// import 'package:sipreti/pages/attendance_page.dart';
 import 'package:sipreti/pages/form_page.dart';
 import 'package:sipreti/pages/login_page.dart';
 import 'package:sipreti/pages/nip_page.dart';
@@ -21,20 +18,23 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  bool _hasUserData() {
+    final userBox = Hive.box('userAndroid');
+    final pegawaiBox = Hive.box('pegawai');
+    return userBox.isNotEmpty && pegawaiBox.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bool hasUserData = _hasUserData();
+
     return MaterialApp(
-      // debugShowCheckedModeBanner: false,
       title: 'Sipreti App',
-      initialRoute: '/option',
-      // initialRoute: '/biometric',
+      initialRoute: hasUserData ? '/' : '/option',
       routes: {
         '/': (context) => const DashboardPage(),
-        '/location': (context) => const LocationPage(),
-        '/biometric': (context) => const BiometricPage(),
         '/option': (context) => const OptionPage(),
         '/login': (context) => const LoginPage(),
-        // '/attendance': (context) => const AttendancePage(),
         '/nip': (context) => const NIPPage(),
         '/form': (context) => const FormPage(),
       },
