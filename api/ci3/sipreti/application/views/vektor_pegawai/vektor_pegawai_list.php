@@ -2,7 +2,7 @@
 <html>
 
 <head>
-	<title>harviacode.com - codeigniter crud generator</title>
+	<title>Daftar Vektor Pegawai</title>
 	<link rel="stylesheet" href="<?php echo base_url('assets/bootstrap/css/bootstrap.min.css') ?>" />
 	<style>
 		body {
@@ -12,7 +12,7 @@
 </head>
 
 <body>
-	<h2 style="margin-top:0px">Vektor_pegawai List</h2>
+	<h2 style="margin-top:0px">Daftar Vektor Pegawai</h2>
 	<div class="row" style="margin-bottom: 10px">
 		<div class="col-md-4">
 			<?php echo anchor(site_url('vektor_pegawai/create'), 'Create', 'class="btn btn-primary"'); ?>
