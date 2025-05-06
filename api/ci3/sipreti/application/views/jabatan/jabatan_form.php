@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>Kelola Jabatan</title>
+        <title>Kelola Data Jabatan</title>
         <link rel="stylesheet" href="<?php echo base_url('assets/bootstrap/css/bootstrap.min.css') ?>"/>
         <style>
             body{
