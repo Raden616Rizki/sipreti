@@ -75,14 +75,15 @@ def face_verification(request):
             num_dimensions = len(vektor_presensi)
 
             # Buat index Voyager
-            index = Index(Space.Euclidean, num_dimensions=num_dimensions)
-            if embeddings:
-                index.add_items(np.array(embeddings))
+            # index = Index(Space.Euclidean, num_dimensions=num_dimensions)
+            # if embeddings:
+            #     index.add_items(np.array(embeddings))
 
             # Query dengan vektor_presensi
-            k = len(embeddings)
-            neighbors, distances = index.query(vektor_presensi, k=k)
-            distances = [float(d) for d in distances] 
+            # k = len(embeddings)
+            # neighbors, distances = index.query(vektor_presensi, k=k)
+            # distances = [float(d) for d in distances] 
+            distances = [float(distance.euclidean(vektor_presensi, embedding)) for embedding in embeddings]
             
             # Cek apakah ada jarak di bawah 1 (threshold)
             verifikasi = any(d < 1 for d in distances)
