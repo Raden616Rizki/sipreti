@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>harviacode.com - codeigniter crud generator</title>
+        <title>Daftar User Android</title>
         <link rel="stylesheet" href="<?php echo base_url('assets/bootstrap/css/bootstrap.min.css') ?>"/>
         <style>
             body{
@@ -10,7 +10,7 @@
         </style>
     </head>
     <body>
-        <h2 style="margin-top:0px">User_android List</h2>
+        <h2 style="margin-top:0px">Daftar User Android</h2>
         <div class="row" style="margin-bottom: 10px">
             <div class="col-md-4">
                 <?php echo anchor(site_url('user_android/create'),'Create', 'class="btn btn-primary"'); ?>
@@ -66,8 +66,8 @@
 			<td style="text-align:center" width="200px">
 				<?php 
 				echo anchor(site_url('user_android/read/'.$user_android->id_user_android),'Read'); 
-				echo ' | '; 
-				echo anchor(site_url('user_android/update/'.$user_android->id_user_android),'Update'); 
+				// echo ' | '; 
+				// echo anchor(site_url('user_android/update/'.$user_android->id_user_android),'Update'); 
 				echo ' | '; 
 				echo anchor(site_url('user_android/delete/'.$user_android->id_user_android),'Delete','onclick="javasciprt: return confirm(\'Are You Sure ?\')"'); 
 				?>
