@@ -46,6 +46,28 @@ class Pegawai extends CI_Controller
 	public function read($id)
 	{
 		$row = $this->Pegawai_model->get_by_id($id);
+		if ($row && empty($row->deleted_at)) {
+			$data = array(
+				'id_pegawai' => $row->id_pegawai,
+				'id_jabatan' => $row->id_jabatan,
+				'id_unit_kerja' => $row->id_unit_kerja,
+				'nip' => $row->nip,
+				'nama' => $row->nama,
+				'url_foto' => $row->url_foto,
+				'created_at' => $row->created_at,
+				'updated_at' => $row->updated_at,
+				'deleted_at' => $row->deleted_at,
+			);
+			$this->load->view('pegawai/pegawai_read', $data);
+		} else {
+			$this->session->set_flashdata('message', 'Record Not Found');
+			redirect(site_url('pegawai'));
+		}
+	}
+
+	public function read_api($id)
+	{
+		$row = $this->Pegawai_model->get_by_id_api($id);
 
 		if ($row && empty($row['deleted_at'])) {
 			$data = array(

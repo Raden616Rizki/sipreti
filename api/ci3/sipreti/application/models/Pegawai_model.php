@@ -23,7 +23,14 @@ class Pegawai_model extends CI_Model
 	}
 
 	// get data by id
-	public function get_by_id($id)
+	function get_by_id($id)
+ 	{
+ 		$this->db->where($this->id, $id);
+ 		return $this->db->get($this->table)->row();
+ 	}
+
+	// get data by id api
+	public function get_by_id_api($id)
 	{
 		$this->db->select('
         pegawai.*, 
