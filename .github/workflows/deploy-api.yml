@@ -3,51 +3,51 @@ name: Deploy API Changes to GCP
 on:
   push:
     paths:
-      - 'api/**'
+      - "api/**"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Set up SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.GCP_INSTANCE_IP }} >> ~/.ssh/known_hosts
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.GCP_INSTANCE_IP }} >> ~/.ssh/known_hosts
 
-    - name: Deploy CI3 folder
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "rm -rf /var/www/html/ci3 && mkdir -p /var/www/html/ci3"
-        scp -r api/ci3/sipreti/* ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/var/www/html/ci3/
+      - name: Deploy CI3 folder
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/ci3 && sudo mkdir -p /var/www/html/ci3"
+          scp -r api/ci3/sipreti/* ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/var/www/html/ci3/
 
-    - name: Deploy Django folder
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "rm -rf /var/www/html/django && mkdir -p /var/www/html/django"
-        scp -r api/django/* ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/var/www/html/django/
+      - name: Deploy Django folder
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/django && sudo mkdir -p /var/www/html/django"
+          scp -r api/django/* ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/var/www/html/django/
 
-    - name: Import MySQL database
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} << 'EOF'
-          MYSQL_USER="root"
-          MYSQL_PASS="${{ secrets.MYSQL_ROOT_PASSWORD }}"
-          DB_NAME="sipreti_db"
-          SQL_FILE="/var/www/html/ci3/sipreti/sipreti_db.sql"
+      - name: Import MySQL database
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} << 'EOF'
+            MYSQL_USER="root"
+            MYSQL_PASS="${{ secrets.MYSQL_ROOT_PASSWORD }}"
+            DB_NAME="sipreti_db"
+            SQL_FILE="/var/www/html/ci3/sipreti/sipreti_db.sql"
 
-          # Drop existing database if exists and create new one
-          mysql -u$MYSQL_USER -p$MYSQL_PASS -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+            # Drop existing database if exists and create new one
+            mysql -u$MYSQL_USER -p$MYSQL_PASS -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-          # Import SQL file
-          mysql -u$MYSQL_USER -p$MYSQL_PASS $DB_NAME < $SQL_FILE
-        EOF
+            # Import SQL file
+            mysql -u$MYSQL_USER -p$MYSQL_PASS $DB_NAME < $SQL_FILE
+          EOF
 
-    - name: Run Composer Install
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} << 'EOF'
-          cd /var/www/html/ci3
-          /usr/local/bin/composer install --no-interaction --prefer-dist
-        EOF
+      - name: Run Composer Install
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} << 'EOF'
+            cd /var/www/html/ci3
+            /usr/local/bin/composer install --no-interaction --prefer-dist
+          EOF
