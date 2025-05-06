@@ -56,7 +56,6 @@ class Log_absensi extends CI_Controller
 				'lattitude' => $row->lattitude,
 				'longitude' => $row->longitude,
 				'nama_lokasi' => $row->nama_lokasi,
-				'nama_kamera' => $row->nama_kamera,
 				'url_foto_presensi' => $row->url_foto_presensi,
 				'url_dokumen' => $row->url_dokumen,
 				'created_at' => $row->created_at,
@@ -83,7 +82,6 @@ class Log_absensi extends CI_Controller
 			'lattitude' => set_value('lattitude'),
 			'longitude' => set_value('longitude'),
 			'nama_lokasi' => set_value('nama_lokasi'),
-			'nama_kamera' => set_value('nama_kamera'),
 			'url_foto_presensi' => set_value('url_foto_presensi'),
 			'url_dokumen' => set_value('url_dokumen'),
 		);
@@ -105,7 +103,6 @@ class Log_absensi extends CI_Controller
 				'lattitude' => $this->input->post('lattitude', TRUE),
 				'longitude' => $this->input->post('longitude', TRUE),
 				'nama_lokasi' => $this->input->post('nama_lokasi', TRUE),
-				'nama_kamera' => $this->input->post('nama_kamera', TRUE),
 				'url_foto_presensi' => $this->input->post('url_foto_presensi', TRUE),
 				'url_dokumen' => $this->input->post('url_dokumen', TRUE),
 				'created_at' => date('Y-m-d H:i:s'),
@@ -135,7 +132,6 @@ class Log_absensi extends CI_Controller
 				'lattitude' => set_value('lattitude', $row->lattitude),
 				'longitude' => set_value('longitude', $row->longitude),
 				'nama_lokasi' => set_value('nama_lokasi', $row->nama_lokasi),
-				'nama_kamera' => set_value('nama_kamera', $row->nama_kamera),
 				'url_foto_presensi' => set_value('url_foto_presensi', $row->url_foto_presensi),
 				'url_dokumen' => set_value('url_dokumen', $row->url_dokumen),
 			);
@@ -161,7 +157,6 @@ class Log_absensi extends CI_Controller
 				'lattitude' => $this->input->post('lattitude', TRUE),
 				'longitude' => $this->input->post('longitude', TRUE),
 				'nama_lokasi' => $this->input->post('nama_lokasi', TRUE),
-				'nama_kamera' => $this->input->post('nama_kamera', TRUE),
 				'url_foto_presensi' => $this->input->post('url_foto_presensi', TRUE),
 				'url_dokumen' => $this->input->post('url_dokumen', TRUE),
 				'updated_at' => date('Y-m-d H:i:s'),
@@ -263,7 +258,6 @@ class Log_absensi extends CI_Controller
 					'lattitude' => $this->input->post('lattitude', TRUE),
 					'longitude' => $this->input->post('longitude', TRUE),
 					'nama_lokasi' => $this->input->post('nama_lokasi', TRUE),
-					'nama_kamera' => $this->input->post('nama_kamera', TRUE),
 					'url_foto_presensi' => $url_foto_presensi,
 					'url_dokumen' => $url_dokumen,
 					'created_at' => date('Y-m-d H:i:s'),
@@ -298,7 +292,6 @@ class Log_absensi extends CI_Controller
 		$this->form_validation->set_rules('lattitude', 'lattitude', 'trim|required|numeric');
 		$this->form_validation->set_rules('longitude', 'longitude', 'trim|required|numeric');
 		$this->form_validation->set_rules('nama_lokasi', 'nama lokasi', 'trim|required');
-		$this->form_validation->set_rules('nama_kamera', 'nama kamera', 'trim|required');
 		$this->form_validation->set_rules('url_foto_presensi', 'url foto presensi', 'trim');
 		$this->form_validation->set_rules('url_dokumen', 'url dokumen', 'trim');
 

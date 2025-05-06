@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>harviacode.com - codeigniter crud generator</title>
+        <title>Kelola Log Absensi</title>
         <link rel="stylesheet" href="<?php echo base_url('assets/bootstrap/css/bootstrap.min.css') ?>"/>
         <style>
             body{
@@ -10,7 +10,7 @@
         </style>
     </head>
     <body>
-        <h2 style="margin-top:0px">Log_absensi <?php echo $button ?></h2>
+        <h2 style="margin-top:0px">Log Absensi <?php echo $button ?></h2>
         <form action="<?php echo $action; ?>" method="post">
 	    <div class="form-group">
             <label for="int">Id Pegawai <?php echo form_error('id_pegawai') ?></label>
@@ -39,10 +39,6 @@
 	    <div class="form-group">
             <label for="varchar">Nama Lokasi <?php echo form_error('nama_lokasi') ?></label>
             <input type="text" class="form-control" name="nama_lokasi" id="nama_lokasi" placeholder="Nama Lokasi" value="<?php echo $nama_lokasi; ?>" />
-        </div>
-	    <div class="form-group">
-            <label for="varchar">Nama Kamera <?php echo form_error('nama_kamera') ?></label>
-            <input type="text" class="form-control" name="nama_kamera" id="nama_kamera" placeholder="Nama Kamera" value="<?php echo $nama_kamera; ?>" />
         </div>
 	    <div class="form-group">
             <label for="varchar">Url Foto Presensi <?php echo form_error('url_foto_presensi') ?></label>

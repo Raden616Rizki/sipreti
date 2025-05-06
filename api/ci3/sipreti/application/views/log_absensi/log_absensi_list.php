@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>harviacode.com - codeigniter crud generator</title>
+        <title>Daftar Log Absensi</title>
         <link rel="stylesheet" href="<?php echo base_url('assets/bootstrap/css/bootstrap.min.css') ?>"/>
         <style>
             body{
@@ -10,7 +10,7 @@
         </style>
     </head>
     <body>
-        <h2 style="margin-top:0px">Log_absensi List</h2>
+        <h2 style="margin-top:0px">Daftar Log Absensi</h2>
         <div class="row" style="margin-bottom: 10px">
             <div class="col-md-4">
                 <?php echo anchor(site_url('log_absensi/create'),'Create', 'class="btn btn-primary"'); ?>
@@ -51,7 +51,6 @@
 		<th>Lattitude</th>
 		<th>Longitude</th>
 		<th>Nama Lokasi</th>
-		<th>Nama Kamera</th>
 		<th>Url Foto Presensi</th>
 		<th>Url Dokumen</th>
 		<th>Action</th>
@@ -68,7 +67,6 @@
 			<td><?php echo $log_absensi->lattitude ?></td>
 			<td><?php echo $log_absensi->longitude ?></td>
 			<td><?php echo $log_absensi->nama_lokasi ?></td>
-			<td><?php echo $log_absensi->nama_kamera ?></td>
 			<td><?php echo $log_absensi->url_foto_presensi ?></td>
 			<td><?php echo $log_absensi->url_dokumen ?></td>
 			<td style="text-align:center" width="200px">
