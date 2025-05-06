@@ -34,18 +34,14 @@ jobs:
 
       - name: Import MySQL database
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} << 'EOF'
-            MYSQL_USER="root"
-            MYSQL_PASS="${{ secrets.MYSQL_ROOT_PASSWORD }}"
-            DB_NAME="sipreti_db"
-            SQL_FILE="/var/www/html/ci3/sipreti/sipreti_db.sql"
-
-            # Drop existing database if exists and create new one
-            mysql -u$MYSQL_USER -p$MYSQL_PASS -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-            # Import SQL file
-            mysql -u$MYSQL_USER -p$MYSQL_PASS $DB_NAME < $SQL_FILE
-          EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
+            mysql -u root -p'${{ secrets.MYSQL_ROOT_PASSWORD }}' -e '
+              DROP DATABASE IF EXISTS sipreti_db;
+              CREATE DATABASE sipreti_db;
+              USE sipreti_db;
+              SOURCE /var/www/html/ci3/sipreti/sipreti_db.sql;
+            '
+          "
 
       - name: Run Composer Install
         run: |
