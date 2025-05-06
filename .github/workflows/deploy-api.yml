@@ -22,13 +22,15 @@ jobs:
 
       - name: Deploy CI3 folder
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/ci3 && sudo mkdir -p /var/www/html/ci3"
-          scp -r api/ci3/sipreti/* ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/var/www/html/ci3/
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /tmp/deploy_ci3 && mkdir -p /tmp/deploy_ci3"
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" api/ci3/sipreti/ ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/tmp/deploy_ci3/
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/ci3 && sudo mv /tmp/deploy_ci3 /var/www/html/ci3 && sudo chown -R www-data:www-data /var/www/html/ci3"
 
       - name: Deploy Django folder
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/django && sudo mkdir -p /var/www/html/django"
-          scp -r api/django/* ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/var/www/html/django/
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /tmp/deploy_django && mkdir -p /tmp/deploy_django"
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" api/django/ ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/tmp/deploy_django/
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/django && sudo mv /tmp/deploy_django /var/www/html/django && sudo chown -R www-data:www-data /var/www/html/django"
 
       - name: Import MySQL database
         run: |
