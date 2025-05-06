@@ -39,13 +39,13 @@ jobs:
               DROP DATABASE IF EXISTS sipreti_db;
               CREATE DATABASE sipreti_db;
               USE sipreti_db;
-              SOURCE /var/www/html/ci3/sipreti/sipreti_db.sql;
+              SOURCE /var/www/html/ci3/sipreti_db.sql;
             '
           "
 
       - name: Run Composer Install
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
             cd /var/www/html/ci3
             /usr/local/bin/composer install --no-interaction --prefer-dist
-          EOF
+          "
