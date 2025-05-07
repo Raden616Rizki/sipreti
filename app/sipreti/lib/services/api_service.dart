@@ -93,7 +93,7 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getPegawai(String idPegawai) async {
-    final String url = "$baseUrl/pegawai/read/$idPegawai";
+    final String url = "$baseUrl/pegawai/read_api/$idPegawai";
 
     try {
       final response = await http.get(Uri.parse(url));

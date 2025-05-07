@@ -178,7 +178,7 @@ class _BiometricPageState extends State<BiometricPage> {
     cameras = await availableCameras();
     if (cameras != null && cameras!.isNotEmpty) {
       _cameraController = CameraController(
-        cameras![0],
+        cameras![1],
         ResolutionPreset.high,
       );
 
@@ -361,12 +361,7 @@ class _BiometricPageState extends State<BiometricPage> {
 
     _interpreter?.run(reshapedInput, output);
 
-    // return output[0];
-
-    List<double> roundedOutput =
-        output[0].map((e) => double.parse(e.toStringAsFixed(8))).toList();
-
-    return roundedOutput;
+    return output[0];
   }
 
   Future<Float32List> _loadAndNormalizeImage(File faceImage) async {

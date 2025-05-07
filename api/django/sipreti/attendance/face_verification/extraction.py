@@ -84,8 +84,7 @@ def face_extraction(folder_id, id_pegawai):
                 interpreter.set_tensor(input_details[0]['index'], face_crop_resized)
                 interpreter.invoke()
                 vector = interpreter.get_tensor(output_details[0]['index'])[0]  # Hasil vektor wajah
-                # vector = np.round(vector, 8).tolist() # Pembulatan 8 angka dibelakang koma
-                vector = [round(float(v), 8) for v in vector] # Pembulatan 8 angka dibelakang koma
+                vector = vector.tolist()
 
                 # Simpan vektor hasil ekstraksi
                 vectors.append(vector)  # Konversi ke list agar mudah disimpan
