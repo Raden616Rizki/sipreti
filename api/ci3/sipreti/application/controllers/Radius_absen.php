@@ -50,7 +50,6 @@ class Radius_absen extends CI_Controller
 			$data = array(
 				'id_radius' => $row->id_radius,
 				'ukuran' => $row->ukuran,
-				'satuan' => $row->satuan,
 				'created_at' => $row->created_at,
 				'updated_at' => $row->updated_at,
 				'deleted_at' => $row->deleted_at,
@@ -69,7 +68,6 @@ class Radius_absen extends CI_Controller
 			'action' => site_url('radius_absen/create_action'),
 			'id_radius' => set_value('id_radius'),
 			'ukuran' => set_value('ukuran'),
-			'satuan' => set_value('satuan'),
 		);
 		$this->load->view('radius_absen/radius_absen_form', $data);
 	}
@@ -83,7 +81,6 @@ class Radius_absen extends CI_Controller
 		} else {
 			$data = array(
 				'ukuran' => $this->input->post('ukuran', TRUE),
-				'satuan' => $this->input->post('satuan', TRUE),
 				'created_at' => date('Y-m-d H:i:s'),
 				'updated_at' => NULL,
 				'deleted_at' => NULL,
@@ -105,7 +102,6 @@ class Radius_absen extends CI_Controller
 				'action' => site_url('radius_absen/update_action'),
 				'id_radius' => set_value('id_radius', $row->id_radius),
 				'ukuran' => set_value('ukuran', $row->ukuran),
-				'satuan' => set_value('satuan', $row->satuan),
 			);
 			$this->load->view('radius_absen/radius_absen_form', $data);
 		} else {
@@ -123,7 +119,6 @@ class Radius_absen extends CI_Controller
 		} else {
 			$data = array(
 				'ukuran' => $this->input->post('ukuran', TRUE),
-				'satuan' => $this->input->post('satuan', TRUE),
 				'updated_at' => date('Y-m-d H:i:s'),
 			);
 
@@ -154,7 +149,6 @@ class Radius_absen extends CI_Controller
 	public function _rules()
 	{
 		$this->form_validation->set_rules('ukuran', 'ukuran', 'trim|required');
-		$this->form_validation->set_rules('satuan', 'satuan', 'trim|required');
 
 		$this->form_validation->set_rules('id_radius', 'id_radius', 'trim');
 		$this->form_validation->set_error_delimiters('<span class="text-danger">', '</span>');
