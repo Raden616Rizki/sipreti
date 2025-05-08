@@ -43,9 +43,9 @@ jobs:
             '
           "
 
-      # - name: Run Composer Install
-      #   run: |
-      #     ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
-      #       cd /var/www/html/ci3
-      #       /usr/local/bin/composer install --no-interaction --prefer-dist
-      #     "
+      - name: Run Composer Install
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
+            cd /var/www/html/ci3
+            sudo /usr/local/bin/composer install --no-interaction --prefer-dist
+          "

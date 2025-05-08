@@ -72,7 +72,7 @@ def face_verification(request):
 
             # Konversi face embeddings dari JSON string ke numpy array
             embeddings = [np.array(json.loads(embedding), dtype=np.float32) for embedding in embeddings_data]
-            num_dimensions = len(vektor_presensi)
+            # num_dimensions = len(vektor_presensi)
 
             # Buat index Voyager
             # index = Index(Space.Euclidean, num_dimensions=num_dimensions)
@@ -83,10 +83,11 @@ def face_verification(request):
             # k = len(embeddings)
             # neighbors, distances = index.query(vektor_presensi, k=k)
             # distances = [float(d) for d in distances] 
-            distances = [float(distance.euclidean(vektor_presensi, embedding)) for embedding in embeddings]
+            # distances = [float(distance.euclidean(vektor_presensi, embedding)) for embedding in embeddings]
+            distances = [float(distance.cityblock(vektor_presensi, embedding)) for embedding in embeddings]
             
             # Cek apakah ada jarak di bawah 1 (threshold)
-            verifikasi = any(d < 1 for d in distances)
+            verifikasi = any(d < 7 for d in distances)
             pesan = "Wajah terverifikasi" if verifikasi else "Wajah tidak terverifikasi"
             value = 1 if verifikasi else 0
 
