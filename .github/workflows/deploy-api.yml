@@ -24,7 +24,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /tmp/deploy_ci3 && mkdir -p /tmp/deploy_ci3"
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" api/ci3/sipreti/ ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/tmp/deploy_ci3/
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/ci3 && sudo mv /tmp/deploy_ci3 /var/www/html/ci3 && sudo chown -R www-data:www-data /var/www/html/ci3"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/sipreti && sudo mv /tmp/deploy_ci3 /var/www/html/sipreti && sudo chown -R www-data:www-data /var/www/html/sipreti"
 
       - name: Deploy Django folder
         run: |
@@ -39,7 +39,7 @@ jobs:
               DROP DATABASE IF EXISTS sipreti_db;
               CREATE DATABASE sipreti_db;
               USE sipreti_db;
-              SOURCE /var/www/html/ci3/sipreti_db.sql;
+              SOURCE /var/www/html/sipreti/sipreti_db.sql;
             '
           "
 
