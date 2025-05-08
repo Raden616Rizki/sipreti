@@ -12,7 +12,7 @@
 </head>
 
 <body>
-	<h2 style="margin-top:0px">Daftar Radius Absen</h2>
+	<h2 style="margin-top:0px">Daftar Radius Absen Pegawai</h2>
 	<div class="row" style="margin-bottom: 10px">
 		<div class="col-md-4">
 			<?php echo anchor(site_url('radius_absen/create'), 'Create', 'class="btn btn-primary"'); ?>
