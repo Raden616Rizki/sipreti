@@ -65,18 +65,12 @@ class LoginPageState extends State<LoginPage> {
       debugPrint("User data saved to Hive successfully.");
 
       await getPegawaiData(userData['id_pegawai']);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Berhasil Masuk')),
-        );
-        Navigator.pushNamed(context, '/');
-      }
     }
   }
 
   Future<void> getPegawaiData(String idPegawai) async {
     Map<String, dynamic> dataPegawai = await _apiService.getPegawai(idPegawai);
+    // debugPrint(dataPegawai.toString());
 
     if (mounted) {
       if (dataPegawai["error"] == true) {
@@ -101,6 +95,12 @@ class LoginPageState extends State<LoginPage> {
         await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
 
         debugPrint("Data pegawai berhasil disimpan ke Hive.");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Berhasil Masuk')),
+          );
+          Navigator.pushNamed(context, '/');
+        }
       }
     }
   }
