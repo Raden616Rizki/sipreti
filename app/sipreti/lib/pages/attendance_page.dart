@@ -41,6 +41,21 @@ class _AttendancePageState extends State<AttendancePage> {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
+    final DateTime now = DateTime.now();
+    final DateTime absensiTime = DateTime.parse(waktuAbsensi.toString());
+
+    final Duration difference = now.difference(absensiTime).abs();
+
+    if (difference > const Duration(minutes: 5)) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Waktu absensi tidak valid (lebih dari 5 menit)')),
+      );
+      Navigator.pushReplacementNamed(context, '/');
+      return;
+    }
+
     var pegawaiBox = Hive.box('pegawai');
 
     String idPegawai = pegawaiBox.get('id_pegawai');
@@ -297,9 +312,11 @@ class _AttendancePageState extends State<AttendancePage> {
                                               BorderRadius.circular(6),
                                         ),
                                       ),
-                                      child: const Text(
-                                        "SELESAI CHECK OUT",
-                                        style: TextStyle(
+                                      child: Text(
+                                        checkMode == 0
+                                            ? "SELESAI CHECK IN"
+                                            : "SELESAI CHECK OUT",
+                                        style: const TextStyle(
                                             fontSize: 16, color: Colors.white),
                                       ),
                                     ),
@@ -321,10 +338,12 @@ class _AttendancePageState extends State<AttendancePage> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                             ),
-                            child: const Text(
-                              "BATAL CHECK OUT",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
+                            child: Text(
+                              checkMode == 0
+                                  ? "BATAL CHECK IN"
+                                  : "BATAL CHECK OUT",
+                              style: const TextStyle(
+                                  fontSize: 16, color: Colors.white),
                             ),
                           ),
                         ),
