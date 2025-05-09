@@ -19,14 +19,24 @@ class _Biometric2PageState extends State<Biometric2Page> {
   CameraController? _cameraController;
   List<CameraDescription>? cameras;
   XFile? capturedImage;
-  File? _croppedFace;
   Interpreter? _interpreter;
+  late FaceDetector _faceDetector;
 
+  @override
   @override
   void initState() {
     super.initState();
     _initializeCamera();
-    _loadModel();
+    _loadModel().then((_) => _warmUpModel());
+    _faceDetector = FaceDetector(
+      options: FaceDetectorOptions(
+        enableClassification: true,
+        enableLandmarks: true,
+        enableTracking: true,
+        enableContours: true,
+        performanceMode: FaceDetectorMode.fast,
+      ),
+    );
   }
 
   Future<void> _initializeCamera() async {
@@ -47,6 +57,20 @@ class _Biometric2PageState extends State<Biometric2Page> {
       _interpreter = await Interpreter.fromAsset('model/mobilefacenet.tflite');
     } catch (e) {
       debugPrint("Error loading model: $e");
+    }
+  }
+
+  Future<void> _warmUpModel() async {
+    try {
+      final dummyInput = Float32List(112 * 112 * 3);
+      final reshaped =
+          dummyInput.buffer.asFloat32List().reshape([1, 112, 112, 3]);
+      final output =
+          List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
+
+      _interpreter?.run(reshaped, output);
+    } catch (e) {
+      debugPrint('Error during warm-up: $e');
     }
   }
 
@@ -71,15 +95,6 @@ class _Biometric2PageState extends State<Biometric2Page> {
           capturedImage = image;
         });
 
-        // Cek tipe file berdasarkan ekstensi
-        final extension = image.path.split('.').last.toLowerCase();
-        debugPrint("Ekstensi file: $extension");
-
-        // Baca header file untuk cek MIME / magic number
-        final bytes = await File(image.path).readAsBytes();
-        final type = _detectImageFormat(bytes);
-        debugPrint("Tipe file berdasarkan header: $type");
-
         await _detectAndCropFace(image);
       } catch (e) {
         debugPrint("Error capturing image: $e");
@@ -87,43 +102,15 @@ class _Biometric2PageState extends State<Biometric2Page> {
     }
   }
 
-  String _detectImageFormat(Uint8List bytes) {
-    if (bytes.length >= 4) {
-      if (bytes[0] == 0xFF && bytes[1] == 0xD8) return 'JPEG';
-      if (bytes[0] == 0x89 &&
-          bytes[1] == 0x50 &&
-          bytes[2] == 0x4E &&
-          bytes[3] == 0x47) return 'PNG';
-      if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46) {
-        return 'GIF';
-      }
-      if (bytes[0] == 0x42 && bytes[1] == 0x4D) return 'BMP';
-    }
-    return 'Unknown';
-  }
-
   Future<void> _detectAndCropFace(XFile image) async {
-    final faceDetector = FaceDetector(
-      options: FaceDetectorOptions(
-        enableClassification: true,
-        enableLandmarks: true,
-        enableTracking: true,
-        enableContours: true,
-        performanceMode: FaceDetectorMode.fast,
-      ),
-    );
-
     final inputImage = InputImage.fromFilePath(image.path);
-    final faces = await faceDetector.processImage(inputImage);
+    final faces = await _faceDetector.processImage(inputImage);
 
     if (faces.isNotEmpty) {
       final face = faces.first;
-      final croppedFace = await _cropFace(image.path, face.boundingBox);
-      setState(() {
-        _croppedFace = croppedFace;
-      });
-
-      final embeddings = await _getFaceEmbeddings(_croppedFace!);
+      final img.Image croppedFace =
+          await _cropFace(image.path, face.boundingBox);
+      final embeddings = await _getFaceEmbeddings(croppedFace);
 
       var pegawaiBox = Hive.box('pegawai');
 
@@ -166,18 +153,66 @@ class _Biometric2PageState extends State<Biometric2Page> {
     } else {
       _showCapturedImageDialog();
     }
-
-    faceDetector.close();
   }
 
-  Future<File> _cropFace(String imagePath, Rect boundingBox) async {
-    final Stopwatch croppingTime = Stopwatch()..start();
+  // Future<img.Image> _cropFace(String imagePath, Rect boundingBox) async {
+  //   final originalImage = img.decodeImage(File(imagePath).readAsBytesSync());
+
+  //   if (originalImage == null) {
+  //     throw Exception("Error reading the original image");
+  //   }
+
+  //   final int left = boundingBox.left.toInt().clamp(0, originalImage.width);
+  //   final int top = boundingBox.top.toInt().clamp(0, originalImage.height);
+  //   final int width =
+  //       boundingBox.width.toInt().clamp(0, originalImage.width - left);
+  //   final int height =
+  //       boundingBox.height.toInt().clamp(0, originalImage.height - top);
+
+  //   return img.copyCrop(originalImage, left, top, width, height);
+  // }
+
+  // Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
+  //   Float32List input = await _loadAndNormalizeImage(faceImage);
+
+  //   var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
+  //   var output =
+  //       List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
+
+  //   _interpreter?.run(reshapedInput, output);
+
+  //   return output[0];
+  // }
+
+  // Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
+  //   final resizedImage = img.copyResize(image, width: 112, height: 112);
+
+  //   final pixels = resizedImage.getBytes(format: img.Format.rgb);
+  //   final floatPixels = Float32List(pixels.length);
+
+  //   for (int i = 0; i < pixels.length; i++) {
+  //     floatPixels[i] = pixels[i] / 255.0;
+  //   }
+
+  //   return floatPixels;
+  // }
+
+  Future<img.Image> _cropFace(String imagePath, Rect boundingBox) async {
+    final decodeTime = Stopwatch()..start();
 
     final originalImage = img.decodeImage(File(imagePath).readAsBytesSync());
+
+    decodeTime.stop();
+    debugPrint('[cropFace] decodeImage: '
+        '${decodeTime.elapsedMicroseconds} µs | '
+        '${decodeTime.elapsedMilliseconds} ms | '
+        '${(decodeTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
 
     if (originalImage == null) {
       throw Exception("Error reading the original image");
     }
+
+    final cropTime = Stopwatch()..start();
 
     final int left = boundingBox.left.toInt().clamp(0, originalImage.width);
     final int top = boundingBox.top.toInt().clamp(0, originalImage.height);
@@ -186,44 +221,72 @@ class _Biometric2PageState extends State<Biometric2Page> {
     final int height =
         boundingBox.height.toInt().clamp(0, originalImage.height - top);
 
-    final croppedImage = img.copyCrop(originalImage, left, top, width, height);
+    cropTime.stop();
+    debugPrint('[cropFace] copyCrop: '
+        '${cropTime.elapsedMicroseconds} µs | '
+        '${cropTime.elapsedMilliseconds} ms | '
+        '${(cropTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
 
-    final croppedFaceFile = File('${imagePath}_cropped.png')
-      ..writeAsBytesSync(img.encodePng(croppedImage));
+    final copyCrop = Stopwatch()..start();
 
-    croppingTime.stop();
-    debugPrint('Time taken for Cropping: '
-        '${croppingTime.elapsedMicroseconds} µs | '
-        '${croppingTime.elapsedMilliseconds} ms | '
-        '${(croppingTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+    final cropped = img.copyCrop(originalImage, left, top, width, height);
 
-    return croppedFaceFile;
+    debugPrint('[cropFace] copyCrop: '
+        '${copyCrop.elapsedMicroseconds} µs | '
+        '${copyCrop.elapsedMilliseconds} ms | '
+        '${(copyCrop.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+
+    return cropped;
   }
 
-  Future<List<double>> _getFaceEmbeddings(File faceImage) async {
+  Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
+    final normalizeTime = Stopwatch()..start();
+
     Float32List input = await _loadAndNormalizeImage(faceImage);
-    final Stopwatch tfliteModelTime = Stopwatch()..start();
+
+    normalizeTime.stop();
+    debugPrint('[getFaceEmbeddings] normalizeImage: '
+        '${normalizeTime.elapsedMicroseconds} µs | '
+        '${normalizeTime.elapsedMilliseconds} ms | '
+        '${(normalizeTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+
+    final reshapeTime = Stopwatch()..start();
 
     var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
+
+    reshapeTime.stop();
+    debugPrint('[getFaceEmbeddings] reshape: '
+        '${reshapeTime.elapsedMicroseconds} µs | '
+        '${reshapeTime.elapsedMilliseconds} ms | '
+        '${(reshapeTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+
+    final modelTime = Stopwatch()..start();
+
     var output =
         List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
-
     _interpreter?.run(reshapedInput, output);
 
-    tfliteModelTime.stop();
-    debugPrint('Time taken for Running Model: '
-        '${tfliteModelTime.elapsedMicroseconds} µs | '
-        '${tfliteModelTime.elapsedMilliseconds} ms | '
-        '${(tfliteModelTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+    modelTime.stop();
+    debugPrint('[getFaceEmbeddings] run interpreter: '
+        '${modelTime.elapsedMicroseconds} µs | '
+        '${modelTime.elapsedMilliseconds} ms | '
+        '${(modelTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
 
     return output[0];
   }
 
-  Future<Float32List> _loadAndNormalizeImage(File faceImage) async {
-    final Stopwatch normalizingTime = Stopwatch()..start();
+  Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
+    final resizeTime = Stopwatch()..start();
 
-    final image = img.decodeImage(faceImage.readAsBytesSync())!;
     final resizedImage = img.copyResize(image, width: 112, height: 112);
+
+    resizeTime.stop();
+    debugPrint('[normalizeImage] resize: '
+        '${resizeTime.elapsedMicroseconds} µs | '
+        '${resizeTime.elapsedMilliseconds} ms | '
+        '${(resizeTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+
+    final loopingTime = Stopwatch()..start();
 
     final pixels = resizedImage.getBytes(format: img.Format.rgb);
     final floatPixels = Float32List(pixels.length);
@@ -232,11 +295,11 @@ class _Biometric2PageState extends State<Biometric2Page> {
       floatPixels[i] = pixels[i] / 255.0;
     }
 
-    normalizingTime.stop();
-    debugPrint('Time taken for Normalize: '
-        '${normalizingTime.elapsedMicroseconds} µs | '
-        '${normalizingTime.elapsedMilliseconds} ms | '
-        '${(normalizingTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+    loopingTime.stop();
+    debugPrint('[normalizeImage] normalize loop: '
+        '${loopingTime.elapsedMicroseconds} µs | '
+        '${loopingTime.elapsedMilliseconds} ms | '
+        '${(loopingTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
 
     return floatPixels;
   }
@@ -275,6 +338,7 @@ class _Biometric2PageState extends State<Biometric2Page> {
   @override
   void dispose() {
     _cameraController?.dispose();
+    _faceDetector.close();
     super.dispose();
   }
 
