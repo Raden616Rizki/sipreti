@@ -9,6 +9,7 @@ class Unit_kerja extends CI_Controller
 	{
 		parent::__construct();
 		$this->load->model('Unit_kerja_model');
+		$this->load->model('Radius_absen_model');
 		$this->load->library('form_validation');
 	}
 
@@ -54,9 +55,7 @@ class Unit_kerja extends CI_Controller
 				'alamat' => $row->alamat,
 				'lattitude' => $row->lattitude,
 				'longitude' => $row->longitude,
-				'created_at' => $row->created_at,
-				'updated_at' => $row->updated_at,
-				'deleted_at' => $row->deleted_at,
+				'radius_options' => $this->Radius_absen_model->get_all(),
 			);
 			$this->load->view('unit_kerja/unit_kerja_read', $data);
 		} else {
@@ -76,6 +75,7 @@ class Unit_kerja extends CI_Controller
 			'alamat' => set_value('alamat'),
 			'lattitude' => set_value('lattitude'),
 			'longitude' => set_value('longitude'),
+			'radius_options' => $this->Radius_absen_model->get_all(),
 		);
 		$this->load->view('unit_kerja/unit_kerja_form', $data);
 	}
@@ -118,6 +118,7 @@ class Unit_kerja extends CI_Controller
 				'alamat' => set_value('alamat', $row->alamat),
 				'lattitude' => set_value('lattitude', $row->lattitude),
 				'longitude' => set_value('longitude', $row->longitude),
+				'radius_options' => $this->Radius_absen_model->get_all(),
 			);
 			$this->load->view('unit_kerja/unit_kerja_form', $data);
 		} else {
