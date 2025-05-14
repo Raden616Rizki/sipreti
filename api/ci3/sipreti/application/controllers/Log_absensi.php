@@ -9,6 +9,7 @@ class Log_absensi extends CI_Controller
 	{
 		parent::__construct();
 		$this->load->model('Log_absensi_model');
+		$this->load->model('Pegawai_model');
 		$this->load->library('form_validation');
 	}
 
@@ -58,9 +59,6 @@ class Log_absensi extends CI_Controller
 				'nama_lokasi' => $row->nama_lokasi,
 				'url_foto_presensi' => $row->url_foto_presensi,
 				'url_dokumen' => $row->url_dokumen,
-				'created_at' => $row->created_at,
-				'updated_at' => $row->updated_at,
-				'deleted_at' => $row->deleted_at,
 			);
 			$this->load->view('log_absensi/log_absensi_read', $data);
 		} else {
@@ -208,7 +206,7 @@ class Log_absensi extends CI_Controller
 			// Konfigurasi upload file
 			$config['upload_path'] = $upload_path;
 			$config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx';
-			$config['max_size'] = 2048; // Maksimal 2MB
+			$config['max_size'] = 2048; // Maksimal 5MB
 			$this->load->library('upload', $config);
 
 			$url_foto_presensi = NULL;
@@ -282,6 +280,60 @@ class Log_absensi extends CI_Controller
 			->set_content_type('application/json')
 			->set_status_header($response['status'])
 			->set_output(json_encode($response));
+	}
+
+	public function list_pegawai()
+	{
+		$q = urldecode($this->input->get('q', TRUE));
+		$start = intval($this->input->get('start'));
+
+		if ($q <> '') {
+			$config['base_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
+			$config['first_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
+		} else {
+			$config['base_url'] = base_url() . 'pegawai/index.html';
+			$config['first_url'] = base_url() . 'pegawai/index.html';
+		}
+
+		$config['per_page'] = 10;
+		$config['page_query_string'] = TRUE;
+		$config['total_rows'] = $this->Pegawai_model->total_rows($q, TRUE);
+		$pegawai = $this->Pegawai_model->get_limit_data($config['per_page'], $start, $q, TRUE);
+
+		$this->load->library('pagination');
+		$this->pagination->initialize($config);
+
+		$data = array(
+			'pegawai_data' => $pegawai,
+			'q' => $q,
+			'pagination' => $this->pagination->create_links(),
+			'total_rows' => $config['total_rows'],
+			'start' => $start,
+		);
+		$this->load->view('log_absensi/log_absensi_pegawai', $data);
+	}
+
+	public function read_absensi_pegawai($id)
+	{
+		if ($id === null) {
+			show_error("ID Pegawai tidak ditemukan.", 400);
+			return;
+		}
+
+		$pegawai = $this->Pegawai_model->get_by_id($id);
+		if (!$pegawai) {
+			show_error("Pegawai tidak ditemukan.", 404);
+			return;
+		}
+
+		$absensi = $this->log_absensi_model->get_limit_data(1000, 0, $id_pegawai, TRUE);
+
+		$data = [
+			'pegawai' => $pegawai,
+			'absensi' => $absensi,
+		];
+
+		$this->load->view('log_absensi/rekap_absensi_pegawai', $data);
 	}
 
 	public function _rules()
