@@ -50,15 +50,12 @@ class User_android extends CI_Controller
 			$data = array(
 				'id_user_android' => $row->id_user_android,
 				'id_pegawai' => $row->id_pegawai,
+				'nama_pegawai' => $row->nama,
 				'username' => $row->username,
 				'password' => $row->password,
 				'email' => $row->email,
 				'no_hp' => $row->no_hp,
 				'valid_hp' => $row->valid_hp,
-				'imei' => $row->imei,
-				'created_at' => $row->created_at,
-				'updated_at' => $row->updated_at,
-				'deleted_at' => $row->deleted_at,
 			);
 			$this->load->view('user_android/user_android_read', $data);
 		} else {

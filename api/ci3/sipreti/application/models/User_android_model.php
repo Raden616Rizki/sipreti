@@ -25,8 +25,11 @@ class User_android_model extends CI_Model
 	// get data by id
 	function get_by_id($id)
 	{
-		$this->db->where($this->id, $id);
-		return $this->db->get($this->table)->row();
+		$this->db->select('user_android.*, pegawai.nama');
+		$this->db->from($this->table);
+		$this->db->join('pegawai', 'pegawai.id_pegawai = user_android.id_pegawai', 'left');
+		$this->db->where('user_android.' . $this->id, $id);
+		return $this->db->get()->row();
 	}
 
 	// get total rows
@@ -43,12 +46,22 @@ class User_android_model extends CI_Model
 	// get data with limit and search
 	public function get_limit_data($limit, $start = 0, $q = NULL, $onlyActive = FALSE)
 	{
-		$this->db->like('username', $q);
-		if ($onlyActive) {
-			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
+		$this->db->select('user_android.*, pegawai.nama');
+		$this->db->from($this->table);
+		$this->db->join('pegawai', 'pegawai.id_pegawai = user_android.id_pegawai', 'left');
+
+		if (!empty($q)) {
+			$this->db->like('user_android.username', $q);
+			$this->db->or_like('pegawai.nama', $q);
 		}
+
+		if ($onlyActive) {
+			$this->db->where('(user_android.deleted_at IS NULL OR user_android.deleted_at = "")');
+		}
+
 		$this->db->limit($limit, $start);
-		return $this->db->get($this->table)->result();
+
+		return $this->db->get()->result();
 	}
 
 	// insert data
