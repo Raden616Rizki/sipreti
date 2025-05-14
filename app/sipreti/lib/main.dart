@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:sipreti/pages/document_page.dart';
+import 'package:sipreti/pages/biometric_2_page.dart';
+import 'package:sipreti/pages/biometric_page.dart';
 import 'package:sipreti/pages/dashboard_page.dart';
 import 'package:sipreti/pages/form_page.dart';
+import 'package:sipreti/pages/location_page.dart';
 import 'package:sipreti/pages/login_page.dart';
 import 'package:sipreti/pages/nip_page.dart';
 import 'package:sipreti/pages/option_page.dart';
@@ -27,16 +31,23 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasUserData = _hasUserData();
+    // debugPrint(hasUserData.toString());
 
     return MaterialApp(
       title: 'Sipreti App',
+      // debugShowCheckedModeBanner: false,
       initialRoute: hasUserData ? '/' : '/option',
+      // initialRoute: '/document',
       routes: {
         '/': (context) => const DashboardPage(),
+        '/location': (context) => const LocationPage(),
+        '/biometric': (context) => const BiometricPage(),
+        '/biometric2': (context) => const Biometric2Page(),
         '/option': (context) => const OptionPage(),
         '/login': (context) => const LoginPage(),
         '/nip': (context) => const NIPPage(),
         '/form': (context) => const FormPage(),
+        '/document': (context) => const DocumentPage()
       },
     );
   }

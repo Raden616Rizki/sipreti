@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-// import 'package:file_picker/file_picker.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:file_picker/file_picker.dart';
 
 class DocumentPage extends StatefulWidget {
   final int checkMode;
@@ -11,44 +14,52 @@ class DocumentPage extends StatefulWidget {
 }
 
 class _DocumentPageState extends State<DocumentPage> {
-  // PlatformFile? selectedFile;
+  String? urlFoto;
+  final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
+  File? selectedFile;
 
-  // Future<void> pickFile() async {
-  //   FilePickerResult? result = await FilePicker.platform.pickFiles(
-  //     type: FileType.custom,
-  //     allowedExtensions: ['png', 'jpeg', 'jpg', 'doc', 'docx'],
-  //     withData: true,
-  //   );
+  @override
+  void initState() {
+    super.initState();
 
-  //   if (result != null && result.files.first.size <= 5 * 1024 * 1024) {
-  //     setState(() {
-  //       selectedFile = result.files.first;
-  //     });
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("File tidak valid atau melebihi 5 MB")),
-  //     );
-  //   }
-  // }
+    var pegawaiBox = Hive.box('pegawai');
+    setState(() {
+      urlFoto = pegawaiBox.get('url_foto');
+    });
+  }
 
-  // void uploadFile() {
-  //   if (selectedFile != null) {
-  //     // TODO: implementasi upload ke server
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("File '${selectedFile!.name}' berhasil dipilih.")),
-  //     );
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Silakan pilih file terlebih dahulu.")),
-  //     );
-  //   }
-  // }
+  Future<void> pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['png', 'jpeg', 'jpg', 'pdf', 'docx', 'doc'],
+      withData: true,
+    );
+
+    if (result != null && result.files.single.size <= 2 * 1024 * 1024) {
+      setState(() {
+        selectedFile = File(result.files.single.path!);
+      });
+    } else if (result != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ukuran file melebihi 2 MB!')),
+        );
+      }
+    }
+  }
+
+  void returnFileToAttendancePage() {
+    if (selectedFile != null) {
+      Navigator.pop(context, selectedFile);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
+        elevation: 4,
         title: Text(
           widget.checkMode == 0 ? "Check In" : "Check Out",
           style: const TextStyle(
@@ -66,8 +77,11 @@ class _DocumentPageState extends State<DocumentPage> {
             height: 40,
           ),
           const SizedBox(width: 8),
-          const CircleAvatar(
-            backgroundImage: AssetImage('assets/images/default_profile.png'),
+          CircleAvatar(
+            backgroundImage: urlFoto != null
+                ? NetworkImage(baseUrl + urlFoto!)
+                : const AssetImage('assets/images/default_profile.png')
+                    as ImageProvider,
           ),
           const SizedBox(width: 10),
         ],
@@ -99,8 +113,8 @@ class _DocumentPageState extends State<DocumentPage> {
                       ),
                       SizedBox(height: 8),
                       Text(
-                          '- Format yang diperbolehkan (png, jpeg, docx, doc)'),
-                      Text('- Ukuran maksimal 5 MB'),
+                          '- Format yang diperbolehkan (png, jpeg, pdf, docx, doc)'),
+                      Text('- Ukuran maksimal 2 MB'),
                     ],
                   ),
                 ),
@@ -122,11 +136,25 @@ class _DocumentPageState extends State<DocumentPage> {
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
+                    if (selectedFile != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(6),
+                          color: Colors.grey[100],
+                        ),
+                        child: Text(
+                          selectedFile!.path.split('/').last,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        // onPressed: pickFile,
-                        onPressed: () {},
+                        onPressed: pickFile,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -141,8 +169,9 @@ class _DocumentPageState extends State<DocumentPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        // onPressed: uploadFile,
-                        onPressed: () {},
+                        onPressed: selectedFile != null
+                            ? returnFileToAttendancePage
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           padding: const EdgeInsets.symmetric(vertical: 16),

@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:camera/camera.dart';
+import 'package:sipreti/pages/document_page.dart';
 import 'dart:io';
 import 'package:sipreti/services/api_service.dart';
 
@@ -22,17 +23,26 @@ class _AttendancePageState extends State<AttendancePage> {
   late DateTime waktuAbsensi = DateTime.now();
   String? jamAbsensi;
   int? checkMode;
-  final int jenisAbsensi = 0;
+  int? jenisAbsensi;
   int? faceStatus;
   late String tanggal = '';
   late String hari = '';
   late String lamaVerifikasi = '';
+  File? supportingDocument;
   final ApiService apiService = ApiService();
+
+  String? urlFoto;
+  final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
 
   @override
   void initState() {
     super.initState();
     _loadPresensiData();
+
+    var pegawaiBox = Hive.box('pegawai');
+    setState(() {
+      urlFoto = pegawaiBox.get('url_foto');
+    });
   }
 
   void submitAttendance() async {
@@ -65,16 +75,16 @@ class _AttendancePageState extends State<AttendancePage> {
 
     try {
       final result = await apiService.storeAttendance(
-        jenisAbsensi: 0,
-        idPegawai: int.parse(idPegawai),
-        checkMode: checkMode!,
-        waktuAbsensi: waktuAbsensi.toString(),
-        latitude: latitude!,
-        longitude: longitude!,
-        namaLokasi: namaLokasi,
-        namaKamera: "Kamera Depan",
-        fotoPresensi: fotoFile,
-      );
+          jenisAbsensi: jenisAbsensi!,
+          idPegawai: int.parse(idPegawai),
+          checkMode: checkMode!,
+          waktuAbsensi: waktuAbsensi.toString(),
+          latitude: latitude!,
+          longitude: longitude!,
+          namaLokasi: namaLokasi,
+          lamaAbsensi: lamaVerifikasi,
+          fotoPresensi: fotoFile,
+          dokumen: supportingDocument);
 
       if (mounted) Navigator.pop(context);
       final presensiBox = await Hive.openBox('presensi');
@@ -115,6 +125,7 @@ class _AttendancePageState extends State<AttendancePage> {
           presensiBox.get('waktu_absensi', defaultValue: DateTime.now());
       jamAbsensi = DateFormat('HH:mm').format(waktuAbsensi);
       checkMode = presensiBox.get('check_mode', defaultValue: 0);
+      jenisAbsensi = presensiBox.get('jenis_absensi', defaultValue: 0);
       faceStatus = presensiBox.get('face_status', defaultValue: 0);
       tanggal = DateFormat('d MMMM y', 'id_ID').format(waktuAbsensi);
       hari = DateFormat('EEEE', 'id_ID').format(waktuAbsensi);
@@ -145,8 +156,11 @@ class _AttendancePageState extends State<AttendancePage> {
             height: 40,
           ),
           const SizedBox(width: 8),
-          const CircleAvatar(
-            backgroundImage: AssetImage('assets/images/default_profile.png'),
+          CircleAvatar(
+            backgroundImage: urlFoto != null
+                ? NetworkImage(baseUrl + urlFoto!)
+                : const AssetImage('assets/images/default_profile.png')
+                    as ImageProvider,
           ),
           const SizedBox(width: 10),
         ],
@@ -311,7 +325,47 @@ class _AttendancePageState extends State<AttendancePage> {
                             ),
                           ),
                         ),
-                        faceStatus == 1
+                        Column(
+                          children: [
+                            if (jenisAbsensi == 1) const SizedBox(height: 10),
+                            if (jenisAbsensi == 1)
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: () async {
+                                    final result = await Navigator.push<File>(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => const DocumentPage()),
+                                    );
+
+                                    if (result != null) {
+                                      setState(() {
+                                        supportingDocument = result;
+                                      });
+                                    }
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    side: const BorderSide(color: Colors.green),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "DOKUMEN PENDUKUNG",
+                                    style: TextStyle(
+                                        fontSize: 16, color: Colors.green),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        (faceStatus == 1 &&
+                                ((jenisAbsensi == 0) ||
+                                    (jenisAbsensi == 1 &&
+                                        supportingDocument != null)))
                             ? Column(
                                 children: [
                                   const SizedBox(height: 10),

@@ -39,11 +39,14 @@ class _BiometricPageState extends State<BiometricPage> {
 
   late String currentInstruction;
 
+  String? urlFoto;
+  final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
+
   @override
-  void initState() {
+  void initState() async {
     super.initState();
-    _initializeCamera();
-    _loadModel();
+    await _initializeCamera();
+    await _loadModel();
     _faceDetector = FaceDetector(
       options: FaceDetectorOptions(
         enableClassification: true,
@@ -54,6 +57,10 @@ class _BiometricPageState extends State<BiometricPage> {
       ),
     );
     _selectRandomInstruction();
+    var pegawaiBox = Hive.box('pegawai');
+    setState(() {
+      urlFoto = pegawaiBox.get('url_foto');
+    });
   }
 
   void _selectRandomInstruction() {
@@ -447,9 +454,11 @@ class _BiometricPageState extends State<BiometricPage> {
                   height: 32,
                 ),
                 const SizedBox(width: 8),
-                const CircleAvatar(
-                  backgroundImage:
-                      AssetImage('assets/images/default_profile.png'),
+                CircleAvatar(
+                  backgroundImage: urlFoto != null
+                      ? NetworkImage(baseUrl + urlFoto!)
+                      : const AssetImage('assets/images/default_profile.png')
+                          as ImageProvider,
                   radius: 16,
                 ),
                 const SizedBox(width: 10),

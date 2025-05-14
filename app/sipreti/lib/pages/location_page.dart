@@ -22,12 +22,26 @@ class _LocationPageState extends State<LocationPage> {
   LatLng kantorLocation = const LatLng(-7.9437612, 112.6143654);
   double radiusMeter = 1280.0;
   bool isWithinRadius = false;
+  int? jenisAbsensi;
+
+  String? urlFoto;
+  final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
+
+  bool isProcessing = true;
 
   @override
-  void initState() {
+  void initState() async {
     super.initState();
-    loadPegawaiData();
-    _getCurrentLocation();
+    await loadPegawaiData();
+    await _getCurrentLocation();
+
+    var pegawaiBox = Hive.box('pegawai');
+    var presensiBox = Hive.box('presensi');
+    setState(() {
+      urlFoto = pegawaiBox.get('url_foto');
+      jenisAbsensi = presensiBox.get('jenis_absensi');
+      isProcessing = false;
+    });
   }
 
   Future<void> loadPegawaiData() async {
@@ -94,18 +108,10 @@ class _LocationPageState extends State<LocationPage> {
     // debugPrint(checkMode.toString());
 
     final DateTime now = DateTime.now();
-    // final String tanggal = DateFormat('d MMMM y').format(now);
-
-    // debugPrint(now.toString());
-    // debugPrint(tanggal);
-    // debugPrint(currentAddress);
-    // debugPrint(latitude.toString());
-    // debugPrint(longitude.toString());
 
     await presensiBox.put('nama_lokasi', currentAddress);
     await presensiBox.put('lattitude', latitude);
     await presensiBox.put('longitude', longitude);
-    // await presensiBox.put('tanggal_presensi', tanggal);
     await presensiBox.put('waktu_absensi', now);
 
     if (mounted) {
@@ -118,6 +124,7 @@ class _LocationPageState extends State<LocationPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
+        elevation: 4,
         title: const Text(
           "Lokasi Absen",
           style: TextStyle(
@@ -132,9 +139,11 @@ class _LocationPageState extends State<LocationPage> {
                 height: 32,
               ),
               const SizedBox(width: 8),
-              const CircleAvatar(
-                backgroundImage:
-                    AssetImage('assets/images/default_profile.png'),
+              CircleAvatar(
+                backgroundImage: urlFoto != null
+                    ? NetworkImage(baseUrl + urlFoto!)
+                    : const AssetImage('assets/images/default_profile.png')
+                        as ImageProvider,
                 radius: 16,
               ),
               const SizedBox(width: 10),
@@ -155,28 +164,30 @@ class _LocationPageState extends State<LocationPage> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.app',
               ),
-              CircleLayer(
-                circles: [
-                  CircleMarker(
-                    point: kantorLocation,
-                    radius: radiusMeter,
-                    useRadiusInMeter: true,
-                    color: Colors.blue.withOpacity(0.2),
-                  ),
-                ],
-              ),
+              if (jenisAbsensi != 1)
+                CircleLayer(
+                  circles: [
+                    CircleMarker(
+                      point: kantorLocation,
+                      radius: radiusMeter,
+                      useRadiusInMeter: true,
+                      color: Colors.blue.withOpacity(0.2),
+                    ),
+                  ],
+                ),
               MarkerLayer(
                 markers: [
-                  Marker(
-                    point: kantorLocation,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.location_pin,
-                      color: Colors.blue,
-                      size: 40,
+                  if (jenisAbsensi != 1)
+                    Marker(
+                      point: kantorLocation,
+                      width: 40,
+                      height: 40,
+                      child: const Icon(
+                        Icons.location_pin,
+                        color: Colors.blue,
+                        size: 40,
+                      ),
                     ),
-                  ),
                   if (currentLocation != null)
                     Marker(
                       point: currentLocation!,
@@ -250,15 +261,16 @@ class _LocationPageState extends State<LocationPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: isWithinRadius
-                        ? () async {
-                            await saveAttendance(
-                              currentAddress: currentAddress!,
-                              latitude: currentLocation!.latitude,
-                              longitude: currentLocation!.longitude,
-                            );
-                          }
-                        : null,
+                    onPressed:
+                        (jenisAbsensi == 1 || isWithinRadius && !isProcessing)
+                            ? () async {
+                                await saveAttendance(
+                                  currentAddress: currentAddress!,
+                                  latitude: currentLocation!.latitude,
+                                  longitude: currentLocation!.longitude,
+                                );
+                              }
+                            : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -266,8 +278,10 @@ class _LocationPageState extends State<LocationPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: const Text("Konfirmasi",
-                        style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      "Konfirmasi",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],

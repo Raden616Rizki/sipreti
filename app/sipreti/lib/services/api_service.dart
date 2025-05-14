@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // final String baseUrl = "http://127.0.0.1/sipreti";
-  final String baseUrl = "http://192.168.1.62/sipreti";
-  final String baseUrlDjango = "http://34.143.219.253:8000/attendance";
+  final String baseUrl = "http://35.187.225.70/sipreti";
+  final String baseUrlDjango = "http://35.187.225.70:8000/attendance";
   // final String baseUrlDjango = "http://127.0.0.1:8000/attendance";
 
   Future<Map<String, dynamic>> validateNip(String nip) async {
@@ -76,9 +76,7 @@ class ApiService {
 
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
-
-      // debugPrint(responseBody);
-
+      
       if (response.statusCode == 200) {
         return jsonDecode(responseBody);
       } else {
@@ -157,7 +155,7 @@ class ApiService {
     required double latitude,
     required double longitude,
     required String namaLokasi,
-    required String namaKamera,
+    required String lamaAbsensi,
     required File fotoPresensi,
     File? dokumen,
   }) async {
@@ -172,7 +170,7 @@ class ApiService {
       request.fields['lattitude'] = latitude.toString();
       request.fields['longitude'] = longitude.toString();
       request.fields['nama_lokasi'] = namaLokasi;
-      request.fields['nama_kamera'] = namaKamera;
+      request.fields['waktu_verifikasi'] = lamaAbsensi;
 
       request.files.add(
         await http.MultipartFile.fromPath(

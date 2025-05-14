@@ -16,6 +16,8 @@ class DashboardPageState extends State<DashboardPage> {
   String? namaPegawai;
   String? nip;
   String? namaJabatan;
+  String? urlFoto;
+  final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
   final ApiService _apiService = ApiService();
 
   @override
@@ -32,6 +34,7 @@ class DashboardPageState extends State<DashboardPage> {
       namaPegawai = pegawaiBox.get('nama');
       nip = pegawaiBox.get('nip');
       namaJabatan = pegawaiBox.get('nama_jabatan');
+      urlFoto = pegawaiBox.get('url_foto');
     });
   }
 
@@ -96,6 +99,7 @@ class DashboardPageState extends State<DashboardPage> {
       drawer: _buildDrawer(context),
       appBar: AppBar(
         backgroundColor: Colors.blue,
+        elevation: 4,
         title: const Text(
           "Presensi Online",
           style: TextStyle(
@@ -117,10 +121,12 @@ class DashboardPageState extends State<DashboardPage> {
                 height: 32,
               ),
               const SizedBox(width: 8),
-              const CircleAvatar(
-                backgroundImage:
-                    AssetImage('assets/images/default_profile.png'),
+              CircleAvatar(
                 radius: 16,
+                backgroundImage: urlFoto != null
+                    ? NetworkImage(baseUrl + urlFoto!)
+                    : const AssetImage('assets/images/default_profile.png')
+                        as ImageProvider,
               ),
               const SizedBox(width: 10),
             ],
@@ -137,10 +143,12 @@ class DashboardPageState extends State<DashboardPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 40,
-                  backgroundImage:
-                      AssetImage('assets/images/default_profile.png'),
+                  backgroundImage: urlFoto != null
+                      ? NetworkImage(baseUrl + urlFoto!)
+                      : const AssetImage('assets/images/default_profile.png')
+                          as ImageProvider,
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -301,13 +309,7 @@ class DashboardPageState extends State<DashboardPage> {
                               text: "Check In",
                               icon: Icons.login,
                               iconColor: Colors.blue,
-                              onTap: () async {
-                                final presensiBox =
-                                    await Hive.openBox('presensi');
-                                await presensiBox.put('check_mode', 0);
-                                if (!context.mounted) return;
-                                Navigator.pushNamed(context, '/location');
-                              },
+                              onTap: () => _showAbsensiModal(context, 0),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -316,13 +318,7 @@ class DashboardPageState extends State<DashboardPage> {
                               text: "Check Out",
                               icon: Icons.logout,
                               iconColor: Colors.blue,
-                              onTap: () async {
-                                final presensiBox =
-                                    await Hive.openBox('presensi');
-                                await presensiBox.put('check_mode', 1);
-                                if (!context.mounted) return;
-                                Navigator.pushNamed(context, '/location');
-                              },
+                              onTap: () => _showAbsensiModal(context, 1),
                             ),
                           ),
                         ],
@@ -391,10 +387,12 @@ class DashboardPageState extends State<DashboardPage> {
               width: double.infinity,
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 20,
-                    backgroundImage:
-                        AssetImage('assets/images/default_profile.png'),
+                    backgroundImage: urlFoto != null
+                        ? NetworkImage(baseUrl + urlFoto!)
+                        : const AssetImage('assets/images/default_profile.png')
+                            as ImageProvider,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -452,35 +450,7 @@ class DashboardPageState extends State<DashboardPage> {
                 title:
                     const Text("Keluar", style: TextStyle(color: Colors.white)),
                 onTap: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (BuildContext dialogContext) {
-                      return AlertDialog(
-                        title: const Text('Konfirmasi'),
-                        content: const Text('Apakah Anda yakin ingin keluar?'),
-                        actions: [
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.green,
-                            ),
-                            onPressed: () =>
-                                Navigator.of(dialogContext).pop(false),
-                            child: const Text('Batal',
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.red,
-                            ),
-                            onPressed: () =>
-                                Navigator.of(dialogContext).pop(true),
-                            child: const Text('Keluar',
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      );
-                    },
-                  );
+                  final confirm = await showExitConfirmationDialog(context);
 
                   if (!context.mounted) return;
 
@@ -493,6 +463,66 @@ class DashboardPageState extends State<DashboardPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<bool?> showExitConfirmationDialog(BuildContext context) {
+    return showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            type: MaterialType.transparency,
+            child: AlertDialog(
+              title: const Text('Konfirmasi'),
+              content: const Text('Apakah Anda yakin ingin keluar?'),
+              actions: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      height: 45,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Batal',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 45,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Keluar',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return Transform.scale(
+          scale: animation.value,
+          child: Opacity(
+            opacity: animation.value,
+            child: child,
+          ),
+        );
+      },
     );
   }
 
@@ -582,5 +612,76 @@ Widget _buildButton({
         ],
       ),
     ),
+  );
+}
+
+void _showAbsensiModal(BuildContext context, int checkMode) {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black54,
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Center(
+        child: Material(
+          type: MaterialType.transparency,
+          child: AlertDialog(
+            title: const Text('Pilih Jenis Absensi'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                    ),
+                    onPressed: () async {
+                      final presensiBox = await Hive.openBox('presensi');
+                      await presensiBox.put('check_mode', checkMode);
+                      await presensiBox.put('jenis_absensi', 0);
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                      Navigator.pushNamed(context, '/location');
+                    },
+                    child: const Text('Reguler',
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                    onPressed: () async {
+                      final presensiBox = await Hive.openBox('presensi');
+                      await presensiBox.put('check_mode', checkMode);
+                      await presensiBox.put('jenis_absensi', 1);
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                      Navigator.pushNamed(context, '/location');
+                    },
+                    child: const Text('DD / DL',
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return Transform.scale(
+        scale: animation.value,
+        child: Opacity(
+          opacity: animation.value,
+          child: child,
+        ),
+      );
+    },
   );
 }
