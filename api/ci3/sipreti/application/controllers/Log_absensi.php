@@ -200,7 +200,7 @@ class Log_absensi extends CI_Controller
 			$timestamp = date('Ymd_His');
 
 			// Direktori penyimpanan berdasarkan id_pegawai
-			$upload_path = './uploads/' . $id_pegawai . '/';
+			$upload_path = './uploads/presensi/' . $id_pegawai . '/';
 			if (!is_dir($upload_path)) {
 				mkdir($upload_path, 0777, true); // Buat folder jika belum ada
 			}
@@ -223,7 +223,7 @@ class Log_absensi extends CI_Controller
 				$this->upload->initialize($config);
 
 				if ($this->upload->do_upload('url_foto_presensi')) {
-					$url_foto_presensi = base_url('uploads/' . $id_pegawai . '/' . $foto_filename);
+					$url_foto_presensi = $foto_filename;
 				} else {
 					$errors[] = "Foto presensi: " . $this->upload->display_errors('', '');
 				}
@@ -237,7 +237,7 @@ class Log_absensi extends CI_Controller
 				$this->upload->initialize($config);
 
 				if ($this->upload->do_upload('url_dokumen')) {
-					$url_dokumen = base_url('uploads/' . $id_pegawai . '/' . $doc_filename);
+					$url_dokumen = $doc_filename;
 				} else {
 					$errors[] = "Dokumen: " . $this->upload->display_errors('', '');
 				}
@@ -258,6 +258,7 @@ class Log_absensi extends CI_Controller
 					'lattitude' => $this->input->post('lattitude', TRUE),
 					'longitude' => $this->input->post('longitude', TRUE),
 					'nama_lokasi' => $this->input->post('nama_lokasi', TRUE),
+					'waktu_verifikasi' => $this->input->post('waktu_verifikasi', TRUE),
 					'url_foto_presensi' => $url_foto_presensi,
 					'url_dokumen' => $url_dokumen,
 					'created_at' => date('Y-m-d H:i:s'),
