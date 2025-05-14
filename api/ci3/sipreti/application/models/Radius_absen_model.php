@@ -16,11 +16,13 @@ class Radius_absen_model extends CI_Model
 	}
 
 	// get all
-	function get_all()
+	public function get_all()
 	{
+		$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
 		$this->db->order_by($this->id, $this->order);
 		return $this->db->get($this->table)->result();
 	}
+
 
 	// get data by id
 	function get_by_id($id)
