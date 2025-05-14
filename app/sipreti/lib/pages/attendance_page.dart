@@ -26,6 +26,7 @@ class _AttendancePageState extends State<AttendancePage> {
   int? faceStatus;
   late String tanggal = '';
   late String hari = '';
+  late String lamaVerifikasi = '';
   final ApiService apiService = ApiService();
 
   @override
@@ -117,6 +118,8 @@ class _AttendancePageState extends State<AttendancePage> {
       faceStatus = presensiBox.get('face_status', defaultValue: 0);
       tanggal = DateFormat('d MMMM y', 'id_ID').format(waktuAbsensi);
       hari = DateFormat('EEEE', 'id_ID').format(waktuAbsensi);
+      lamaVerifikasi =
+          presensiBox.get('verification_time', defaultValue: 'Tidak diketahui');
     });
   }
 
@@ -233,6 +236,19 @@ class _AttendancePageState extends State<AttendancePage> {
                             Expanded(
                               child: Text(
                                 namaLokasi,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const Icon(Icons.timelapse, color: Colors.black),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Lama Verifikasi Wajah: $lamaVerifikasi',
                                 style: const TextStyle(fontSize: 14),
                               ),
                             ),

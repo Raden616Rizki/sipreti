@@ -21,7 +21,6 @@ class _BiometricPageState extends State<BiometricPage> {
   CameraController? _cameraController;
   List<CameraDescription>? cameras;
   XFile? capturedImage;
-  File? _croppedFace;
   Interpreter? _interpreter;
   final ApiService _apiService = ApiService();
 
@@ -200,13 +199,13 @@ class _BiometricPageState extends State<BiometricPage> {
     }
   }
 
-  double euclideanDistance(List<double> e1, List<double> e2) {
-    double sum = 0.0;
-    for (int i = 0; i < e1.length; i++) {
-      sum += pow((e1[i] - e2[i]), 2);
-    }
-    return sqrt(sum);
-  }
+  // double euclideanDistance(List<double> e1, List<double> e2) {
+  //   double sum = 0.0;
+  //   for (int i = 0; i < e1.length; i++) {
+  //     sum += pow((e1[i] - e2[i]), 2);
+  //   }
+  //   return sqrt(sum);
+  // }
 
   double manhattanDistance(List<double> e1, List<double> e2) {
     double sum = 0.0;
@@ -235,56 +234,21 @@ class _BiometricPageState extends State<BiometricPage> {
   }
 
   Future<void> _detectAndCropFace(XFile image) async {
+    final totalTime = Stopwatch()..start();
+
     final inputImage = InputImage.fromFilePath(image.path);
     final faces = await _faceDetector.processImage(inputImage);
 
     if (faces.isNotEmpty) {
       final face = faces.first;
       final croppedFace = await _cropFace(image.path, face.boundingBox);
-      setState(() {
-        _croppedFace = croppedFace;
-      });
 
-      final Stopwatch extractionTime = Stopwatch()..start();
-
-      final embeddings = await _getFaceEmbeddings(_croppedFace!);
-      extractionTime.stop();
-      // debugPrint(
-      //     'Time taken for Extraction: ${extractionTime.elapsedMicroseconds} µs');
-
-      debugPrint('Time taken for Extraction: '
-          '${extractionTime.elapsedMicroseconds} µs | '
-          '${extractionTime.elapsedMilliseconds} ms | '
-          '${(extractionTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
-      // debugPrint(embeddings.toString());
-
+      final embeddings = await _getFaceEmbeddings(croppedFace);
       var pegawaiBox = Hive.box('pegawai');
 
       // String idPegawai = pegawaiBox.get('id_pegawai');
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
 
-      // debugPrint(faceEmbeddings.toString());
-
-      final Stopwatch localCalculation = Stopwatch()..start();
-      List<double> distances = [];
-
-      for (int i = 0; i < faceEmbeddings.length; i++) {
-        List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
-        double distance = euclideanDistance(embeddings, storedEmbedding);
-        distances.add(distance);
-      }
-
-      localCalculation.stop();
-      debugPrint('Local Euclidean Distance: $distances');
-      // debugPrint(
-      //     'Time taken for Local Euclidean Distance: ${localCalculation2.elapsedMicroseconds} µs');
-      debugPrint('Time taken for Local Euclidean Distance: '
-          '${localCalculation.elapsedMicroseconds} µs | '
-          '${localCalculation.elapsedMilliseconds} ms | '
-          '${(localCalculation.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
-      debugPrint('Semua jarak kedekatan: $distances');
-
-      final Stopwatch localCalculation2 = Stopwatch()..start();
       List<double> distances2 = [];
 
       for (int i = 0; i < faceEmbeddings.length; i++) {
@@ -292,16 +256,6 @@ class _BiometricPageState extends State<BiometricPage> {
         double distance = manhattanDistance(embeddings, storedEmbedding);
         distances2.add(distance);
       }
-
-      localCalculation2.stop();
-      debugPrint('Local Manhattan Distance: $distances2');
-      // debugPrint(
-      //     'Time taken for Local Euclidean Distance: ${localCalculation2.elapsedMicroseconds} µs');
-      debugPrint('Time taken for Local Manhttan Distance: '
-          '${localCalculation2.elapsedMicroseconds} µs | '
-          '${localCalculation2.elapsedMilliseconds} ms | '
-          '${(localCalculation2.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
-      debugPrint('Semua jarak kedekatan: $distances');
 
       // Cek apakah ada jarak di bawah threshold (misal 7)
       const double threshold = 7;
@@ -319,17 +273,12 @@ class _BiometricPageState extends State<BiometricPage> {
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.put('face_status', value);
 
-      // final Stopwatch cloudCalculation = Stopwatch()..start();
+      totalTime.stop();
+      final verificationTime = '${totalTime.elapsedMicroseconds} µs | '
+          '${totalTime.elapsedMilliseconds} ms | '
+          '${(totalTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s';
 
-      // await verifyFace(idPegawai.toString(), embeddings);
-
-      // debugPrint('Cloud Euclidean Distance: $cloudCalculation');
-      // debugPrint(
-      //     'Time taken for Cloud Euclidean Distance: ${cloudCalculation.elapsedMicroseconds} µs');
-      // debugPrint('Time taken for Cloud Manhattan Distance: '
-      //     '${cloudCalculation.elapsedMicroseconds} µs | '
-      //     '${cloudCalculation.elapsedMilliseconds} ms | '
-      //     '${(cloudCalculation.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
+      await presensiBox.put('verification_time', verificationTime);
 
       if (mounted) {
         Navigator.pushReplacement(
@@ -351,13 +300,8 @@ class _BiometricPageState extends State<BiometricPage> {
     }
   }
 
-  Future<File> _cropFace(String imagePath, Rect boundingBox) async {
-    final Stopwatch totalTime = Stopwatch()..start();
-
-    final Stopwatch decodeTime = Stopwatch()..start();
+  Future<img.Image> _cropFace(String imagePath, Rect boundingBox) async {
     final originalImage = img.decodeImage(File(imagePath).readAsBytesSync());
-    decodeTime.stop();
-
     if (originalImage == null) {
       throw Exception("Error reading the original image");
     }
@@ -368,64 +312,26 @@ class _BiometricPageState extends State<BiometricPage> {
         boundingBox.width.toInt().clamp(0, originalImage.width - left);
     final int height =
         boundingBox.height.toInt().clamp(0, originalImage.height - top);
+    final cropped = img.copyCrop(originalImage, left, top, width, height);
 
-    final Stopwatch cropTime = Stopwatch()..start();
-    final croppedImage = img.copyCrop(originalImage, left, top, width, height);
-    cropTime.stop();
-
-    final Stopwatch writeTime = Stopwatch()..start();
-    final croppedFaceFile = File('${imagePath}_cropped.png')
-      ..writeAsBytesSync(img.encodePng(croppedImage));
-    writeTime.stop();
-
-    totalTime.stop();
-
-    debugPrint(
-        '⏱️ Decode time: ${decodeTime.elapsedMicroseconds} µs | ${decodeTime.elapsedMilliseconds} ms');
-    debugPrint(
-        '✂️ Crop time: ${cropTime.elapsedMicroseconds} µs | ${cropTime.elapsedMilliseconds} ms');
-    debugPrint(
-        '💾 Write time: ${writeTime.elapsedMicroseconds} µs | ${writeTime.elapsedMilliseconds} ms');
-    debugPrint(
-        '⏳ Total _cropFace time: ${totalTime.elapsedMicroseconds} µs | ${totalTime.elapsedMilliseconds} ms');
-
-    return croppedFaceFile;
+    return cropped;
   }
 
-  Future<List<double>> _getFaceEmbeddings(File faceImage) async {
-    final Stopwatch totalTime = Stopwatch()..start();
-
-    final Stopwatch loadTime = Stopwatch()..start();
+  Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
     Float32List input = await _loadAndNormalizeImage(faceImage);
-    loadTime.stop();
 
     final Stopwatch reshapeTime = Stopwatch()..start();
     var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
     reshapeTime.stop();
 
-    final Stopwatch runTime = Stopwatch()..start();
     var output =
         List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
     _interpreter?.run(reshapedInput, output);
-    runTime.stop();
-
-    totalTime.stop();
-
-    // Debug output
-    debugPrint(
-        '📦 Load & normalize time: ${loadTime.elapsedMicroseconds} µs | ${loadTime.elapsedMilliseconds} ms');
-    debugPrint(
-        '🔁 Reshape time: ${reshapeTime.elapsedMicroseconds} µs | ${reshapeTime.elapsedMilliseconds} ms');
-    debugPrint(
-        '🧠 Interpreter run time: ${runTime.elapsedMicroseconds} µs | ${runTime.elapsedMilliseconds} ms');
-    debugPrint(
-        '⏳ Total embedding time: ${totalTime.elapsedMicroseconds} µs | ${totalTime.elapsedMilliseconds} ms');
 
     return output[0];
   }
 
-  Future<Float32List> _loadAndNormalizeImage(File faceImage) async {
-    final image = img.decodeImage(faceImage.readAsBytesSync())!;
+  Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
     final resizedImage = img.copyResize(image, width: 112, height: 112);
 
     final pixels = resizedImage.getBytes(format: img.Format.rgb);
