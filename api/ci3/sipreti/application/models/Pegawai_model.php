@@ -24,10 +24,10 @@ class Pegawai_model extends CI_Model
 
 	// get data by id
 	function get_by_id($id)
- 	{
- 		$this->db->where($this->id, $id);
- 		return $this->db->get($this->table)->row();
- 	}
+	{
+		$this->db->where($this->id, $id);
+		return $this->db->get($this->table)->row();
+	}
 
 	// get data by id api
 	public function get_by_id_api($id)
@@ -39,8 +39,7 @@ class Pegawai_model extends CI_Model
         unit_kerja.alamat, 
         unit_kerja.lattitude, 
         unit_kerja.longitude,
-        radius_absen.ukuran, 
-        radius_absen.satuan
+        radius_absen.ukuran,
     ');
 		$this->db->from('pegawai');
 		$this->db->join('jabatan', 'jabatan.id_jabatan = pegawai.id_jabatan', 'left');
@@ -87,13 +86,26 @@ class Pegawai_model extends CI_Model
 	// get data with limit and search
 	public function get_limit_data($limit, $start = 0, $q = NULL, $onlyActive = FALSE)
 	{
-		$this->db->or_like('nama', $q);
-		if ($onlyActive) {
-			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
+		// Pilih kolom yang dibutuhkan dari tabel pegawai, jabatan, dan unit_kerja
+		$this->db->select('pegawai.*, jabatan.nama_jabatan, unit_kerja.nama_unit_kerja');
+		$this->db->from($this->table);
+
+		$this->db->join('jabatan', 'pegawai.id_jabatan = jabatan.id_jabatan', 'left');
+		$this->db->join('unit_kerja', 'pegawai.id_unit_kerja = unit_kerja.id_unit_kerja', 'left');
+
+		if (!empty($q)) {
+			$this->db->like('pegawai.nama', $q);
 		}
+
+		if ($onlyActive) {
+			$this->db->where('(pegawai.deleted_at IS NULL OR pegawai.deleted_at = "")');
+		}
+
 		$this->db->limit($limit, $start);
-		return $this->db->get($this->table)->result();
+
+		return $this->db->get()->result();
 	}
+
 
 	// insert data
 	function insert($data)
@@ -127,6 +139,7 @@ class Pegawai_model extends CI_Model
 			return null;
 		}
 	}
+
 }
 
 /* End of file Pegawai_model.php */

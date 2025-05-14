@@ -9,6 +9,9 @@ class Pegawai extends CI_Controller
 	{
 		parent::__construct();
 		$this->load->model('Pegawai_model');
+		$this->load->model('Jabatan_model');
+		$this->load->model('Unit_kerja_model');
+
 		$this->load->library('form_validation');
 	}
 
@@ -54,9 +57,8 @@ class Pegawai extends CI_Controller
 				'nip' => $row->nip,
 				'nama' => $row->nama,
 				'url_foto' => $row->url_foto,
-				'created_at' => $row->created_at,
-				'updated_at' => $row->updated_at,
-				'deleted_at' => $row->deleted_at,
+				'jabatan_options' => $this->Jabatan_model->get_all(),
+				'unit_kerja_options' => $this->Unit_kerja_model->get_all(),
 			);
 			$this->load->view('pegawai/pegawai_read', $data);
 		} else {
@@ -75,27 +77,19 @@ class Pegawai extends CI_Controller
 				'nip' => $row['nip'],
 				'nama' => $row['nama'],
 				'url_foto' => $row['url_foto'],
-				// 'id_jabatan' => $row['id_jabatan'],
 				'nama_jabatan' => $row['nama_jabatan'],
 
 				// Data Unit Kerja
-				// 'id_unit_kerja' => $row['id_unit_kerja'],
 				'nama_unit_kerja' => $row['nama_unit_kerja'],
 				'alamat_unit_kerja' => $row['alamat'],
 				'lattitude' => $row['lattitude'],
 				'longitude' => $row['longitude'],
 
 				// Data Radius Absen
-				// 'id_radius' => $row['id_radius'],
 				'ukuran_radius' => $row['ukuran'],
-				'satuan_radius' => $row['satuan'],
 
 				// Data Face Embeddings sebagai array
 				'face_embeddings' => $row['face_embeddings'],
-
-				// 'created_at' => $row['created_at'],
-				// 'updated_at' => $row['updated_at'],
-				// 'deleted_at' => $row['deleted_at'],
 			);
 
 			header('Content-Type: application/json');
@@ -118,6 +112,8 @@ class Pegawai extends CI_Controller
 			'nip' => set_value('nip'),
 			'nama' => set_value('nama'),
 			'url_foto' => set_value('url_foto'),
+			'jabatan_options' => $this->Jabatan_model->get_all(),
+			'unit_kerja_options' => $this->Unit_kerja_model->get_all(),
 		);
 		$this->load->view('pegawai/pegawai_form', $data);
 	}
@@ -129,12 +125,42 @@ class Pegawai extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->create();
 		} else {
+			$upload_path = './uploads/foto_pegawai/';
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0777, true);
+			}
+
+			$config['upload_path'] = $upload_path;
+			$config['allowed_types'] = 'jpg|jpeg|png';
+			$config['max_size'] = 2048; // 2MB
+			$config['encrypt_name'] = FALSE;
+
+			$foto = null;
+			if (!empty($_FILES['url_foto']['name'])) {
+				$extension = pathinfo($_FILES['url_foto']['name'], PATHINFO_EXTENSION);
+				$original_name = str_replace(' ', '_', pathinfo($_FILES['url_foto']['name'], PATHINFO_FILENAME));
+				$new_filename = date('YmdHis') . '_' . $original_name;
+				$config['file_name'] = $new_filename;
+
+				$this->load->library('upload', $config);
+				$this->upload->initialize($config);
+
+				if ($this->upload->do_upload('url_foto')) {
+					$upload_data = $this->upload->data();
+					$foto = $upload_data['file_name'];
+				} else {
+					$this->session->set_flashdata('message', $this->upload->display_errors());
+					redirect(site_url('pegawai/create'));
+					return;
+				}
+			}
+
 			$data = array(
 				'id_jabatan' => $this->input->post('id_jabatan', TRUE),
 				'id_unit_kerja' => $this->input->post('id_unit_kerja', TRUE),
 				'nip' => $this->input->post('nip', TRUE),
 				'nama' => $this->input->post('nama', TRUE),
-				'url_foto' => $this->input->post('url_foto', TRUE),
+				'url_foto' => $foto,
 				'created_at' => date('Y-m-d H:i:s'),
 				'updated_at' => NULL,
 				'deleted_at' => NULL,
@@ -160,6 +186,8 @@ class Pegawai extends CI_Controller
 				'nip' => set_value('nip', $row->nip),
 				'nama' => set_value('nama', $row->nama),
 				'url_foto' => set_value('url_foto', $row->url_foto),
+				'jabatan_options' => $this->Jabatan_model->get_all(),
+				'unit_kerja_options' => $this->Unit_kerja_model->get_all(),
 			);
 			$this->load->view('pegawai/pegawai_form', $data);
 		} else {
@@ -175,12 +203,48 @@ class Pegawai extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->update($this->input->post('id_pegawai', TRUE));
 		} else {
+			$upload_path = './uploads/foto_pegawai/';
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0777, true); // Buat folder jika belum ada
+			}
+
+			$config['upload_path'] = $upload_path;
+			$config['allowed_types'] = 'jpg|jpeg|png';
+			$config['max_size'] = 2048; // 2MB
+			$config['encrypt_name'] = FALSE;
+
+			$foto = $this->input->post('existing_foto');
+
+			if (!empty($_FILES['url_foto']['name'])) {
+				$extension = pathinfo($_FILES['url_foto']['name'], PATHINFO_EXTENSION);
+				$original_name = str_replace(' ', '_', pathinfo($_FILES['url_foto']['name'], PATHINFO_FILENAME));
+				$new_filename = date('YmdHis') . '_' . $original_name . '.' . $extension;
+				$config['file_name'] = $new_filename;
+
+				$this->load->library('upload', $config);
+				$this->upload->initialize($config);
+
+				if ($this->upload->do_upload('url_foto')) {
+					// Hapus file lama jika ada
+					if (!empty($foto) && file_exists($upload_path . $foto)) {
+						unlink($upload_path . $foto);
+					}
+
+					$upload_data = $this->upload->data();
+					$foto = $upload_data['file_name'];
+				} else {
+					$this->session->set_flashdata('message', $this->upload->display_errors());
+					$this->update($this->input->post('id_pegawai', TRUE));
+					return;
+				}
+			}
+
 			$data = array(
 				'id_jabatan' => $this->input->post('id_jabatan', TRUE),
 				'id_unit_kerja' => $this->input->post('id_unit_kerja', TRUE),
 				'nip' => $this->input->post('nip', TRUE),
 				'nama' => $this->input->post('nama', TRUE),
-				'url_foto' => $this->input->post('url_foto', TRUE),
+				'url_foto' => $foto,
 				'updated_at' => date('Y-m-d H:i:s'),
 			);
 
@@ -254,7 +318,7 @@ class Pegawai extends CI_Controller
 		$this->form_validation->set_rules('id_unit_kerja', 'id unit kerja', 'trim|required');
 		$this->form_validation->set_rules('nip', 'nip', 'trim|required');
 		$this->form_validation->set_rules('nama', 'nama', 'trim|required');
-		$this->form_validation->set_rules('url_foto', 'url foto', 'trim|required');
+		// $this->form_validation->set_rules('url_foto', 'url foto', 'trim|required');
 
 		$this->form_validation->set_rules('id_pegawai', 'id_pegawai', 'trim');
 		$this->form_validation->set_error_delimiters('<span class="text-danger">', '</span>');
