@@ -18,6 +18,7 @@ class Unit_kerja_model extends CI_Model
 	// get all
 	function get_all()
 	{
+		$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
 		$this->db->order_by($this->id, $this->order);
 		return $this->db->get($this->table)->result();
 	}
@@ -42,12 +43,20 @@ class Unit_kerja_model extends CI_Model
 	// get data with limit and search
 	public function get_limit_data($limit, $start = 0, $q = NULL, $onlyActive = FALSE)
 	{
-		$this->db->or_like('nama_unit_kerja', $q);
-		if ($onlyActive) {
-			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
+		$this->db->select('unit_kerja.*, radius_absen.ukuran');
+		$this->db->from($this->table);
+		$this->db->join('radius_absen', 'radius_absen.id_radius = unit_kerja.id_radius', 'left');
+
+		if (!empty($q)) {
+			$this->db->like('unit_kerja.nama_unit_kerja', $q);
 		}
+
+		if ($onlyActive) {
+			$this->db->where('(unit_kerja.deleted_at IS NULL OR unit_kerja.deleted_at = "")');
+		}
+
 		$this->db->limit($limit, $start);
-		return $this->db->get($this->table)->result();
+		return $this->db->get()->result();
 	}
 
 	// insert data
