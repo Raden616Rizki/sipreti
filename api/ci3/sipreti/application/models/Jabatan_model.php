@@ -18,6 +18,7 @@ class Jabatan_model extends CI_Model
 	// get all
 	function get_all()
 	{
+		$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
 		$this->db->order_by($this->id, $this->order);
 		return $this->db->get($this->table)->result();
 	}

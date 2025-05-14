@@ -1,0 +1,188 @@
+.card-container {
+	margin-top: 96px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: relative;
+	z-index: 1;
+}
+
+.card {
+	background-color: white;
+	border-radius: 10px;
+	width: 400px;
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+}
+
+.card-header {
+	background-color: #4caf50;
+	color: white;
+	padding: 16px;
+	font-size: 16px;
+	font-weight: bold;
+	text-align: left;
+	margin-bottom: 10px;
+}
+
+.form-group {
+	padding: 5px 20px;
+	font-size: 12px;
+}
+
+.form-group label {
+	display: block;
+	font-weight: bold;
+	margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+	width: 100%;
+	padding: 8px;
+	font-size: 12px;
+	border: 1px solid #888;
+	border-radius: 6px;
+	font-family: inherit;
+}
+
+.form-group textarea {
+	resize: vertical;
+}
+
+.form-actions {
+	display: flex;
+	justify-content: right;
+	gap: 10px;
+	padding-right: 20px;
+	padding-bottom: 10px;
+}
+
+.btn-cancel {
+	background-color: #fff;
+	border: 1px solid #b100b7;
+	color: #b100b7;
+	padding: 8px 20px;
+	font-size: 12px;
+	border-radius: 6px;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+.btn-save {
+	background-color: #b100b7;
+	color: #fff;
+	border: none;
+	padding: 8px 20px;
+	font-size: 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.btn-cancel:hover,
+.btn-save:hover {
+	opacity: 0.9;
+}
+
+.error-text {
+	color: red;
+	font-weight: normal;
+	font-size: 12px;
+	display: block;
+	margin-top: 5px;
+}
+
+.modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.4);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 9999;
+}
+
+.modal-content {
+	background-color: white;
+	padding: 20px;
+	border-radius: 10px;
+	width: 300px;
+	text-align: left;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-actions {
+	margin-top: 15px;
+	justify-content: right;
+}
+
+.label-with-icon {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 5px;
+}
+
+.label-with-icon label {
+	font-weight: bold;
+	margin: 0;
+}
+
+.icon-map {
+	color: #fff;
+	background-color: #4caf50;
+	border-radius: 4px;
+	padding: 6px;
+	cursor: pointer;
+	margin-bottom: 4px;
+}
+
+.icon-map i {
+	font-size: 16px;
+}
+
+.form-control {
+	width: 100%;
+	padding: 8px;
+	font-size: 12px;
+	border: 1px solid #888;
+	border-radius: 6px;
+	resize: vertical;
+	font-family: inherit;
+}
+
+.profile-container {
+	position: relative;
+	width: 120px;
+	margin: 20px auto;
+}
+
+.profile-img {
+	width: 120px;
+	height: 120px;
+	object-fit: cover;
+	border-radius: 50%;
+	border: 4px solid #eee;
+	background: #eee;
+}
+
+.edit-icon {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	background: #9c27b0;
+	color: white;
+	border-radius: 50%;
+	padding: 8px;
+	cursor: pointer;
+	border: 2px solid white;
+}
+
+input[type="file"] {
+	display: none;
+}

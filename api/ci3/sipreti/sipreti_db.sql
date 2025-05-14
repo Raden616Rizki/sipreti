@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 08, 2025 at 05:23 AM
--- Server version: 10.4.27-MariaDB
--- PHP Version: 7.4.33
+-- Waktu pembuatan: 14 Bulan Mei 2025 pada 05.25
+-- Versi server: 10.4.27-MariaDB
+-- Versi PHP: 7.4.33
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,7 +24,7 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `jabatan`
+-- Struktur dari tabel `jabatan`
 --
 
 CREATE TABLE `jabatan` (
@@ -36,22 +36,26 @@ CREATE TABLE `jabatan` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `jabatan`
+-- Dumping data untuk tabel `jabatan`
 --
 
 INSERT INTO `jabatan` (`id_jabatan`, `nama_jabatan`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, 'Guru SMP Negeri', '2025-03-11 12:09:36', '2025-03-11 18:10:55', '2025-03-11 12:10:55'),
-(2, 'Administrasi', '2025-03-11 12:10:06', '2025-03-11 18:10:06', NULL),
+(2, 'Administrasi', '2025-03-11 12:10:06', '2025-05-12 00:50:59', NULL),
 (3, 'Dosen PTN', '2025-03-11 21:43:24', '2025-03-12 04:53:38', '2025-03-11 22:53:38'),
 (4, 'Pemberdayaan Masyarakat', '2025-03-11 22:18:48', '2025-03-12 04:21:11', '2025-03-11 22:21:11'),
 (5, 'Pranata Komputer', '2025-03-11 22:52:51', '2025-03-11 23:03:28', NULL),
 (6, 'Dosen', '2025-03-11 23:03:14', '2025-05-07 17:42:35', '2025-05-07 12:42:35'),
-(7, 'Guru', '2025-05-07 12:42:31', '2025-05-07 17:42:31', NULL);
+(7, 'Guru', '2025-05-07 12:42:31', '2025-05-07 17:42:31', NULL),
+(8, 'Koordinator', '2025-05-12 00:14:31', '2025-05-12 05:29:50', '2025-05-12 00:29:50'),
+(9, 'Kehutanan', '2025-05-12 00:14:41', '2025-05-12 05:27:06', '2025-05-12 00:27:06'),
+(10, 'QA Engineer', '2025-05-12 00:45:54', '2025-05-12 00:46:26', NULL),
+(11, 'Dosen', '2025-05-12 07:31:17', '2025-05-12 13:17:13', '2025-05-12 08:17:13');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `log_absensi`
+-- Struktur dari tabel `log_absensi`
 --
 
 CREATE TABLE `log_absensi` (
@@ -65,32 +69,36 @@ CREATE TABLE `log_absensi` (
   `nama_lokasi` varchar(255) DEFAULT NULL,
   `url_foto_presensi` varchar(255) DEFAULT NULL,
   `url_dokumen` varchar(255) DEFAULT NULL,
+  `waktu_verifikasi` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `log_absensi`
+-- Dumping data untuk tabel `log_absensi`
 --
 
-INSERT INTO `log_absensi` (`id_log_absensi`, `id_pegawai`, `jenis_absensi`, `check_mode`, `waktu_absensi`, `lattitude`, `longitude`, `nama_lokasi`, `url_foto_presensi`, `url_dokumen`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 2, 1, 0, '0000-00-00 00:00:00', 1, 1, '-', '-', '-', '2025-03-12 01:23:29', '2025-03-12 07:23:48', '2025-03-12 01:23:48'),
-(2, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', '-', NULL, '2025-03-18 20:50:26', '2025-03-19 02:51:02', '2025-03-18 20:51:02'),
-(3, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/4/foto_20250319_040321.jpg', 'http://localhost/sipreti/uploads/4/dokumen_20250319_040321.pdf', '2025-03-18 21:03:21', '2025-05-06 16:01:49', '2025-05-06 11:01:49'),
-(4, 3, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/3/foto_20250319_040333.jpg', 'http://localhost/sipreti/uploads/3/dokumen_20250319_040333.pdf', '2025-03-18 21:03:33', '2025-05-06 16:01:55', '2025-05-06 11:01:55'),
-(5, 3, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/3/foto_20250319_040438.jpg', NULL, '2025-03-18 21:04:38', '2025-03-19 03:04:38', NULL),
-(6, 3, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/3/foto_20250319_040529.jpg', NULL, '2025-03-18 21:05:29', '2025-03-19 03:05:29', NULL),
-(7, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/4/foto_20250501_193803.jpg', NULL, '2025-05-01 12:38:03', '2025-05-01 17:38:03', NULL),
-(8, 3, 0, 0, '2025-05-02 10:49:41', -7.943759, 112.6144014, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250502_055033.jpg', NULL, '2025-05-01 22:50:33', '2025-05-02 03:50:33', NULL),
-(9, 3, 0, 0, '2025-05-02 13:32:14', -7.9436309, 112.6144218, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250502_083317.jpg', NULL, '2025-05-02 01:33:17', '2025-05-02 06:33:17', NULL),
-(10, 3, 0, 0, '2025-05-02 13:40:13', -7.9436406, 112.6142068, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250502_084110.jpg', NULL, '2025-05-02 01:41:10', '2025-05-02 06:41:10', NULL),
-(11, 3, 0, 0, '2025-05-03 10:47:23', -7.9437105, 112.6143933, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250503_055031.jpg', NULL, '2025-05-02 22:50:31', '2025-05-03 03:50:31', NULL);
+INSERT INTO `log_absensi` (`id_log_absensi`, `id_pegawai`, `jenis_absensi`, `check_mode`, `waktu_absensi`, `lattitude`, `longitude`, `nama_lokasi`, `url_foto_presensi`, `url_dokumen`, `waktu_verifikasi`, `created_at`, `updated_at`, `deleted_at`) VALUES
+(1, 2, 1, 0, '0000-00-00 00:00:00', 1, 1, '-', '-', '-', NULL, '2025-03-12 01:23:29', '2025-03-12 07:23:48', '2025-03-12 01:23:48'),
+(2, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', '-', NULL, NULL, '2025-03-18 20:50:26', '2025-03-19 02:51:02', '2025-03-18 20:51:02'),
+(3, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/4/foto_20250319_040321.jpg', 'http://localhost/sipreti/uploads/4/dokumen_20250319_040321.pdf', NULL, '2025-03-18 21:03:21', '2025-05-06 16:01:49', '2025-05-06 11:01:49'),
+(4, 3, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/3/foto_20250319_040333.jpg', 'http://localhost/sipreti/uploads/3/dokumen_20250319_040333.pdf', NULL, '2025-03-18 21:03:33', '2025-05-06 16:01:55', '2025-05-06 11:01:55'),
+(5, 3, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/3/foto_20250319_040438.jpg', NULL, NULL, '2025-03-18 21:04:38', '2025-03-19 03:04:38', NULL),
+(6, 3, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/3/foto_20250319_040529.jpg', NULL, NULL, '2025-03-18 21:05:29', '2025-03-19 03:05:29', NULL),
+(7, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'http://localhost/sipreti/uploads/4/foto_20250501_193803.jpg', NULL, NULL, '2025-05-01 12:38:03', '2025-05-01 17:38:03', NULL),
+(8, 3, 0, 0, '2025-05-02 10:49:41', -7.943759, 112.6144014, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250502_055033.jpg', NULL, NULL, '2025-05-01 22:50:33', '2025-05-02 03:50:33', NULL),
+(9, 3, 0, 0, '2025-05-02 13:32:14', -7.9436309, 112.6144218, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250502_083317.jpg', NULL, NULL, '2025-05-02 01:33:17', '2025-05-02 06:33:17', NULL),
+(10, 3, 0, 0, '2025-05-02 13:40:13', -7.9436406, 112.6142068, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250502_084110.jpg', NULL, NULL, '2025-05-02 01:41:10', '2025-05-02 06:41:10', NULL),
+(11, 3, 0, 0, '2025-05-03 10:47:23', -7.9437105, 112.6143933, '3J47+JQG, 3J47+JQG, Jatimulyo, Kecamatan Lowokwaru, Jawa Timur, , Indonesia', 'http://localhost/sipreti/uploads/3/foto_20250503_055031.jpg', NULL, NULL, '2025-05-02 22:50:31', '2025-05-03 03:50:31', NULL),
+(12, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'foto_20250514_050725.jpg', 'dokumen_20250514_050725.pdf', NULL, '2025-05-13 22:07:25', '2025-05-14 03:07:25', NULL),
+(13, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', 'foto_20250514_052042.jpg', 'dokumen_20250514_052042.pdf', '123 ms', '2025-05-13 22:20:42', '2025-05-14 03:20:42', NULL),
+(14, 4, 0, 1, '2025-03-19 08:00:00', -6.2, 106.8166, 'Kantor Pusat', NULL, NULL, NULL, '2025-05-13 22:23:07', '2025-05-14 03:23:07', NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `pegawai`
+-- Struktur dari tabel `pegawai`
 --
 
 CREATE TABLE `pegawai` (
@@ -106,20 +114,23 @@ CREATE TABLE `pegawai` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `pegawai`
+-- Dumping data untuk tabel `pegawai`
 --
 
 INSERT INTO `pegawai` (`id_pegawai`, `id_jabatan`, `id_unit_kerja`, `nip`, `nama`, `url_foto`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, 2, 1, '1929182832', 'Jonathan Rizki', '-', '2025-03-12 00:54:26', '2025-03-12 06:55:21', '2025-03-12 00:55:21'),
 (2, 1, 1, '1928192819', 'Budiyono', '-', '2025-03-12 00:54:51', '2025-05-06 09:30:36', '2025-05-06 04:30:36'),
-(3, 2, 1, '2141720064', 'Raden Rizki', '-', '2025-03-12 21:12:12', '2025-05-05 04:11:23', NULL),
+(3, 2, 1, '2141720064', 'Raden Rizki', '20250513142515_photo_profile_(1).jpg', '2025-03-12 21:12:12', '2025-05-13 07:25:15', NULL),
 (4, 5, 1, '2141820192', 'Chico Kurniawan', '-', '2025-03-12 22:03:07', '2025-03-13 04:03:07', NULL),
-(5, 1, 1, '120', 'Budiyono', '-', '2025-05-06 11:04:52', '2025-05-06 16:04:52', NULL);
+(5, 7, 1, '21065758588', 'Budiyono', '-', '2025-05-06 11:04:52', '2025-05-13 06:37:46', NULL),
+(24, 10, 5, '1929182831', 'Steven', '', '2025-05-13 06:34:31', '2025-05-13 12:22:39', '2025-05-13 07:22:39'),
+(25, 7, 5, '21065758589', 'Jonathan Rizki', '20250513141615_WhatsApp_Image_2025-05-06_at_14_57_36.jpeg', '2025-05-13 06:38:51', '2025-05-13 12:22:42', '2025-05-13 07:22:42'),
+(26, 7, 5, '119321', 'Steven', '20250513142321_WhatsApp_Image_2025-05-06_at_14_57_36.jpeg', '2025-05-13 07:23:02', '2025-05-13 07:23:21', NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `radius_absen`
+-- Struktur dari tabel `radius_absen`
 --
 
 CREATE TABLE `radius_absen` (
@@ -131,19 +142,24 @@ CREATE TABLE `radius_absen` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `radius_absen`
+-- Dumping data untuk tabel `radius_absen`
 --
 
 INSERT INTO `radius_absen` (`id_radius`, `ukuran`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, 100, '2025-03-11 23:55:21', '2025-03-12 05:55:21', NULL),
 (2, 60, '2025-03-11 23:56:17', '2025-03-12 05:56:41', '2025-03-11 23:56:41'),
 (3, 50, '2025-03-12 00:26:32', '2025-03-12 06:26:32', NULL),
-(4, 60, '2025-03-12 00:59:48', '2025-03-12 06:59:48', NULL);
+(4, 60, '2025-03-12 00:59:48', '2025-05-12 12:33:22', '2025-05-12 07:33:22'),
+(5, 1024, '2025-05-12 07:28:28', '2025-05-12 12:28:28', NULL),
+(6, 2049, '2025-05-12 07:42:33', '2025-05-12 12:42:46', '2025-05-12 07:42:46'),
+(7, 120, '2025-05-12 08:04:21', '2025-05-12 13:04:24', '2025-05-12 08:04:24'),
+(8, 657765, '2025-05-12 08:11:22', '2025-05-12 13:11:27', '2025-05-12 08:11:27'),
+(9, 0, '2025-05-12 08:13:52', '2025-05-12 13:13:57', '2025-05-12 08:13:57');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `unit_kerja`
+-- Struktur dari tabel `unit_kerja`
 --
 
 CREATE TABLE `unit_kerja` (
@@ -159,17 +175,20 @@ CREATE TABLE `unit_kerja` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `unit_kerja`
+-- Dumping data untuk tabel `unit_kerja`
 --
 
 INSERT INTO `unit_kerja` (`id_unit_kerja`, `id_radius`, `nama_unit_kerja`, `alamat`, `lattitude`, `longitude`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 1, 'Politeknik Negeri Malang', 'Jl. Soekarno Hatta No.9, Jatimulyo, Kec. Lowokwaru, Kota Malang, Jawa Timur 65141, Indonesia', -7.9437612, 112.6143654, '2025-03-12 00:34:03', '2025-03-12 00:34:23', NULL),
-(2, 3, 'Politeknik Negeri Malang', '-', 1, 1, '2025-03-12 00:34:53', '2025-03-12 06:35:00', '2025-03-12 00:35:00');
+(1, 5, 'Politeknik Negeri Malang', 'Politeknik Negeri Malang, 9, Jalan Soekarno Hatta, Penanggungan, Kota Malang, Jawa Timur, Jawa, 65141, Indonesia', -7.9472259, 112.6167388, '2025-03-12 00:34:03', '2025-05-12 22:24:31', NULL),
+(2, 3, 'Politeknik Negeri Malang', '-', 1, 1, '2025-03-12 00:34:53', '2025-03-12 06:35:00', '2025-03-12 00:35:00'),
+(3, 1, 'fasdfa', 'fasdfa', -7.9437612, 112.6143654, '2025-05-12 09:36:37', '2025-05-12 14:36:40', '2025-05-12 09:36:40'),
+(4, 3, 'Politeknik Negeri Malang', 'Jl. Soekarno Hatta No.9, Jatimulyo, Kec. Lowokwaru, Kota Malang, Jawa Timur 65141, Indonesia', -7.9437612, 112.6143654, '2025-05-12 09:54:05', '2025-05-12 15:01:03', '2025-05-12 10:01:03'),
+(5, 5, 'Taman Krida', 'Perumahan Griya Shanta Blok N, Tulusrejo, Kota Malang, Jawa Timur, Jawa, 65142, Indonesia', -7.9427011, 112.6225658, '2025-05-12 11:57:32', '2025-05-12 16:57:32', NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user_android`
+-- Struktur dari tabel `user_android`
 --
 
 CREATE TABLE `user_android` (
@@ -187,7 +206,7 @@ CREATE TABLE `user_android` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `user_android`
+-- Dumping data untuk tabel `user_android`
 --
 
 INSERT INTO `user_android` (`id_user_android`, `id_pegawai`, `username`, `password`, `email`, `no_hp`, `valid_hp`, `imei`, `created_at`, `updated_at`, `deleted_at`) VALUES
@@ -196,7 +215,7 @@ INSERT INTO `user_android` (`id_user_android`, `id_pegawai`, `username`, `passwo
 -- --------------------------------------------------------
 
 --
--- Table structure for table `vektor_pegawai`
+-- Struktur dari tabel `vektor_pegawai`
 --
 
 CREATE TABLE `vektor_pegawai` (
@@ -210,7 +229,7 @@ CREATE TABLE `vektor_pegawai` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `vektor_pegawai`
+-- Dumping data untuk tabel `vektor_pegawai`
 --
 
 INSERT INTO `vektor_pegawai` (`id_vektor_pegawai`, `id_pegawai`, `face_embeddings`, `url_foto`, `created_at`, `updated_at`, `deleted_at`) VALUES
@@ -225,20 +244,20 @@ INSERT INTO `vektor_pegawai` (`id_vektor_pegawai`, `id_pegawai`, `face_embedding
 --
 
 --
--- Indexes for table `jabatan`
+-- Indeks untuk tabel `jabatan`
 --
 ALTER TABLE `jabatan`
   ADD PRIMARY KEY (`id_jabatan`);
 
 --
--- Indexes for table `log_absensi`
+-- Indeks untuk tabel `log_absensi`
 --
 ALTER TABLE `log_absensi`
   ADD PRIMARY KEY (`id_log_absensi`),
   ADD KEY `id_pegawai` (`id_pegawai`);
 
 --
--- Indexes for table `pegawai`
+-- Indeks untuk tabel `pegawai`
 --
 ALTER TABLE `pegawai`
   ADD PRIMARY KEY (`id_pegawai`),
@@ -247,20 +266,20 @@ ALTER TABLE `pegawai`
   ADD KEY `id_unit_kerja` (`id_unit_kerja`);
 
 --
--- Indexes for table `radius_absen`
+-- Indeks untuk tabel `radius_absen`
 --
 ALTER TABLE `radius_absen`
   ADD PRIMARY KEY (`id_radius`);
 
 --
--- Indexes for table `unit_kerja`
+-- Indeks untuk tabel `unit_kerja`
 --
 ALTER TABLE `unit_kerja`
   ADD PRIMARY KEY (`id_unit_kerja`),
   ADD KEY `id_radius` (`id_radius`);
 
 --
--- Indexes for table `user_android`
+-- Indeks untuk tabel `user_android`
 --
 ALTER TABLE `user_android`
   ADD PRIMARY KEY (`id_user_android`),
@@ -269,89 +288,89 @@ ALTER TABLE `user_android`
   ADD UNIQUE KEY `email` (`email`);
 
 --
--- Indexes for table `vektor_pegawai`
+-- Indeks untuk tabel `vektor_pegawai`
 --
 ALTER TABLE `vektor_pegawai`
   ADD PRIMARY KEY (`id_vektor_pegawai`),
   ADD KEY `id_pegawai` (`id_pegawai`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT untuk tabel yang dibuang
 --
 
 --
--- AUTO_INCREMENT for table `jabatan`
+-- AUTO_INCREMENT untuk tabel `jabatan`
 --
 ALTER TABLE `jabatan`
-  MODIFY `id_jabatan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_jabatan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
--- AUTO_INCREMENT for table `log_absensi`
+-- AUTO_INCREMENT untuk tabel `log_absensi`
 --
 ALTER TABLE `log_absensi`
-  MODIFY `id_log_absensi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id_log_absensi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
--- AUTO_INCREMENT for table `pegawai`
+-- AUTO_INCREMENT untuk tabel `pegawai`
 --
 ALTER TABLE `pegawai`
-  MODIFY `id_pegawai` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_pegawai` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
--- AUTO_INCREMENT for table `radius_absen`
+-- AUTO_INCREMENT untuk tabel `radius_absen`
 --
 ALTER TABLE `radius_absen`
-  MODIFY `id_radius` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_radius` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
--- AUTO_INCREMENT for table `unit_kerja`
+-- AUTO_INCREMENT untuk tabel `unit_kerja`
 --
 ALTER TABLE `unit_kerja`
-  MODIFY `id_unit_kerja` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_unit_kerja` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
--- AUTO_INCREMENT for table `user_android`
+-- AUTO_INCREMENT untuk tabel `user_android`
 --
 ALTER TABLE `user_android`
   MODIFY `id_user_android` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
--- AUTO_INCREMENT for table `vektor_pegawai`
+-- AUTO_INCREMENT untuk tabel `vektor_pegawai`
 --
 ALTER TABLE `vektor_pegawai`
   MODIFY `id_vektor_pegawai` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
--- Constraints for dumped tables
+-- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
 --
 
 --
--- Constraints for table `log_absensi`
+-- Ketidakleluasaan untuk tabel `log_absensi`
 --
 ALTER TABLE `log_absensi`
   ADD CONSTRAINT `log_absensi_ibfk_1` FOREIGN KEY (`id_pegawai`) REFERENCES `pegawai` (`id_pegawai`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `pegawai`
+-- Ketidakleluasaan untuk tabel `pegawai`
 --
 ALTER TABLE `pegawai`
   ADD CONSTRAINT `pegawai_ibfk_1` FOREIGN KEY (`id_jabatan`) REFERENCES `jabatan` (`id_jabatan`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `pegawai_ibfk_2` FOREIGN KEY (`id_unit_kerja`) REFERENCES `unit_kerja` (`id_unit_kerja`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `unit_kerja`
+-- Ketidakleluasaan untuk tabel `unit_kerja`
 --
 ALTER TABLE `unit_kerja`
   ADD CONSTRAINT `unit_kerja_ibfk_1` FOREIGN KEY (`id_radius`) REFERENCES `radius_absen` (`id_radius`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `user_android`
+-- Ketidakleluasaan untuk tabel `user_android`
 --
 ALTER TABLE `user_android`
   ADD CONSTRAINT `user_android_ibfk_1` FOREIGN KEY (`id_pegawai`) REFERENCES `pegawai` (`id_pegawai`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `vektor_pegawai`
+-- Ketidakleluasaan untuk tabel `vektor_pegawai`
 --
 ALTER TABLE `vektor_pegawai`
   ADD CONSTRAINT `vektor_pegawai_ibfk_1` FOREIGN KEY (`id_pegawai`) REFERENCES `pegawai` (`id_pegawai`) ON DELETE CASCADE ON UPDATE CASCADE;
