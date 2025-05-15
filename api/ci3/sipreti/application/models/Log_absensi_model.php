@@ -79,6 +79,24 @@ class Log_absensi_model extends CI_Model
 		$this->db->delete($this->table);
 	}
 
+	// get all data by id_pegawai
+	public function get_rekap_absensi($id_pegawai)
+	{
+		$this->db->select("
+			DATE(waktu_absensi) AS tanggal,
+			DAYNAME(waktu_absensi) AS hari,
+			MIN(CASE WHEN check_mode = 0 THEN waktu_absensi END) AS jam_datang,
+			MIN(CASE WHEN check_mode = 1 THEN waktu_absensi END) AS jam_pulang,
+    	");
+		$this->db->from($this->table);
+		$this->db->where('id_pegawai', $id_pegawai);
+		$this->db->where('deleted_at IS NULL');
+		$this->db->group_by('DATE(waktu_absensi)');
+		$this->db->order_by('tanggal', 'DESC');
+
+		return $this->db->get()->result();
+	}
+
 }
 
 /* End of file Log_absensi_model.php */

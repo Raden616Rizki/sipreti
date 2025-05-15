@@ -76,7 +76,7 @@
 						<td style="max-width: 200px; word-break: break-word;"><?php echo $pegawai->nama_unit_kerja; ?></td>
 
 						<td class="action-buttons">
-							<a href="<?php echo site_url('log_absensi'); ?>"
+							<a href="<?php echo site_url('log_absensi/read_absensi_pegawai/'. $pegawai->id_pegawai); ?>"
 								class="btn-action view" style="font-size: 12px;">Rekap Absensi</i></a>
 						</td>
 					</tr>

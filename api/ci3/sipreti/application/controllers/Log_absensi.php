@@ -326,15 +326,35 @@ class Log_absensi extends CI_Controller
 			return;
 		}
 
-		$absensi = $this->log_absensi_model->get_limit_data(1000, 0, $id_pegawai, TRUE);
+		$rekap = $this->Log_absensi_model->get_rekap_absensi($id);
+
+		foreach ($rekap as &$r) {
+			$r->hari = $this->convert_day($r->hari);
+		}
 
 		$data = [
 			'pegawai' => $pegawai,
-			'absensi' => $absensi,
+			'absensi' => $rekap,
 		];
 
 		$this->load->view('log_absensi/rekap_absensi_pegawai', $data);
 	}
+
+	function convert_day($day)
+	{
+		$days = [
+			'Sunday' => 'Minggu',
+			'Monday' => 'Senin',
+			'Tuesday' => 'Selasa',
+			'Wednesday' => 'Rabu',
+			'Thursday' => 'Kamis',
+			'Friday' => 'Jumat',
+			'Saturday' => 'Sabtu'
+		];
+
+		return $days[$day] ?? $day;
+	}
+
 
 	public function _rules()
 	{

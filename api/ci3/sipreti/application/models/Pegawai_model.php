@@ -23,10 +23,14 @@ class Pegawai_model extends CI_Model
 	}
 
 	// get data by id
-	function get_by_id($id)
+	public function get_by_id($id)
 	{
-		$this->db->where($this->id, $id);
-		return $this->db->get($this->table)->row();
+		$this->db->select('pegawai.*, jabatan.nama_jabatan, unit_kerja.nama_unit_kerja');
+		$this->db->from($this->table);
+		$this->db->join('jabatan', 'jabatan.id_jabatan = pegawai.id_jabatan', 'left');
+		$this->db->join('unit_kerja', 'unit_kerja.id_unit_kerja = pegawai.id_unit_kerja', 'left');
+		$this->db->where('pegawai.' . $this->id, $id);
+		return $this->db->get()->row();
 	}
 
 	// get data by id api
