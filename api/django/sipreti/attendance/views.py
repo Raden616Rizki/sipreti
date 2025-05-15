@@ -4,10 +4,12 @@ import numpy as np
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import VektorPegawai
-from .face_verification.extraction import face_extraction, extract_folder_id
+from .face_verification.extraction import face_extraction_gdrive, extract_folder_id, face_extraction
 from voyager import Index, Space
 import time
 from scipy.spatial import distance
+import requests
+from django.conf import settings
 
 @csrf_exempt
 def upload_csv(request):
@@ -23,25 +25,37 @@ def upload_csv(request):
             if not id_pegawai or not folder_url:
                 continue
 
-            # Ekstraksi folder ID dari Google Drive URL
             folder_id = extract_folder_id(folder_url)
             if not folder_id:
                 print(f"URL folder tidak valid: {folder_url}")
                 continue
 
-            # Ekstraksi vektor wajah
-            vectors = face_extraction(folder_id, id_pegawai)
-            if vectors:
+            # Ambil vektor wajah dan gambar hasil cropping
+            results = face_extraction_gdrive(folder_id, id_pegawai)
+            if results:
+                vectors, originalImages = results
                 print(f"Berhasil mengekstrak {len(vectors)} vektor wajah untuk ID pegawai {id_pegawai}")
 
-                # Simpan ke database
-                for vector in vectors:
-                    VektorPegawai.objects.create(
-                        id_pegawai=id_pegawai,
-                        face_embeddings=json.dumps(vector),  # Simpan sebagai JSON string
-                        url_foto="-"
-                    )
-                print(f"Vektor wajah berhasil disimpan di database untuk ID pegawai {id_pegawai}")
+                for i, vector in enumerate(vectors):
+                    try:
+                        files = {
+                            'url_foto': originalImages[i] 
+                        }
+                        data = {
+                            'id_pegawai': id_pegawai,
+                            'face_embeddings': json.dumps(vector)
+                        }
+
+                        ci3_url = settings.CI3_API_URL
+                        response = requests.post(ci3_url, data=data, files=files)
+
+                        if response.status_code == 200:
+                            print(f"Data berhasil dikirim untuk ID {id_pegawai}, foto {i+1}")
+                        else:
+                            print(f"Error response dari CI3: {response.text}")
+
+                    except Exception as send_err:
+                        print(f"Gagal mengirim data ke CI3: {send_err}")
 
             else:
                 print(f"Tidak ada vektor wajah yang diekstrak untuk ID pegawai {id_pegawai}")
@@ -50,6 +64,44 @@ def upload_csv(request):
         return JsonResponse({'message': 'Data berhasil diproses'}, status=200)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@csrf_exempt
+def face_register(request):
+    if request.method == 'POST':
+        id_pegawai = request.POST.get('id_pegawai')
+        uploaded_file = request.FILES.get('uploaded_file')
+
+        if not id_pegawai or not uploaded_file:
+            return JsonResponse({'error': 'id_pegawai dan file foto wajib diisi'}, status=400)
+
+        try:
+            result = face_extraction(uploaded_file, id_pegawai)
+            if not result:
+                return JsonResponse({'error': 'Wajah tidak berhasil dideteksi'}, status=422)
+
+            vector, original_io = result
+            
+            files = {
+                'url_foto': original_io
+            }
+            data = {
+                'id_pegawai': id_pegawai,
+                'face_embeddings': json.dumps(vector)
+            }
+
+            ci3_url = settings.CI3_API_URL
+            response = requests.post(ci3_url, data=data, files=files)
+
+            if response.status_code == 200:
+                return JsonResponse({'message': 'Data berhasil dikirim ke CI3'}, status=200)
+            else:
+                return JsonResponse({'error': f"Error dari CI3: {response.text}"}, status=response.status_code)
+
+        except Exception as e:
+            return JsonResponse({'error': f'Gagal memproses: {e}'}, status=500)
+
+    return JsonResponse({'error': 'Metode harus POST'}, status=405)
+
 
 @csrf_exempt
 def face_verification(request):
@@ -72,18 +124,7 @@ def face_verification(request):
 
             # Konversi face embeddings dari JSON string ke numpy array
             embeddings = [np.array(json.loads(embedding), dtype=np.float32) for embedding in embeddings_data]
-            # num_dimensions = len(vektor_presensi)
-
-            # Buat index Voyager
-            # index = Index(Space.Euclidean, num_dimensions=num_dimensions)
-            # if embeddings:
-            #     index.add_items(np.array(embeddings))
-
-            # Query dengan vektor_presensi
-            # k = len(embeddings)
-            # neighbors, distances = index.query(vektor_presensi, k=k)
-            # distances = [float(d) for d in distances] 
-            # distances = [float(distance.euclidean(vektor_presensi, embedding)) for embedding in embeddings]
+        
             distances = [float(distance.cityblock(vektor_presensi, embedding)) for embedding in embeddings]
             
             # Cek apakah ada jarak di bawah 1 (threshold)
