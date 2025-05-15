@@ -47,7 +47,7 @@
 			<th>No</th>
 			<th>Id Pegawai</th>
 			<th>Face Embeddings</th>
-			<th>Url Foto</th>
+			<th>Foto</th>
 			<th>Action</th>
 		</tr><?php
 		foreach ($vektor_pegawai_data as $vektor_pegawai) {
@@ -56,7 +56,17 @@
 				<td width="80px"><?php echo ++$start ?></td>
 				<td><?php echo $vektor_pegawai->id_pegawai ?></td>
 				<td><?php echo $vektor_pegawai->face_embeddings ?></td>
-				<td><?php echo $vektor_pegawai->url_foto ?></td>
+				<td>
+					<?php
+					$foto_path = !empty($vektor_pegawai->url_foto)
+						? base_url('uploads/vektor_pegawai/'.$vektor_pegawai->id_pegawai.'/'. $vektor_pegawai->url_foto)
+						: base_url('assets/placeholder/default-profile.png');
+					$default_foto = base_url('assets/placeholder/default-profile.png');
+					?>
+					<img src="<?php echo $foto_path; ?>" alt="Foto Pegawai"
+						style="width: 128px"
+						onerror="this.onerror=null; this.src='<?php echo $default_foto; ?>';">
+				</td>
 				<td style="text-align:center" width="200px">
 					<?php
 					echo anchor(site_url('vektor_pegawai/read/' . $vektor_pegawai->id_vektor_pegawai), 'Read');

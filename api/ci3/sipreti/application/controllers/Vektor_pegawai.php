@@ -98,6 +98,81 @@ class Vektor_pegawai extends CI_Controller
 		}
 	}
 
+	public function create_api()
+	{
+		$this->_rules();
+
+		if ($this->form_validation->run() == FALSE) {
+			$response = array(
+				'status' => 400,
+				'message' => validation_errors()
+			);
+		} else {
+			$id_pegawai = $this->input->post('id_pegawai', TRUE);
+			$face_embeddings = $this->input->post('face_embeddings', TRUE);
+			$timestamp = date('Ymd_His');
+
+			// Direktori penyimpanan foto berdasarkan id_pegawai
+			$upload_path = './uploads/vektor_pegawai/' . $id_pegawai . '/';
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0777, true);
+			}
+
+			// Konfigurasi upload file
+			$config['upload_path'] = $upload_path;
+			$config['allowed_types'] = 'jpg|jpeg|png';
+			$config['max_size'] = 2048; // Maksimal 2MB
+			$this->load->library('upload', $config);
+
+			$url_foto = NULL;
+			$errors = [];
+
+			// Upload foto jika ada
+			if (!empty($_FILES['url_foto']['name'])) {
+				$foto_filename = $_FILES['url_foto']['name'];
+				$config['file_name'] = $foto_filename;
+				$this->upload->initialize($config);
+
+				if ($this->upload->do_upload('url_foto')) {
+					$url_foto = $foto_filename;
+				} else {
+					$errors[] = "Foto: " . $this->upload->display_errors('', '');
+				}
+			}
+
+			if (!empty($errors)) {
+				$response = array(
+					'status' => 400,
+					'message' => implode("; ", $errors)
+				);
+			} else {
+				$data = array(
+					'id_pegawai' => $id_pegawai,
+					'face_embeddings' => $face_embeddings,
+					'url_foto' => $url_foto,
+					'created_at' => date('Y-m-d H:i:s'),
+					'updated_at' => NULL,
+					'deleted_at' => NULL,
+				);
+
+				$this->Vektor_pegawai_model->insert($data);
+
+				$response = array(
+					'status' => 200,
+					'message' => 'Data vektor pegawai berhasil disimpan',
+					'data' => $data
+				);
+			}
+		}
+
+		// Output response JSON
+		$this->output
+			->set_content_type('application/json')
+			->set_status_header($response['status'])
+			->set_output(json_encode($response));
+	}
+
+
 	public function update($id)
 	{
 		$row = $this->Vektor_pegawai_model->get_by_id($id);
@@ -160,7 +235,6 @@ class Vektor_pegawai extends CI_Controller
 	{
 		$this->form_validation->set_rules('id_pegawai', 'id pegawai', 'trim|required');
 		$this->form_validation->set_rules('face_embeddings', 'face embeddings', 'trim|required');
-		$this->form_validation->set_rules('url_foto', 'url foto', 'trim|required');
 
 		$this->form_validation->set_rules('id_vektor_pegawai', 'id_vektor_pegawai', 'trim');
 		$this->form_validation->set_error_delimiters('<span class="text-danger">', '</span>');
