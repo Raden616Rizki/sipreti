@@ -76,7 +76,7 @@
 						<td style="max-width: 200px; word-break: break-word;"><?php echo $pegawai->nama_unit_kerja; ?></td>
 
 						<td class="action-buttons">
-							<a href="<?php echo site_url('log_absensi/read_absensi_pegawai/'. $pegawai->id_pegawai); ?>"
+							<a href="<?php echo site_url('log_absensi/read_absensi_pegawai/' . $pegawai->id_pegawai); ?>"
 								class="btn-action view" style="font-size: 12px;">Rekap Absensi</i></a>
 						</td>
 					</tr>
@@ -85,8 +85,10 @@
 		</table>
 
 		<div class="pagination-footer">
-			<div>Total Record: <strong><?php echo $total_rows; ?></strong></div>
-			<div><?php echo $pagination; ?></div>
+			<div>Total Record: <strong><?= $total_rows; ?></strong></div>
+			<div class="custom-pagination-wrapper">
+				<div><?php echo $pagination; ?></div>
+			</div>
 		</div>
 	</div>
 
@@ -94,5 +96,22 @@
 		&copy;2025 BKPSDM Kota Malang
 	</footer>
 </body>
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		const wrapper = document.querySelector('.custom-pagination-wrapper');
+
+		if (!wrapper) return;
+
+		const strongs = wrapper.querySelectorAll('strong');
+		strongs.forEach(strong => {
+			const activeText = strong.textContent.trim();
+			const activeLink = document.createElement('a');
+			activeLink.textContent = activeText;
+			activeLink.href = '#';
+			activeLink.className = 'active-page';
+			strong.replaceWith(activeLink);
+		});
+	});
+</script>
 
 </html>

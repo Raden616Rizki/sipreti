@@ -88,9 +88,12 @@
 		</table>
 
 		<div class="pagination-footer">
-			<div>Total Record: <strong><?php echo $total_rows; ?></strong></div>
-			<div><?php echo $pagination; ?></div>
+			<div>Total Record: <strong><?= $total_rows; ?></strong></div>
+			<div class="custom-pagination-wrapper">
+				<div><?php echo $pagination; ?></div>
+			</div>
 		</div>
+
 	</div>
 
 	<footer class="footer">
@@ -118,6 +121,22 @@
 	function closeModal() {
 		document.getElementById('confirmModal').style.display = 'none';
 	}
+
+	document.addEventListener('DOMContentLoaded', function () {
+		const wrapper = document.querySelector('.custom-pagination-wrapper');
+
+		if (!wrapper) return;
+
+		const strongs = wrapper.querySelectorAll('strong');
+		strongs.forEach(strong => {
+			const activeText = strong.textContent.trim();
+			const activeLink = document.createElement('a');
+			activeLink.textContent = activeText;
+			activeLink.href = '#';
+			activeLink.className = 'active-page';
+			strong.replaceWith(activeLink);
+		});
+	});
 
 	window.onclick = function (event) {
 		const modal = document.getElementById('confirmModal');

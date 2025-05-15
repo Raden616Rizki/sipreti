@@ -279,6 +279,43 @@ html {
 	font-size: 12px;
 }
 
+.custom-pagination-wrapper ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.custom-pagination-wrapper li {
+	display: inline;
+}
+
+.custom-pagination-wrapper a,
+.custom-pagination-wrapper .active-page {
+	padding: 4px 12px;
+	border: 2px solid #a5158c;
+	border-radius: 8px;
+	color: #a5158c;
+	text-decoration: none;
+	font-weight: bold;
+	transition: 0.3s;
+	background-color: white;
+}
+
+.custom-pagination-wrapper a:hover {
+	background-color: #a5158c;
+	color: white;
+}
+
+.custom-pagination-wrapper .active-page {
+	background-color: #a5158c;
+	color: white;
+	border-color: #a5158c;
+	pointer-events: none;
+}
+
 /* Modal */
 .modal {
 	display: none;
