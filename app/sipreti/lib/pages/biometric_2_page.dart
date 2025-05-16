@@ -28,7 +28,6 @@ class _Biometric2PageState extends State<Biometric2Page> {
     super.initState();
     _initializeCamera();
     _loadModel();
-    // _loadModel().then((_) => _warmUpModel());
     _faceDetector = FaceDetector(
       options: FaceDetectorOptions(
         enableClassification: true,
@@ -61,20 +60,6 @@ class _Biometric2PageState extends State<Biometric2Page> {
     }
   }
 
-  Future<void> _warmUpModel() async {
-    try {
-      final dummyInput = Float32List(112 * 112 * 3);
-      final reshaped =
-          dummyInput.buffer.asFloat32List().reshape([1, 112, 112, 3]);
-      final output =
-          List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
-
-      _interpreter?.run(reshaped, output);
-    } catch (e) {
-      debugPrint('Error during warm-up: $e');
-    }
-  }
-
   double manhattanDistance(List<double> e1, List<double> e2) {
     double sum = 0.0;
     for (int i = 0; i < e1.length; i++) {
@@ -92,6 +77,22 @@ class _Biometric2PageState extends State<Biometric2Page> {
       );
       try {
         final image = await _cameraController!.takePicture();
+        
+        // Mendapatkan path file
+        final filePath = image.path;
+        final file = File(filePath);
+
+        // Cek ekstensi file (format: jpg, png, dll)
+        final fileExtension =
+            filePath.split('.').last.toUpperCase(); // Misalnya: JPG, PNG
+
+        // Dapatkan ukuran file dalam byte
+        final fileSizeBytes = await file.length();
+        final fileSizeMB = fileSizeBytes / (1024 * 1024); // Konversi ke MB
+
+        debugPrint("File type: $fileExtension");
+        debugPrint("File size: ${fileSizeMB.toStringAsFixed(2)} MB");
+
         setState(() {
           capturedImage = image;
         });
@@ -103,88 +104,25 @@ class _Biometric2PageState extends State<Biometric2Page> {
     }
   }
 
-  // Future<void> _detectAndCropFace(XFile image) async {
-  //   final inputImage = InputImage.fromFilePath(image.path);
-  //   final faces = await _faceDetector.processImage(inputImage);
-
-  //   if (faces.isNotEmpty) {
-  //     final face = faces.first;
-  //     final img.Image croppedFace =
-  //         await _cropFace(image.path, face.boundingBox);
-  //     final embeddings = await _getFaceEmbeddings(croppedFace);
-
-  //     var pegawaiBox = Hive.box('pegawai');
-
-  //     List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
-
-  //     List<double> distances = [];
-
-  //     for (int i = 0; i < faceEmbeddings.length; i++) {
-  //       List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
-  //       double distance = manhattanDistance(embeddings, storedEmbedding);
-  //       distances.add(distance);
-  //     }
-
-  //     const double threshold = 7;
-  //     bool verifikasi = distances.any((d) => d < threshold);
-  //     int value = verifikasi ? 1 : 0;
-
-  //     debugPrint('Jarak Kedekatan: $distances');
-
-  //     final presensiBox = await Hive.openBox('presensi');
-  //     await presensiBox.put('face_status', value);
-
-  //     if (mounted) {
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(
-  //           builder: (context) => AttendancePage(
-  //             capturedImage: capturedImage,
-  //           ),
-  //         ),
-  //       );
-  //     }
-  //   } else {
-  //     _showCapturedImageDialog();
-  //   }
-  // }
-
   Future<void> _detectAndCropFace(XFile image) async {
-    final totalTime = Stopwatch()..start();
-
-    final step1 = Stopwatch()..start();
     final inputImage = InputImage.fromFilePath(image.path);
-    step1.stop();
-    debugPrint(
-        '[Step 1] InputImage.fromFilePath: ${step1.elapsedMilliseconds} ms');
 
-    final step2 = Stopwatch()..start();
+    final detectionTime = Stopwatch()..start();
     final faces = await _faceDetector.processImage(inputImage);
-    step2.stop();
-    debugPrint('[Step 2] Face detection: ${step2.elapsedMilliseconds} ms');
+    detectionTime.stop();
+    debugPrint(
+        'Time of Face detection: ${detectionTime.elapsedMilliseconds} ms');
 
     if (faces.isNotEmpty) {
-      final step3 = Stopwatch()..start();
       final face = faces.first;
+
       final croppedFace = await _cropFace(image.path, face.boundingBox);
-      step3.stop();
-      debugPrint('[Step 3] Crop face: ${step3.elapsedMilliseconds} ms');
-
-      final step4 = Stopwatch()..start();
       final embeddings = await _getFaceEmbeddings(croppedFace);
-      step4.stop();
-      debugPrint(
-          '[Step 4] Get face embeddings: ${step4.elapsedMilliseconds} ms');
 
-      final step5 = Stopwatch()..start();
       var pegawaiBox = Hive.box('pegawai');
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
-      step5.stop();
-      debugPrint(
-          '[Step 5] Load stored embeddings from Hive: ${step5.elapsedMilliseconds} ms');
-
-      final step6 = Stopwatch()..start();
       List<double> distances = [];
+
       for (int i = 0; i < faceEmbeddings.length; i++) {
         List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
         double distance = manhattanDistance(embeddings, storedEmbedding);
@@ -195,25 +133,11 @@ class _Biometric2PageState extends State<Biometric2Page> {
       String message =
           verifikasi ? "Wajah terverifikasi" : "Wajah tidak terverifikasi";
       int value = verifikasi ? 1 : 0;
-      step6.stop();
-      debugPrint(
-          '[Step 6] Compare embeddings & verify: ${step6.elapsedMilliseconds} ms');
       debugPrint('Jarak Kedekatan: $distances');
       debugPrint('message: $message');
       debugPrint('Value: $value');
-
-      final step7 = Stopwatch()..start();
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.put('face_status', value);
-      step7.stop();
-      debugPrint(
-          '[Step 7] Save result to Hive: ${step7.elapsedMilliseconds} ms');
-
-      totalTime.stop();
-      debugPrint('[TOTAL] Face verification total time: '
-          '${totalTime.elapsedMicroseconds} µs | '
-          '${totalTime.elapsedMilliseconds} ms | '
-          '${(totalTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s');
 
       if (mounted) {
         Navigator.pushReplacement(
