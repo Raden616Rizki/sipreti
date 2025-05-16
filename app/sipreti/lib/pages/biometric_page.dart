@@ -43,10 +43,10 @@ class _BiometricPageState extends State<BiometricPage> {
   final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
 
   @override
-  void initState() async {
+  void initState() {
     super.initState();
-    await _initializeCamera();
-    await _loadModel();
+    _initializeCamera();
+    _loadModel();
     _faceDetector = FaceDetector(
       options: FaceDetectorOptions(
         enableClassification: true,

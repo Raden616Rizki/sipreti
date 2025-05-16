@@ -87,6 +87,19 @@ class _AttendancePageState extends State<AttendancePage> {
           dokumen: supportingDocument);
 
       if (mounted) Navigator.pop(context);
+
+      final dashboardBox = await Hive.openBox('dashboard');
+      if (checkMode == 0) {
+        await dashboardBox.put('checkin', jamAbsensi);
+      } else if (checkMode == 1) {
+        await dashboardBox.put('checkout', jamAbsensi);
+      } else {
+        debugPrint("Invalid check mode: $checkMode");
+      }
+
+      final tanggalPresensi = DateFormat('yyyy-MM-dd').format(waktuAbsensi);
+      await dashboardBox.put('tanggal_presensi', tanggalPresensi);
+
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.clear();
 

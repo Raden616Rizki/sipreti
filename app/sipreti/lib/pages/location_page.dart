@@ -30,10 +30,10 @@ class _LocationPageState extends State<LocationPage> {
   bool isProcessing = true;
 
   @override
-  void initState() async {
+  void initState() {
     super.initState();
-    await loadPegawaiData();
-    await _getCurrentLocation();
+    loadPegawaiData();
+    _getCurrentLocation();
 
     var pegawaiBox = Hive.box('pegawai');
     var presensiBox = Hive.box('presensi');

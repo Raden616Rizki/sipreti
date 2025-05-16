@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:sipreti/services/api_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -20,6 +21,9 @@ class DashboardPageState extends State<DashboardPage> {
   final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
   final ApiService _apiService = ApiService();
 
+  String checkin = '-';
+  String checkout = '-';
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +40,8 @@ class DashboardPageState extends State<DashboardPage> {
       namaJabatan = pegawaiBox.get('nama_jabatan');
       urlFoto = pegawaiBox.get('url_foto');
     });
+    initializeDateFormatting('id_ID', null);
+    _loadTodayAttendance();
   }
 
   Future<void> updatePegawaiData() async {
@@ -47,6 +53,7 @@ class DashboardPageState extends State<DashboardPage> {
 
     var pegawaiBox = Hive.box('pegawai');
     String idPegawai = pegawaiBox.get('id_pegawai');
+    await pegawaiBox.clear();
 
     Map<String, dynamic> dataPegawai = await _apiService.getPegawai(idPegawai);
 
@@ -56,7 +63,7 @@ class DashboardPageState extends State<DashboardPage> {
           SnackBar(content: Text(dataPegawai["message"])),
         );
       } else {
-        // await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
+        await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
         await pegawaiBox.put('nip', dataPegawai['nip']);
         await pegawaiBox.put('nama', dataPegawai['nama']);
         await pegawaiBox.put('url_foto', dataPegawai['url_foto']);
@@ -78,6 +85,25 @@ class DashboardPageState extends State<DashboardPage> {
           Navigator.pushNamed(context, '/');
         }
       }
+    }
+  }
+
+  Future<void> _loadTodayAttendance() async {
+    final dashboardBox = await Hive.openBox('dashboard');
+    final storedDate = dashboardBox.get('tanggal_presensi');
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    if (storedDate == today) {
+      setState(() {
+        checkin = dashboardBox.get('checkin', defaultValue: '-');
+        checkout = dashboardBox.get('checkout', defaultValue: '-');
+      });
+    } else {
+      setState(() {
+        checkin = '-';
+        checkout = '-';
+      });
+      debugPrint("Tidak ada presensi hari ini.");
     }
   }
 
@@ -189,23 +215,23 @@ class DashboardPageState extends State<DashboardPage> {
                         BoxShadow(color: Colors.black12, blurRadius: 5),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(
+                              const Text(
                                 "Check In terakhir",
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFFABABAB)),
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Text(
-                                "07:30",
-                                style: TextStyle(
+                                checkin,
+                                style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -215,16 +241,16 @@ class DashboardPageState extends State<DashboardPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(
+                              const Text(
                                 "Check Out terakhir",
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFFABABAB)),
                               ),
-                              SizedBox(height: 5),
+                              const SizedBox(height: 5),
                               Text(
-                                "-",
-                                style: TextStyle(
+                                checkout,
+                                style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -256,9 +282,9 @@ class DashboardPageState extends State<DashboardPage> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               const SizedBox(width: 12),
-                              _buildPieChart(75, Colors.blue, "75.0%"),
+                              _buildPieChart(100, Colors.blue, "100.0%"),
                               const SizedBox(width: 12),
-                              _buildPieChart(25, Colors.red, "25.0%"),
+                              _buildPieChart(0, Colors.red, "0.0%"),
                             ],
                           ),
                         ),
@@ -273,7 +299,7 @@ class DashboardPageState extends State<DashboardPage> {
                                 Align(
                                   alignment: Alignment.topLeft,
                                   child: Text(
-                                    "Index Presensi ${DateFormat('MMMM').format(DateTime.now())}",
+                                    "Index Presensi ${DateFormat('MMMM', 'id_ID').format(DateTime.now())}",
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFFABABAB),
