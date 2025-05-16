@@ -31,13 +31,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasUserData = _hasUserData();
-    // debugPrint(hasUserData.toString());
+    debugPrint(hasUserData.toString());
 
     return MaterialApp(
       title: 'Sipreti App',
-      // debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false,
       initialRoute: hasUserData ? '/' : '/option',
-      // initialRoute: '/document',
+      // initialRoute: '/biometric2',
       routes: {
         '/': (context) => const DashboardPage(),
         '/location': (context) => const LocationPage(),

@@ -4,6 +4,7 @@ import 'package:sipreti/services/api_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_device_imei/flutter_device_imei.dart';
 import 'dart:io';
+import 'package:android_id/android_id.dart';
 
 class FormPage extends StatefulWidget {
   const FormPage({super.key});
@@ -61,7 +62,9 @@ class FormPageState extends State<FormPage> {
         if (androidInfo.version.sdkInt < 29) {
           imei = await FlutterDeviceImei.instance.getIMEI() ?? "Unknown";
         } else {
-          imei = androidInfo.id;
+          const androidIdPlugin = AndroidId();
+          final androidId = await androidIdPlugin.getId();
+          imei = androidId!;
         }
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
