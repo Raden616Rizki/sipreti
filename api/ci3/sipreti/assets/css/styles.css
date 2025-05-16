@@ -200,7 +200,9 @@ html {
 
 .search-btn,
 .reset-btn,
-.add-btn {
+.add-btn,
+.export-csv-btn,
+.import-csv-btn {
 	background-color: #820263;
 	color: white;
 	padding: 10px 20px;
@@ -218,6 +220,14 @@ html {
 
 .add-btn {
 	background-color: #b30086;
+}
+
+.export-csv-btn {
+	background-color: #089CCA;
+}
+
+.import-csv-btn {
+	background-color: #6DA941;
 }
 
 /* Tabel */

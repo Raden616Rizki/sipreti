@@ -9,6 +9,7 @@ class Vektor_pegawai extends CI_Controller
 	{
 		parent::__construct();
 		$this->load->model('Vektor_pegawai_model');
+		$this->load->model('Pegawai_model');
 		$this->load->library('form_validation');
 	}
 
@@ -229,6 +230,37 @@ class Vektor_pegawai extends CI_Controller
 			$this->session->set_flashdata('message', 'Record Not Found');
 			redirect(site_url('vektor_pegawai'));
 		}
+	}
+
+	public function list_pegawai()
+	{
+		$q = urldecode($this->input->get('q', TRUE));
+		$start = intval($this->input->get('start'));
+
+		if ($q <> '') {
+			$config['base_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
+			$config['first_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
+		} else {
+			$config['base_url'] = base_url() . 'pegawai/index.html';
+			$config['first_url'] = base_url() . 'pegawai/index.html';
+		}
+
+		$config['per_page'] = 10;
+		$config['page_query_string'] = TRUE;
+		$config['total_rows'] = $this->Pegawai_model->total_rows($q, TRUE);
+		$pegawai = $this->Pegawai_model->get_limit_data($config['per_page'], $start, $q, TRUE);
+
+		$this->load->library('pagination');
+		$this->pagination->initialize($config);
+
+		$data = array(
+			'pegawai_data' => $pegawai,
+			'q' => $q,
+			'pagination' => $this->pagination->create_links(),
+			'total_rows' => $config['total_rows'],
+			'start' => $start,
+		);
+		$this->load->view('vektor_pegawai/pegawai_list', $data);
 	}
 
 	public function _rules()

@@ -42,12 +42,21 @@ class Vektor_pegawai_model extends CI_Model
 	// get data with limit and search
 	public function get_limit_data($limit, $start = 0, $q = NULL, $onlyActive = FALSE)
 	{
-		$this->db->like('id_pegawai', $q);
-		if ($onlyActive) {
-			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
+		$this->db->select('vektor_pegawai.*, pegawai.nama');
+		$this->db->from($this->table);
+		$this->db->join('pegawai', 'vektor_pegawai.id_pegawai = pegawai.id_pegawai', 'left');
+
+		if (!empty($q)) {
+			$this->db->like('vektor_pegawai.id_pegawai', $q);
+			$this->db->or_like('pegawai.nama', $q);
 		}
+
+		if ($onlyActive) {
+			$this->db->where('(vektor_pegawai.deleted_at IS NULL OR vektor_pegawai.deleted_at = "")');
+		}
+
 		$this->db->limit($limit, $start);
-		return $this->db->get($this->table)->result();
+		return $this->db->get()->result();
 	}
 
 	// insert data
