@@ -209,6 +209,10 @@
 			</div>
 		</div>
 	</div>
+
+	<footer class="footer">
+		&copy;2025 BKPSDM Kota Malang
+	</footer>
 </body>
 <script>
 	let map, marker, selectedLatLng, selectedAddress;

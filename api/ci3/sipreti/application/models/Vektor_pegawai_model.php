@@ -79,6 +79,16 @@ class Vektor_pegawai_model extends CI_Model
 		$this->db->delete($this->table);
 	}
 
+	// get by id pegawai
+	public function get_by_id_pegawai($id_pegawai)
+	{
+		$this->db->where('id_pegawai', $id_pegawai);
+		$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
+		return $this->db->get('vektor_pegawai')->result();
+	}
+
+
+
 }
 
 /* End of file Vektor_pegawai_model.php */

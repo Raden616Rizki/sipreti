@@ -231,6 +231,23 @@ class Vektor_pegawai extends CI_Controller
 			redirect(site_url('vektor_pegawai'));
 		}
 	}
+	public function delete_from_pegawai($id_pegawai, $id)
+	{
+		$row = $this->Vektor_pegawai_model->get_by_id($id);
+
+		if ($row) {
+			$data = array(
+				'deleted_at' => date('Y-m-d H:i:s'),
+			);
+
+			$this->Vektor_pegawai_model->update($id, $data);
+			$this->session->set_flashdata('message', 'Delete Record Success');
+			redirect(site_url('vektor_pegawai/read_vektor_pegawai/' . $id_pegawai));
+		} else {
+			$this->session->set_flashdata('message', 'Record Not Found');
+			redirect(site_url('vektor_pegawai/read_vektor_pegawai/' . $id_pegawai));
+		}
+	}
 
 	public function list_pegawai()
 	{
@@ -261,6 +278,29 @@ class Vektor_pegawai extends CI_Controller
 			'start' => $start,
 		);
 		$this->load->view('vektor_pegawai/pegawai_list', $data);
+	}
+
+	public function read_vektor_pegawai($id)
+	{
+		if ($id === null) {
+			show_error("ID Pegawai tidak ditemukan.", 400);
+			return;
+		}
+
+		$pegawai = $this->Pegawai_model->get_by_id($id);
+		if (!$pegawai) {
+			show_error("Pegawai tidak ditemukan.", 404);
+			return;
+		}
+
+		$biometrik = $this->Vektor_pegawai_model->get_by_id_pegawai($id);
+
+		$data = [
+			'pegawai' => $pegawai,
+			'biometrik' => $biometrik,
+		];
+
+		$this->load->view('vektor_pegawai/pegawai_vektor_management', $data);
 	}
 
 	public function _rules()

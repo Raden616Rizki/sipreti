@@ -45,12 +45,12 @@
 		</div>
 
 		<div class="toolbar">
-			<form action="<?php echo site_url('pegawai/index'); ?>" method="get" class="search-form">
+			<form action="<?php echo site_url('log_absensi/list_pegawai'); ?>" method="get" class="search-form">
 				<input type="text" name="q" class="search-input" placeholder="Masukkan nama pegawai..."
 					value="<?php echo $q; ?>">
 				<button type="submit" class="search-btn">Cari</button>
 				<?php if ($q <> ''): ?>
-					<a href="<?php echo site_url('pegawai'); ?>" class="reset-btn">Reset</a>
+					<a href="<?php echo site_url('log_absensi/list_pegawai'); ?>" class="reset-btn">Reset</a>
 				<?php endif; ?>
 			</form>
 		</div>

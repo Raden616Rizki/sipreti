@@ -45,12 +45,12 @@
 		</div>
 
 		<div class="toolbar">
-			<form action="<?php echo site_url('pegawai/index'); ?>" method="get" class="search-form">
+			<form action="<?php echo site_url('vektor_pegawai/list_pegawai'); ?>" method="get" class="search-form">
 				<input type="text" name="q" class="search-input" placeholder="Masukkan nama pegawai..."
 					value="<?php echo $q; ?>">
 				<button type="submit" class="search-btn">Cari</button>
 				<?php if ($q <> ''): ?>
-					<a href="<?php echo site_url('pegawai'); ?>" class="reset-btn">Reset</a>
+					<a href="<?php echo site_url('vektor_pegawai/list_pegawai'); ?>" class="reset-btn">Reset</a>
 				<?php endif; ?>
 			</form>
 			<div>
@@ -65,8 +65,8 @@
 					<th>No</th>
 					<th>Nama</th>
 					<th>NIP</th>
-					<th>Jabatan</th>
 					<th>Unit Kerja</th>
+					<th>Jumlah Biometrik</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
@@ -76,12 +76,12 @@
 						<td><?php echo ++$start; ?></td>
 						<td style="max-width: 200px; word-break: break-word;"><?php echo $pegawai->nama; ?></td>
 						<td><?php echo $pegawai->nip; ?></td>
-						<td><?php echo $pegawai->nama_jabatan; ?></td>
 						<td style="max-width: 200px; word-break: break-word;"><?php echo $pegawai->nama_unit_kerja; ?></td>
+						<td><?php echo $pegawai->jumlah_biometrik; ?>/10</td>
 
 						<td class="action-buttons">
-							<a href="<?php echo site_url('log_absensi/read_absensi_pegawai/' . $pegawai->id_pegawai); ?>"
-								class="btn-action view" style="font-size: 12px;">Rekap Absensi</i></a>
+							<a href="<?php echo site_url('vektor_pegawai/read_vektor_pegawai/' . $pegawai->id_pegawai); ?>"
+								class="btn-action view" style="font-size: 12px;">Kelola Biometrik</i></a>
 						</td>
 					</tr>
 				<?php endforeach; ?>

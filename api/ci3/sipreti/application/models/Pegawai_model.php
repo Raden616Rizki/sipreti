@@ -90,12 +90,22 @@ class Pegawai_model extends CI_Model
 	// get data with limit and search
 	public function get_limit_data($limit, $start = 0, $q = NULL, $onlyActive = FALSE)
 	{
-		// Pilih kolom yang dibutuhkan dari tabel pegawai, jabatan, dan unit_kerja
-		$this->db->select('pegawai.*, jabatan.nama_jabatan, unit_kerja.nama_unit_kerja');
+		$this->db->select('
+        pegawai.*, 
+        jabatan.nama_jabatan, 
+        unit_kerja.nama_unit_kerja, 
+        COUNT(CASE 
+            WHEN vektor_pegawai.id_vektor_pegawai IS NOT NULL 
+                 AND (vektor_pegawai.deleted_at IS NULL OR vektor_pegawai.deleted_at = "") 
+            THEN 1 
+            ELSE NULL 
+        END) AS jumlah_biometrik
+    ');
 		$this->db->from($this->table);
 
 		$this->db->join('jabatan', 'pegawai.id_jabatan = jabatan.id_jabatan', 'left');
 		$this->db->join('unit_kerja', 'pegawai.id_unit_kerja = unit_kerja.id_unit_kerja', 'left');
+		$this->db->join('vektor_pegawai', 'pegawai.id_pegawai = vektor_pegawai.id_pegawai', 'left');
 
 		if (!empty($q)) {
 			$this->db->like('pegawai.nama', $q);
@@ -105,10 +115,13 @@ class Pegawai_model extends CI_Model
 			$this->db->where('(pegawai.deleted_at IS NULL OR pegawai.deleted_at = "")');
 		}
 
+		$this->db->group_by('pegawai.id_pegawai');
+
 		$this->db->limit($limit, $start);
 
 		return $this->db->get()->result();
 	}
+
 
 	// insert data
 	function insert($data)
