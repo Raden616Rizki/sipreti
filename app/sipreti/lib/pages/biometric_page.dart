@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -190,6 +189,7 @@ class _BiometricPageState extends State<BiometricPage> {
       _cameraController = CameraController(
         cameras![1],
         ResolutionPreset.high,
+        enableAudio: false,
       );
 
       await _cameraController!.initialize();
@@ -248,7 +248,7 @@ class _BiometricPageState extends State<BiometricPage> {
 
     if (faces.isNotEmpty) {
       final face = faces.first;
-      final croppedFace = await _cropFace(image.path, face.boundingBox);
+      final croppedFace = await _cropFace(image, face.boundingBox);
 
       final embeddings = await _getFaceEmbeddings(croppedFace);
       var pegawaiBox = Hive.box('pegawai');
@@ -307,8 +307,9 @@ class _BiometricPageState extends State<BiometricPage> {
     }
   }
 
-  Future<img.Image> _cropFace(String imagePath, Rect boundingBox) async {
-    final originalImage = img.decodeImage(File(imagePath).readAsBytesSync());
+  Future<img.Image> _cropFace(XFile image, Rect boundingBox) async {
+    final bytes = await image.readAsBytes();
+    final originalImage = img.decodeImage(bytes);
     if (originalImage == null) {
       throw Exception("Error reading the original image");
     }
@@ -327,9 +328,7 @@ class _BiometricPageState extends State<BiometricPage> {
   Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
     Float32List input = await _loadAndNormalizeImage(faceImage);
 
-    final Stopwatch reshapeTime = Stopwatch()..start();
     var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
-    reshapeTime.stop();
 
     var output =
         List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
@@ -501,19 +500,6 @@ class _BiometricPageState extends State<BiometricPage> {
                   ),
                 ),
               ),
-            // if (_cameraButtonEnabled)
-            //   Positioned(
-            //     bottom: 50,
-            //     left: screenWidth / 2 - 40,
-            //     child: GestureDetector(
-            //       onTap: _captureImage,
-            //       child: Image.asset(
-            //         'assets/images/camera_button.png',
-            //         width: 80,
-            //         height: 80,
-            //       ),
-            //     ),
-            //   ),
           ],
         ));
   }

@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasUserData = _hasUserData();
-    debugPrint(hasUserData.toString());
+    // debugPrint(hasUserData.toString());
 
     return MaterialApp(
       title: 'Sipreti App',
