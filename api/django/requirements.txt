@@ -11,3 +11,4 @@ google-auth
 google-auth-oauthlib
 voyager
 scipy
+django-cors-headers

@@ -86,7 +86,7 @@ def face_register(request):
             }
             data = {
                 'id_pegawai': id_pegawai,
-                'face_embeddings': json.dumps(vector)
+                'face_embeddings': json.dumps(vector) 
             }
 
             ci3_url = settings.CI3_API_URL
