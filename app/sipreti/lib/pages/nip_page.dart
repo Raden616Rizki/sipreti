@@ -1,6 +1,7 @@
-// import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:sipreti/services/api_service.dart';
+import 'dart:convert';
+import 'package:sipreti/utils/dialog.dart';
 
 class NIPPage extends StatefulWidget {
   const NIPPage({super.key});
@@ -16,11 +17,7 @@ class NIPPageState extends State<NIPPage> {
   void _loadNIP() async {
     String nip = _nipController.text.trim();
     if (nip.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Masukkan NIP terlebih dahulu")),
-        );
-      }
+      await showErrorDialog(context, "Masukkan NIP terlebih dahulu");
       return;
     }
 
@@ -29,11 +26,10 @@ class NIPPageState extends State<NIPPage> {
     if (!mounted) return;
 
     if (result["error"] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"])),
-      );
+      final String message = extractMessage(result["message"]);
+      await showErrorDialog(context, message);
+      return;
     } else {
-      // debugPrint("Data Pegawai: $result");
       if (mounted) {
         Navigator.pushNamed(
           context,
@@ -48,11 +44,22 @@ class NIPPageState extends State<NIPPage> {
     }
   }
 
+  String extractMessage(String rawMessage) {
+    try {
+      final jsonPart = rawMessage.split('-').last.trim();
+      final decoded = json.decode(jsonPart);
+      return decoded['message'] ?? 'Terjadi kesalahan';
+    } catch (e) {
+      return 'Terjadi kesalahan';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final double heightScreen = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           Positioned.fill(
@@ -80,81 +87,89 @@ class NIPPageState extends State<NIPPage> {
                   topRight: Radius.circular(16),
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 60),
-                  const Text(
-                    "Buat Akun Baru",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    "Load Pegawai by NIP",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  const SizedBox(height: 25),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 60),
+                    const Text(
+                      "Buat Akun Baru",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: TextField(
-                      controller: _nipController,
-                      decoration: InputDecoration(
-                        hintText: "Masukkan NIP Baru / NIP Lama",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
+                    const SizedBox(height: 40),
+                    const Text(
+                      "Load Pegawai by NIP",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(height: 25),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
                         ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.person,
-                          color: Colors.grey,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                      ),
+                      child: TextField(
+                        controller: _nipController,
+                        decoration: InputDecoration(
+                          hintText: "Masukkan NIP Baru / NIP Lama",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          shadowColor: Colors.black,
+                          elevation: 8,
                         ),
-                        shadowColor: Colors.black,
-                        elevation: 8,
-                      ),
-                      onPressed: _loadNIP,
-                      child: const Text(
-                        "LOAD NIP",
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                        onPressed: _loadNIP,
+                        child: const Text(
+                          "LOAD NIP",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

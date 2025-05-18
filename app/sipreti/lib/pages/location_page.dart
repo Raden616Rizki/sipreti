@@ -104,8 +104,6 @@ class _LocationPageState extends State<LocationPage> {
     required double longitude,
   }) async {
     final presensiBox = await Hive.openBox('presensi');
-    // final checkMode = presensiBox.get('check_mode');
-    // debugPrint(checkMode.toString());
 
     final DateTime now = DateTime.now();
 

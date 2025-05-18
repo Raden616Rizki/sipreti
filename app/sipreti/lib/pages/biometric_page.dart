@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:sipreti/pages/attendance_page.dart';
+import 'package:sipreti/utils/dialog.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sipreti/services/api_service.dart';
 
 class BiometricPage extends StatefulWidget {
   const BiometricPage({super.key});
@@ -21,7 +21,6 @@ class _BiometricPageState extends State<BiometricPage> {
   List<CameraDescription>? cameras;
   XFile? capturedImage;
   Interpreter? _interpreter;
-  final ApiService _apiService = ApiService();
 
   bool _showInstructionCard = true;
   // bool _cameraButtonEnabled = false;
@@ -65,23 +64,6 @@ class _BiometricPageState extends State<BiometricPage> {
   void _selectRandomInstruction() {
     final random = Random();
     currentInstruction = instructions[random.nextInt(instructions.length)];
-  }
-
-  Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
-    Map<String, dynamic> result = await _apiService.faceVerification(
-      idPegawai,
-      faceEmbeddings,
-    );
-
-    if (!mounted) return;
-
-    if (result["success"] == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
-      );
-    } else {
-      debugPrint(result.toString());
-    }
   }
 
   InputImageRotation _rotationFromCamera(int sensorOrientation) {
@@ -162,7 +144,9 @@ class _BiometricPageState extends State<BiometricPage> {
         }
       }
     } catch (e) {
-      debugPrint("Face processing error: $e");
+      if (mounted) {
+        showErrorDialog(context, "Face processing error: $e");
+      }
     } finally {
       await Future.delayed(const Duration(milliseconds: 300));
       _isProcessing = false;
@@ -173,14 +157,9 @@ class _BiometricPageState extends State<BiometricPage> {
     setState(() {
       _showInstructionCard = false;
     });
-    // await Future.delayed(const Duration(seconds: 1));
     await _captureImage();
 
     _cameraController?.stopImageStream();
-
-    // setState(() {
-    //   _cameraButtonEnabled = true;
-    // });
   }
 
   Future<void> _initializeCamera() async {
@@ -202,7 +181,9 @@ class _BiometricPageState extends State<BiometricPage> {
     try {
       _interpreter = await Interpreter.fromAsset('model/mobilefacenet.tflite');
     } catch (e) {
-      debugPrint("Error loading model: $e");
+      if (mounted) {
+        showErrorDialog(context, "Error loading model: $e");
+      }
     }
   }
 
@@ -223,7 +204,7 @@ class _BiometricPageState extends State<BiometricPage> {
   }
 
   Future<void> _captureImage() async {
-    _showLoadingDialog();
+    showLoadingDialog(context);
 
     if (_cameraController != null && _cameraController!.value.isInitialized) {
       try {
@@ -235,7 +216,9 @@ class _BiometricPageState extends State<BiometricPage> {
 
         await _detectAndCropFace(image);
       } catch (e) {
-        debugPrint("Error capturing image: $e");
+        if (mounted) {
+          showErrorDialog(context, "Error capturing image: $e");
+        }
       }
     }
   }
@@ -381,49 +364,6 @@ class _BiometricPageState extends State<BiometricPage> {
     );
   }
 
-  void _showLoadingDialog() {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: "Loading",
-      pageBuilder: (_, __, ___) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              elevation: 8,
-              color: Colors.white,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 20),
-                    Text(
-                      "Harap Tunggu",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (_, anim, __, child) {
-        return FadeTransition(
-          opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
-          child: child,
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 250),
-    );
-  }
-
   @override
   void dispose() {
     _cameraController?.dispose();
@@ -483,7 +423,7 @@ class _BiometricPageState extends State<BiometricPage> {
             if (_showInstructionCard)
               Center(
                 child: Card(
-                  color: Colors.blue,
+                  color: Colors.blue[900],
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: Padding(

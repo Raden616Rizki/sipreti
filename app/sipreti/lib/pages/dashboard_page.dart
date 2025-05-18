@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:sipreti/services/api_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:sipreti/utils/dialog.dart';
+import 'dart:convert';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -44,12 +46,18 @@ class DashboardPageState extends State<DashboardPage> {
     _loadTodayAttendance();
   }
 
+  String extractMessage(String rawMessage) {
+    try {
+      final jsonPart = rawMessage.split('-').last.trim();
+      final decoded = json.decode(jsonPart);
+      return decoded['message'] ?? 'Terjadi kesalahan';
+    } catch (e) {
+      return 'Terjadi kesalahan';
+    }
+  }
+
   Future<void> updatePegawaiData() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    showLoadingDialog(context);
 
     var pegawaiBox = Hive.box('pegawai');
     String idPegawai = pegawaiBox.get('id_pegawai');
@@ -59,9 +67,9 @@ class DashboardPageState extends State<DashboardPage> {
 
     if (mounted) {
       if (dataPegawai["error"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(dataPegawai["message"])),
-        );
+        final String message = extractMessage(dataPegawai["message"]);
+        await showErrorDialog(context, message);
+        return;
       } else {
         await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
         await pegawaiBox.put('nip', dataPegawai['nip']);
@@ -78,11 +86,10 @@ class DashboardPageState extends State<DashboardPage> {
         await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Data Pegawai Berhasil Diperbarui')),
-          );
-
-          Navigator.pushNamed(context, '/');
+          showSuccessDialog(context, 'Data Pegawai Berhasil Diperbarui');
+          Future.delayed(const Duration(seconds: 2), () {
+            Navigator.pushNamed(context, '/');
+          });
         }
       }
     }
@@ -103,11 +110,11 @@ class DashboardPageState extends State<DashboardPage> {
         checkin = '-';
         checkout = '-';
       });
-      debugPrint("Tidak ada presensi hari ini.");
     }
   }
 
   Future<void> logout(BuildContext context) async {
+    showLoadingDialog(context);
     final userBox = await Hive.openBox('userAndroid');
     final pegawaiBox = await Hive.openBox('pegawai');
 
@@ -180,7 +187,7 @@ class DashboardPageState extends State<DashboardPage> {
                 Text(
                   "$namaPegawai",
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -194,7 +201,10 @@ class DashboardPageState extends State<DashboardPage> {
                 Text(
                   "$namaJabatan",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, color: Colors.white),
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -462,7 +472,6 @@ class DashboardPageState extends State<DashboardPage> {
               ),
             ),
             Container(
-              // margin: const EdgeInsets.only(bottom: 64),
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Colors.red,

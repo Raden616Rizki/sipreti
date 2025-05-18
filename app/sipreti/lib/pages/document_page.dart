@@ -161,7 +161,10 @@ class _DocumentPageState extends State<DocumentPage> {
                         ),
                         child: const Text(
                           'AMBIL FILE',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -178,7 +181,10 @@ class _DocumentPageState extends State<DocumentPage> {
                         ),
                         child: const Text(
                           'UPLOAD',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),

@@ -1,10 +1,11 @@
-// import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:sipreti/services/api_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_device_imei/flutter_device_imei.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:android_id/android_id.dart';
+import 'package:sipreti/utils/dialog.dart';
 
 class FormPage extends StatefulWidget {
   const FormPage({super.key});
@@ -33,20 +34,8 @@ class FormPageState extends State<FormPage> {
     final username = _nameController.text.trim();
     final noHp = _noTelephoneController.text.trim();
     final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password dan Konfirmasi tidak cocok")),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    showLoadingDialog(context);
 
     try {
       String imei = "Unknown";
@@ -56,7 +45,6 @@ class FormPageState extends State<FormPage> {
 
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
-        debugPrint(androidInfo.toString());
         validHp = "${androidInfo.manufacturer} ${androidInfo.model}";
 
         if (androidInfo.version.sdkInt < 29) {
@@ -86,24 +74,77 @@ class FormPageState extends State<FormPage> {
 
       if (mounted) {
         if (result['error'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'Registrasi gagal')),
-          );
+          final String message = extractMessage(result["message"]);
+          await showErrorDialog(context, message);
+          return;
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registrasi berhasil!')),
-          );
-          Navigator.pushNamed(context, '/login');
+          showSuccessDialog(context, 'Registrasi Berhasil');
+          Future.delayed(const Duration(seconds: 2), () {
+            Navigator.pushNamed(context, '/login');
+          });
         }
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
-        );
+        await showErrorDialog(context, 'Terjadi Kesalahan');
+        return;
       }
     }
+  }
+
+  String extractMessage(String rawMessage) {
+    try {
+      final jsonPart = rawMessage.split('-').last.trim();
+      final decoded = json.decode(jsonPart);
+      return decoded['message'] ?? 'Terjadi kesalahan';
+    } catch (e) {
+      return 'Terjadi kesalahan';
+    }
+  }
+
+  Future<bool> _validateForm() async {
+    if (_emailController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Email tidak boleh kosong.");
+      return false;
+    }
+
+    if (!isEmailValid(_emailController.text.trim())) {
+      await showErrorDialog(context, "Format email tidak valid.");
+      return false;
+    }
+
+    if (_noTelephoneController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Nomor Telepon tidak boleh kosong.");
+      return false;
+    }
+
+    if (_nameController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Nama Pegawai tidak boleh kosong.");
+      return false;
+    }
+
+    if (_passwordController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Password tidak boleh kosong.");
+      return false;
+    }
+
+    if (_confirmPasswordController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Konfirmasi Password tidak boleh kosong.");
+      return false;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      await showErrorDialog(context, "Password dan Konfirmasi Password tidak sama.");
+      return false;
+    }
+
+    return true;
+  }
+
+  bool isEmailValid(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
   }
 
   @override
@@ -134,6 +175,7 @@ class FormPageState extends State<FormPage> {
     final nip = data['nip'];
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           Positioned.fill(
@@ -161,254 +203,266 @@ class FormPageState extends State<FormPage> {
                   topRight: Radius.circular(16),
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 60),
-                  const Text(
-                    "Buat Akun Baru",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    nama ?? "Nama tidak tersedia",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Text(
-                    nip ?? "NIP tidak tersedia",
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 60),
+                    const Text(
+                      "Buat Akun Baru",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        hintText: "Email",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.email,
-                          color: Colors.grey,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                        ),
+                    const SizedBox(height: 20),
+                    Text(
+                      nama ?? "Nama tidak tersedia",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
+                    Text(
+                      nip ?? "NIP tidak tersedia",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.normal,
+                        color: Colors.black,
                       ),
                     ),
-                    child: TextField(
-                      controller: _noTelephoneController,
-                      decoration: InputDecoration(
-                        hintText: "No. Telepon",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.contacts,
-                          color: Colors.grey,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                    const SizedBox(height: 32),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        hintText: "Nama Pegawai",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.person,
-                          color: Colors.grey,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _passwordController,
-                      obscureText: !_isPasswordVisible,
-                      decoration: InputDecoration(
-                        hintText: "Password",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.lock,
-                          color: Colors.grey,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                      child: TextField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          hintText: "Email",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.email,
                             color: Colors.grey,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
-                          },
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
+                    const SizedBox(height: 16),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: TextField(
-                      controller: _confirmPasswordController,
-                      obscureText: !_isConfirmPasswordVisible,
-                      decoration: InputDecoration(
-                        hintText: "Konfirmasi Password",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.lock,
-                          color: Colors.grey,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isConfirmPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                      child: TextField(
+                        controller: _noTelephoneController,
+                        decoration: InputDecoration(
+                          hintText: "No. Telepon",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.contacts,
                             color: Colors.grey,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _isConfirmPasswordVisible =
-                                  !_isConfirmPasswordVisible;
-                            });
-                          },
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 12),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
                         ),
-                        shadowColor: Colors.black,
-                        elevation: 8,
                       ),
-                      onPressed: submitRegistration,
-                      child: const Text(
-                        "DAFTAR SEKARANG",
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      child: TextField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          hintText: "Nama Pegawai",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        decoration: InputDecoration(
+                          hintText: "Password",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock,
+                            color: Colors.grey,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _confirmPasswordController,
+                        obscureText: !_isConfirmPasswordVisible,
+                        decoration: InputDecoration(
+                          hintText: "Konfirmasi Password",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock,
+                            color: Colors.grey,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isConfirmPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isConfirmPasswordVisible =
+                                    !_isConfirmPasswordVisible;
+                              });
+                            },
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          shadowColor: Colors.black,
+                          elevation: 8,
+                        ),
+                        onPressed: () async {
+                          bool isValid = await _validateForm();
+                          if (!isValid) return;
+
+                          submitRegistration();
+                        },
+                        child: const Text(
+                          "DAFTAR SEKARANG",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

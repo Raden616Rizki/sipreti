@@ -67,7 +67,11 @@ class OptionPage extends StatelessWidget {
                     },
                     child: const Text(
                       "MASUK",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -89,7 +93,11 @@ class OptionPage extends StatelessWidget {
                     },
                     child: const Text(
                       "DAFTAR",
-                      style: TextStyle(fontSize: 18, color: Colors.blue),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

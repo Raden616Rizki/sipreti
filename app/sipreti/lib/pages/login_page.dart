@@ -2,6 +2,9 @@
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:sipreti/services/api_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
+
+import 'package:sipreti/utils/dialog.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,40 +20,19 @@ class LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
 
   void _loginUser() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    showLoadingDialog(context);
 
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
-    if (email.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Masukkan Email terlebih dahulu")),
-        );
-      }
-      return;
-    }
-
-    if (password.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Masukkan Password terlebih dahulu")),
-        );
-      }
-      return;
-    }
 
     Map<String, dynamic> result = await _apiService.loginUser(email, password);
 
     if (!mounted) return;
 
     if (result["error"] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"])),
-      );
+      final String message = extractMessage(result["message"]);
+      await showErrorDialog(context, message);
+      return;
     } else {
       final userData = result['data'];
 
@@ -62,21 +44,52 @@ class LoginPageState extends State<LoginPage> {
       await box.put('email', userData['email']);
       await box.put('no_hp', userData['no_hp']);
 
-      debugPrint("User data saved to Hive successfully.");
-
       await getPegawaiData(userData['id_pegawai']);
     }
   }
 
+  String extractMessage(String rawMessage) {
+    try {
+      final jsonPart = rawMessage.split('-').last.trim();
+      final decoded = json.decode(jsonPart);
+      return decoded['message'] ?? 'Terjadi kesalahan';
+    } catch (e) {
+      return 'Terjadi kesalahan';
+    }
+  }
+
+  Future<bool> _validateForm() async {
+    if (_emailController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Email tidak boleh kosong.");
+      return false;
+    }
+
+    if (!isEmailValid(_emailController.text.trim())) {
+      await showErrorDialog(context, "Format email tidak valid.");
+      return false;
+    }
+
+    if (_passwordController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Password tidak boleh kosong.");
+      return false;
+    }
+
+    return true;
+  }
+
+  bool isEmailValid(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
+  }
+
   Future<void> getPegawaiData(String idPegawai) async {
     Map<String, dynamic> dataPegawai = await _apiService.getPegawai(idPegawai);
-    // debugPrint(dataPegawai.toString());
 
     if (mounted) {
       if (dataPegawai["error"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(dataPegawai["message"])),
-        );
+        final String message = extractMessage(dataPegawai["message"]);
+        await showErrorDialog(context, message);
+        return;
       } else {
         var pegawaiBox = Hive.box('pegawai');
 
@@ -94,12 +107,11 @@ class LoginPageState extends State<LoginPage> {
         await pegawaiBox.put('satuan_radius', dataPegawai['satuan_radius']);
         await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
 
-        debugPrint("Data pegawai berhasil disimpan ke Hive.");
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Berhasil Masuk')),
-          );
-          Navigator.pushNamed(context, '/');
+          showSuccessDialog(context, 'Berhasil Masuk');
+          Future.delayed(const Duration(seconds: 2), () {
+            Navigator.pushNamed(context, '/');
+          });
         }
       }
     }
@@ -110,6 +122,7 @@ class LoginPageState extends State<LoginPage> {
     final double heightScreen = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           Positioned.fill(
@@ -137,124 +150,133 @@ class LoginPageState extends State<LoginPage> {
                   topRight: Radius.circular(16),
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 60),
-                  const Text(
-                    "Masuk",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 25),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 60),
+                    const Text(
+                      "Masuk",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        hintText: "Email",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.email,
-                          color: Colors.grey,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                    const SizedBox(height: 25),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 25),
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: -3,
-                      intensity: 0.6,
-                      color: Colors.grey[200],
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _passwordController,
-                      obscureText:
-                          !_isPasswordVisible, // Mengatur visibilitas password
-                      decoration: InputDecoration(
-                        hintText: "Password",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.lock,
-                          color: Colors.grey,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                      child: TextField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          hintText: "Email",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.email,
                             color: Colors.grey,
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _isPasswordVisible = !_isPasswordVisible;
-                            });
-                          },
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 25),
+                    Neumorphic(
+                      style: NeumorphicStyle(
+                        depth: -3,
+                        intensity: 0.6,
+                        color: Colors.grey[200],
+                        boxShape: NeumorphicBoxShape.roundRect(
+                          BorderRadius.circular(10),
                         ),
-                        shadowColor: Colors.black,
-                        elevation: 8,
                       ),
-                      onPressed: _loginUser,
-                      // onPressed: () {
-                      //   Navigator.pushNamed(context, '/');
-                      // },
-                      child: const Text(
-                        "MASUK",
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      child: TextField(
+                        controller: _passwordController,
+                        obscureText:
+                            !_isPasswordVisible, // Mengatur visibilitas password
+                        decoration: InputDecoration(
+                          hintText: "Password",
+                          hintStyle: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock,
+                            color: Colors.grey,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          shadowColor: Colors.black,
+                          elevation: 8,
+                        ),
+                        onPressed: () async {
+                          bool isValid = await _validateForm();
+                          if (!isValid) return;
+
+                          _loginUser();
+                        },
+                        child: const Text(
+                          "MASUK",
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

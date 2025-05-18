@@ -5,7 +5,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:camera/camera.dart';
 import 'package:sipreti/pages/document_page.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:sipreti/services/api_service.dart';
+import 'package:sipreti/utils/dialog.dart';
 
 class AttendancePage extends StatefulWidget {
   final XFile? capturedImage;
@@ -46,11 +48,7 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   void submitAttendance() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    showLoadingDialog(context);
 
     final DateTime now = DateTime.now();
     final DateTime absensiTime = DateTime.parse(waktuAbsensi.toString());
@@ -59,10 +57,8 @@ class _AttendancePageState extends State<AttendancePage> {
 
     if (difference > const Duration(minutes: 5)) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Waktu absensi tidak valid (lebih dari 5 menit)')),
-      );
+      showErrorDialog(
+          context, 'Waktu absensi tidak valid (lebih dari 5 menit)');
       Navigator.pushReplacementNamed(context, '/');
       return;
     }
@@ -105,23 +101,31 @@ class _AttendancePageState extends State<AttendancePage> {
 
       if (mounted) {
         if (result['error'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'Presensi gagal')),
-          );
+          final String message = extractMessage(result["message"]);
+          await showErrorDialog(context, message);
+          return;
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Presensi berhasil!')),
-          );
-          Navigator.pushNamed(context, '/');
+          showSuccessDialog(context, 'Berhasil Presebsu');
+          Future.delayed(const Duration(seconds: 2), () {
+            Navigator.pushNamed(context, '/');
+          });
         }
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
-        );
+        showErrorDialog(context, 'Terjadi kesalahan: $e');
       }
+    }
+  }
+
+  String extractMessage(String rawMessage) {
+    try {
+      final jsonPart = rawMessage.split('-').last.trim();
+      final decoded = json.decode(jsonPart);
+      return decoded['message'] ?? 'Terjadi kesalahan';
+    } catch (e) {
+      return 'Terjadi kesalahan';
     }
   }
 
@@ -333,8 +337,10 @@ class _AttendancePageState extends State<AttendancePage> {
                             ),
                             child: const Text(
                               "FOTO ULANG",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.blue),
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -369,7 +375,9 @@ class _AttendancePageState extends State<AttendancePage> {
                                   child: const Text(
                                     "DOKUMEN PENDUKUNG",
                                     style: TextStyle(
-                                        fontSize: 16, color: Colors.green),
+                                        fontSize: 16,
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
@@ -400,7 +408,9 @@ class _AttendancePageState extends State<AttendancePage> {
                                             ? "SELESAI CHECK IN"
                                             : "SELESAI CHECK OUT",
                                         style: const TextStyle(
-                                            fontSize: 16, color: Colors.white),
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ),
@@ -426,7 +436,9 @@ class _AttendancePageState extends State<AttendancePage> {
                                   ? "BATAL CHECK IN"
                                   : "BATAL CHECK OUT",
                               style: const TextStyle(
-                                  fontSize: 16, color: Colors.white),
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
