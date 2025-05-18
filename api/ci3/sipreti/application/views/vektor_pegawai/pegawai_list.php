@@ -55,7 +55,11 @@
 				<?php endif; ?>
 			</form>
 			<div>
-				<a href="<?php echo site_url('vektor_pegawai/list_pegawai'); ?>" class="export-csv-btn">Export CSV</a>
+				<form method="get" action="<?php echo site_url('vektor_pegawai/export_csv'); ?>"
+					style="display: inline;">
+					<button type="submit" class="export-csv-btn">Export CSV</button>
+				</form>
+
 				<form id="csvUploadForm" enctype="multipart/form-data" style="display: inline;">
 					<input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
 					<button type="button" class="import-csv-btn"
@@ -108,18 +112,33 @@
 	<!-- Modal Umum -->
 	<div id="modal-global" class="modal-message" style="display:none;">
 		<div class="modal-message-content" style="text-align: center; padding: 20px;">
+
 			<!-- Loader -->
 			<div id="modal-loader" style="display: none;">
 				<div class="loader" style="margin: 20px auto;"></div>
 				<p>Memproses, mohon tunggu...</p>
+
+				<!-- Progress Bar -->
+				<div id="progress-wrapper"
+					style="position: relative; margin-top: 20px; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; height: 20px;">
+					<div id="progress-bar" style="width: 0%; height: 100%; background-color: #4caf50;">
+					</div>
+					<div id="progress-text"
+						style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: black; font-weight: bold;">
+						0%
+					</div>
+				</div>
+
 			</div>
 
 			<!-- Pesan Error -->
 			<div id="modal-error-message" style="display: none;">
 				<p id="modal-error-text">Terjadi kesalahan</p>
 			</div>
+
 		</div>
 	</div>
+
 </body>
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
@@ -138,9 +157,10 @@
 		});
 	});
 
+	const taskId = 'task_' + Date.now(); // ID unik
+
 	document.getElementById('csvFileInput').addEventListener('change', function (event) {
 		const file = event.target.files[0];
-
 		if (!file) {
 			alert('Silakan pilih file CSV terlebih dahulu.');
 			return;
@@ -152,27 +172,60 @@
 		// Tampilkan modal loading jika ingin (opsional)
 		showModalLoading();
 
-		fetch('http://127.0.0.1:8000/attendance/upload-csv/', {
+		document.getElementById('progress-wrapper').style.display = 'block';
+
+		updateProgressBar(0); // Reset awal
+
+		// Upload dengan task_id
+		fetch(`http://127.0.0.1:8000/attendance/upload-csv/?task_id=${taskId}`, {
 			method: 'POST',
 			body: formData
 		})
-			.then(response => response.json().then(data => ({
-				ok: response.ok,
-				status: response.status,
-				data: data
-			})))
+			.then(response => response.json())
 			.then(result => {
-				if (result.status == 200) {
+				if (result.message) {
+					checkProgressDone = true;
+					updateProgressBar(100);
 					window.location.href = "<?php echo site_url('vektor_pegawai/list_pegawai'); ?>";
 				} else {
-					showModalError(result.data.error || 'Gagal memproses CSV.');
+					showModalError(result.error || 'Gagal memproses CSV.');
 				}
 			})
 			.catch(err => {
 				console.error('Gagal mengunggah CSV:', err);
 				showModalError('Terjadi kesalahan saat mengunggah CSV.');
 			});
+
+		let checkProgressDone = false;
+
+		// Polling progress tiap 2 detik
+		const intervalId = setInterval(() => {
+			if (checkProgressDone) {
+				clearInterval(intervalId);
+				return;
+			}
+			fetch(`http://127.0.0.1:8000/attendance/progress/${taskId}/`)
+				.then(res => res.json())
+				.then(data => {
+					if (data.total > 0) {
+						const percent = Math.floor((data.done / data.total) * 100);
+						updateProgressBar(percent);
+					}
+				})
+				.catch(err => console.log('Gagal cek progress:', err));
+		}, 2000);
 	});
+
+	function updateProgressBar(percent) {
+		const bar = document.getElementById('progress-bar');
+		const text = document.getElementById('progress-text');
+
+		if (bar && text) {
+			bar.style.width = percent + '%';
+			text.textContent = percent + '%';
+		}
+	}
+
 
 	// Fungsi modal loading
 	function showModalLoading() {

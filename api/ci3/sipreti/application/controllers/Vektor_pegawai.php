@@ -303,6 +303,27 @@ class Vektor_pegawai extends CI_Controller
 		$this->load->view('vektor_pegawai/pegawai_vektor_management', $data);
 	}
 
+	public function export_csv()
+	{
+		$this->load->helper('download');
+
+		$result = $this->Pegawai_model->get_all_for_csv_export()->result();
+
+		$csv = "id_pegawai,nama,nip,nama_unit_kerja,url_photo_folder\n";
+
+		foreach ($result as $row) {
+			$csv .=
+				$row->id_pegawai . ',' .
+				$row->nama . ',' .
+				$row->nip . ',' .
+				$row->nama_unit_kerja . ',' .
+				$row->url_photo_folder . "\n";
+		}
+
+		$filename = 'daftar_pegawai_' . date('Ymd_His') . '.csv';
+		force_download($filename, $csv);
+	}
+
 	public function _rules()
 	{
 		$this->form_validation->set_rules('id_pegawai', 'id pegawai', 'trim|required');

@@ -10,34 +10,44 @@ import time
 from scipy.spatial import distance
 import requests
 from django.conf import settings
+from .progress_tracker import set_progress, get_progress
 
 @csrf_exempt
 def upload_csv(request):
     if request.method == "POST" and request.FILES.get("file"):
         csv_file = request.FILES["file"]
+        task_id = request.GET.get("task_id", "default")
 
         try:
-            decoded_file = csv_file.read().decode("utf-8").splitlines()
-            reader = csv.DictReader(decoded_file)
+            raw_data = csv_file.read().decode("utf-8").splitlines()
+            reader = csv.DictReader(raw_data)
 
-            # Validasi: Pastikan kolom yang dibutuhkan ada
             required_columns = {'id_pegawai', 'url_photo_folder'}
             if not required_columns.issubset(reader.fieldnames):
                 return JsonResponse({
                     'error': 'CSV Tidak Valid. Pastikan terdapat kolom: id_pegawai dan url_photo_folder.'
                 }, status=400)
 
-            # Proses setiap baris CSV
-            for row in reader:
+            rows = list(reader)
+            total_rows = len(rows)
+            current = 0
+
+            for row in rows:
                 id_pegawai = row.get("id_pegawai")
                 folder_url = row.get("url_photo_folder")
 
                 if not id_pegawai or not folder_url:
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
                     continue
 
                 folder_id = extract_folder_id(folder_url)
                 if not folder_id:
                     print(f"URL folder tidak valid: {folder_url}")
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
                     continue
 
                 results = face_extraction_gdrive(folder_id, id_pegawai)
@@ -55,8 +65,7 @@ def upload_csv(request):
                                 'face_embeddings': json.dumps(vector)
                             }
 
-                            ci3_url = settings.CI3_API_URL
-                            response = requests.post(ci3_url, data=data, files=files)
+                            response = requests.post(settings.CI3_API_URL, data=data, files=files)
 
                             if response.status_code == 200:
                                 print(f"Data berhasil dikirim untuk ID {id_pegawai}, foto {i+1}")
@@ -67,6 +76,10 @@ def upload_csv(request):
                             print(f"Gagal mengirim data ke CI3: {send_err}")
                 else:
                     print(f"Tidak ada vektor wajah yang diekstrak untuk ID pegawai {id_pegawai}")
+
+                current += 1
+                if task_id:
+                    set_progress(task_id, current, total_rows)
 
             return JsonResponse({'message': 'Data berhasil diproses'}, status=200)
 
@@ -286,3 +299,10 @@ def distance_comparasion(request):
             return JsonResponse({"error": str(e)}, status=500)  
 
     return JsonResponse({"error": "Metode tidak diizinkan"}, status=405)
+
+def check_progress(request, task_id):
+    progress = get_progress(task_id)
+    if progress:
+        return JsonResponse(progress)
+    else:
+        return JsonResponse({"done": 0, "total": 0}, status=404)

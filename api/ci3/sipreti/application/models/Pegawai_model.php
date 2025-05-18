@@ -156,6 +156,22 @@ class Pegawai_model extends CI_Model
 		}
 	}
 
+	public function get_all_for_csv_export()
+	{
+		$this->db->select('
+			p.id_pegawai,
+			p.nama,
+			p.nip,
+			u.nama_unit_kerja,
+			"" AS url_photo_folder
+		');
+		$this->db->from('pegawai p');
+		$this->db->join('unit_kerja u', 'p.id_unit_kerja = u.id_unit_kerja', 'left');
+		$this->db->where('(p.deleted_at IS NULL OR p.deleted_at = "")', null, false);
+
+		return $this->db->get();
+	}
+
 }
 
 /* End of file Pegawai_model.php */
