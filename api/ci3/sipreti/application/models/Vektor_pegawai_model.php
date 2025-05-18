@@ -87,8 +87,28 @@ class Vektor_pegawai_model extends CI_Model
 		return $this->db->get('vektor_pegawai')->result();
 	}
 
+	// Delete vektor tertua jika id_pegawai sudah memiliki 10 vektor aktif
+	public function soft_delete_if_limit_exceeded($id_pegawai, $limit = 10)
+	{
+		$this->db->where('id_pegawai', $id_pegawai);
+		$this->db->where('deleted_at IS NULL', null, false);
+		$this->db->from($this->table);
+		$jumlah_vektor = $this->db->count_all_results();
 
+		if ($jumlah_vektor >= $limit) {
+			// Ambil vektor paling lama (created_at paling awal)
+			$this->db->where('id_pegawai', $id_pegawai);
+			$this->db->where('deleted_at IS NULL', null, false);
+			$this->db->order_by('created_at', 'ASC');
+			$this->db->limit(1);
+			$vektor_lama = $this->db->get($this->table)->row();
 
+			if ($vektor_lama) {
+				$this->db->where($this->id, $vektor_lama->id_vektor_pegawai);
+				$this->db->delete($this->table);
+			}
+		}
+	}
 }
 
 /* End of file Vektor_pegawai_model.php */

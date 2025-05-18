@@ -11,49 +11,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?php echo base_url('assets/css/styles.css?v=<?= time();'); ?>">
-
-	<style>
-		.modal-message {
-			position: fixed;
-			z-index: 1000;
-			left: 0;
-			top: 0;
-			width: 100%;
-			height: 100%;
-			overflow: auto;
-			background-color: rgba(0, 0, 0, 0.4);
-		}
-
-		.modal-message-content {
-			background-color: #fff;
-			margin: 15% auto;
-			padding: 20px;
-			border: 1px solid #888;
-			width: 300px;
-			border-radius: 8px;
-			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-		}
-
-		/* Loader animasi */
-		.loader {
-			border: 6px solid #f3f3f3;
-			border-top: 6px solid #089CCA;
-			border-radius: 50%;
-			width: 40px;
-			height: 40px;
-			animation: spin 1s linear infinite;
-		}
-
-		@keyframes spin {
-			0% {
-				transform: rotate(0deg);
-			}
-
-			100% {
-				transform: rotate(360deg);
-			}
-		}
-	</style>
+	<link rel="stylesheet" href="<?php echo base_url('assets/css/biometric-styles.css?v=<?= time();'); ?>">
 </head>
 
 <body>
@@ -204,7 +162,6 @@
 				data: data
 			})))
 			.then(result => {
-				console.log('Hasil:', result);
 				if (result.status == 200) {
 					window.location.href = "<?php echo site_url('vektor_pegawai/list_pegawai'); ?>";
 				} else {

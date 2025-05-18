@@ -12,206 +12,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?= base_url('assets/css/styles.css?v=<?= time();'); ?>">
 	<link rel="stylesheet" href="<?= base_url('assets/css/form-styles.css?v=<?= time();'); ?>">
-
-	<style>
-		.biometrik-info {
-			display: flex;
-			align-items: center;
-			padding: 20px;
-			background-color: white;
-			border-bottom: 1px solid #ddd;
-			font-size: 12px;
-		}
-
-		.biometrik-info img {
-			width: 120px;
-			border-radius: 4px;
-			margin-right: 20px;
-			object-fit: cover;
-		}
-
-		.biometrik-info div {
-			line-height: 1.8;
-		}
-
-		.card {
-			background-color: white;
-			border-radius: 10px;
-			width: 640px;
-			box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-			overflow: hidden;
-		}
-
-		.modal {
-			display: none;
-			position: fixed;
-			z-index: 999;
-			left: 0;
-			top: 0;
-			width: 100%;
-			height: 100%;
-			overflow: auto;
-			background-color: rgba(0, 0, 0, 0.4);
-		}
-
-		.modal-message {
-			position: fixed;
-			z-index: 1000;
-			left: 0;
-			top: 0;
-			width: 100%;
-			height: 100%;
-			overflow: auto;
-			background-color: rgba(0, 0, 0, 0.4);
-		}
-
-		.modal-message-content {
-			background-color: #fff;
-			margin: 15% auto;
-			padding: 20px;
-			border: 1px solid #888;
-			width: 300px;
-			border-radius: 8px;
-			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-		}
-
-		/* Loader animasi */
-		.loader {
-			border: 6px solid #f3f3f3;
-			border-top: 6px solid #089CCA;
-			border-radius: 50%;
-			width: 40px;
-			height: 40px;
-			animation: spin 1s linear infinite;
-		}
-
-		@keyframes spin {
-			0% {
-				transform: rotate(0deg);
-			}
-
-			100% {
-				transform: rotate(360deg);
-			}
-		}
-
-
-		.table-container {
-			padding-right: 24px;
-			padding-left: 24px;
-		}
-
-		.image-grid {
-			display: grid;
-			grid-template-columns: repeat(5, 1fr);
-			gap: 16px;
-			padding: 0 24px 24px;
-		}
-
-		.image-slot {
-			position: relative;
-			width: 100%;
-			padding-top: 100%;
-		}
-
-		.image-wrapper {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background-color: #eee;
-			border: 1px solid #ccc;
-			border-radius: 4px;
-			overflow: hidden;
-		}
-
-		.image-wrapper img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
-
-		.image-wrapper.kosong {
-			background-color: #f0f0f0;
-		}
-
-		.delete-btn {
-			position: absolute;
-			bottom: 4px;
-			right: 4px;
-			background-color: #F15E3C;
-			color: white;
-			border: none;
-			border-radius: 50%;
-			width: 28px;
-			height: 28px;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			cursor: pointer;
-		}
-
-		.upload-container {
-			display: flex;
-			justify-content: flex-end;
-			padding: 0 24px 24px;
-			margin-top: 20px;
-		}
-
-		.upload-button {
-			background-color: #089CCA;
-			color: white;
-			padding: 10px 16px;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 14px;
-			transition: background-color 0.3s ease;
-		}
-
-		.upload-button:hover {
-			background-color: #067e9e;
-		}
-
-		.btn-cancel {
-			background-color: #4caf50;
-			color: white;
-			border: none;
-			padding: 8px 16px;
-			cursor: pointer;
-			border-radius: 5px;
-			font-weight: bold;
-		}
-
-		.btn-back {
-			background-color: #fff;
-			border: 1px solid #b100b7;
-			color: #b100b7;
-			padding: 8px 20px;
-			font-size: 12px;
-			border-radius: 6px;
-			text-decoration: none;
-			font-weight: bold;
-		}
-
-		.btn-save {
-			background-color: #b100b7;
-			color: #fff;
-			border: none;
-			padding: 8px 20px;
-			font-size: 12px;
-			border-radius: 6px;
-			cursor: pointer;
-			font-weight: bold;
-		}
-
-		.btn-cancel:hover,
-		.btn-back:hover,
-		.btn-save:hover {
-			opacity: 0.9;
-		}
-	</style>
+	<link rel="stylesheet" href="<?= base_url('assets/css/biometric-styles.css?v=<?= time();'); ?>">
 </head>
 
 <body>
@@ -261,7 +62,7 @@
 			</div>
 
 			<div class="upload-container">
-				<button class="upload-button" onclick="document.getElementById('uploadInput').click();">
+				<button class="upload-button" onclick="handleUploadClick();">
 					Upload Foto
 				</button>
 				<input type="file" id="uploadInput" accept="image/*" style="display: none;" multiple>
@@ -330,8 +131,16 @@
 
 </body>
 <script>
-	// Ganti dengan ID pegawai yang aktif, bisa diatur via server-side templating
 	const idPegawai = "<?= $pegawai->id_pegawai ?>";
+	const jumlahBiometrik = <?= count($biometrik) ?>;
+
+	function handleUploadClick() {
+		if (jumlahBiometrik >= 10) {
+			showModalError('Kuota biometrik penuh. Maksimal 10 foto.');
+			return;
+		}
+		document.getElementById('uploadInput').click();
+	}
 
 	function openModal(deleteUrl) {
 		document.getElementById('confirmModal').style.display = 'block';
@@ -419,8 +228,6 @@
 			modal.style.display = 'none';
 		}, 2000);
 	}
-
-
 </script>
 
 </html>

@@ -111,7 +111,7 @@ class Vektor_pegawai extends CI_Controller
 		} else {
 			$id_pegawai = $this->input->post('id_pegawai', TRUE);
 			$face_embeddings = $this->input->post('face_embeddings', TRUE);
-			$timestamp = date('Ymd_His');
+			$this->Vektor_pegawai_model->soft_delete_if_limit_exceeded($id_pegawai);
 
 			// Direktori penyimpanan foto berdasarkan id_pegawai
 			$upload_path = './uploads/vektor_pegawai/' . $id_pegawai . '/';
