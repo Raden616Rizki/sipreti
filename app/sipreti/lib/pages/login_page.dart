@@ -30,6 +30,7 @@ class LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (result["error"] == true) {
+      Navigator.of(context).pop();
       final String message = extractMessage(result["message"]);
       await showErrorDialog(context, message);
       return;

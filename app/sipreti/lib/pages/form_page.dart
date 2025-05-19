@@ -74,10 +74,12 @@ class FormPageState extends State<FormPage> {
 
       if (mounted) {
         if (result['error'] == true) {
+          Navigator.of(context).pop();
           final String message = extractMessage(result["message"]);
           await showErrorDialog(context, message);
           return;
         } else {
+          Navigator.of(context).pop();
           showSuccessDialog(context, 'Registrasi Berhasil');
           Future.delayed(const Duration(seconds: 2), () {
             Navigator.pushNamed(context, '/login');
@@ -135,7 +137,8 @@ class FormPageState extends State<FormPage> {
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      await showErrorDialog(context, "Password dan Konfirmasi Password tidak sama.");
+      await showErrorDialog(
+          context, "Password dan Konfirmasi Password tidak sama.");
       return false;
     }
 

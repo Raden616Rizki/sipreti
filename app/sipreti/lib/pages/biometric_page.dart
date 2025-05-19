@@ -217,6 +217,7 @@ class _BiometricPageState extends State<BiometricPage> {
         await _detectAndCropFace(image);
       } catch (e) {
         if (mounted) {
+          Navigator.of(context).pop();
           showErrorDialog(context, "Error capturing image: $e");
         }
       }
@@ -236,29 +237,21 @@ class _BiometricPageState extends State<BiometricPage> {
       final embeddings = await _getFaceEmbeddings(croppedFace);
       var pegawaiBox = Hive.box('pegawai');
 
-      // String idPegawai = pegawaiBox.get('id_pegawai');
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
-
-      List<double> distances2 = [];
+      const double threshold = 7;
+      bool verifikasi = false;
 
       for (int i = 0; i < faceEmbeddings.length; i++) {
         List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
         double distance = manhattanDistance(embeddings, storedEmbedding);
-        distances2.add(distance);
+
+        if (distance < threshold) {
+          verifikasi = true;
+          break;
+        }
       }
 
-      // Cek apakah ada jarak di bawah threshold (misal 7)
-      const double threshold = 7;
-      bool verifikasi = distances2.any((d) => d < threshold);
-
-      String message =
-          verifikasi ? "Wajah terverifikasi" : "Wajah tidak terverifikasi";
       int value = verifikasi ? 1 : 0;
-
-      // Tampilkan hasil akhir
-      debugPrint('Jarak Kedekatan: $distances2');
-      debugPrint('message: $message');
-      debugPrint('Value: $value');
 
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.put('face_status', value);
@@ -281,6 +274,10 @@ class _BiometricPageState extends State<BiometricPage> {
         );
       }
     } else {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
       _showCapturedImageDialog();
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
@@ -339,7 +336,7 @@ class _BiometricPageState extends State<BiometricPage> {
       barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: Colors.red.withOpacity(0.5),
+          backgroundColor: const Color(0xFFFD5765),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -349,7 +346,7 @@ class _BiometricPageState extends State<BiometricPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "No face detected, please try again.",
+                  "Wajah Tidak Terdeteksi, Mohon Ulangi",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,

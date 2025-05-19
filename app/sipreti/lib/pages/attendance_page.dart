@@ -105,7 +105,7 @@ class _AttendancePageState extends State<AttendancePage> {
           await showErrorDialog(context, message);
           return;
         } else {
-          showSuccessDialog(context, 'Berhasil Presebsu');
+          showSuccessDialog(context, 'Berhasil Presensi');
           Future.delayed(const Duration(seconds: 2), () {
             Navigator.pushNamed(context, '/');
           });
