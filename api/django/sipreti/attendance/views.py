@@ -70,14 +70,14 @@ def upload_csv(request):
                             response = requests.post(settings.CI3_API_URL, data=data, files=files)
 
                             if response.status_code == 200:
-                                print(f"Data berhasil dikirim dengan ID Pegawai {id_pegawai}, foto {i+1}")
+                                print(f"Data berhasil dikirim untuk ID Pegawai {id_pegawai}, foto {i+1}")
                             else:
                                 print(f"Error response dari CI3: {response.text}")
 
                         except Exception as send_err:
                             print(f"Gagal mengirim data ke CI3: {send_err}")
                 else:
-                    print(f"Tidak ada vektor wajah yang diekstrak dengan ID pegawai {id_pegawai}")
+                    print(f"Tidak ada vektor wajah yang diekstrak untuk ID pegawai {id_pegawai}")
 
                 current += 1
                 if task_id:

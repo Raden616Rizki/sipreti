@@ -74,18 +74,16 @@ jobs:
 
       - name: Configure Django settings.py
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
- 
+          ssh -o StrictHostKeyChecking=no '${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}' '
             sudo cp /var/www/html/django/sipreti/sipreti/settings_copy.py /var/www/html/django/sipreti/sipreti/settings.py
 
-            sudo sed -i \"s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g\" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|^SECRET_KEY = .*|SECRET_KEY = '\''${{ secrets.DJANGO_KEY }}'\''|" /var/www/html/django/sipreti/sipreti/settings.py
 
-            sudo sed -i \"s|^SECRET_KEY = .*|SECRET_KEY = '${{ secrets.DJANGO_KEY }}'|\" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|http://localhost|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
 
-            sudo sed -i \"s|http://localhost|http://${{ secrets.GCP_INSTANCE_IP }}|g\" /var/www/html/django/sipreti/sipreti/settings.py
-            sudo sed -i \"s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g\" /var/www/html/django/sipreti/sipreti/settings.py
-
-            sudo sed -i \"s|'PASSWORD': *''|'PASSWORD': '${{ secrets.MYSQL_ROOT_PASSWORD }}'|\" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|'PASSWORD': *''|'PASSWORD': '${{ secrets.MYSQL_ROOT_PASSWORD }}'|" /var/www/html/django/sipreti/sipreti/settings.py
           '
 
       - name: Restart sipreti service
