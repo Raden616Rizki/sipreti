@@ -83,7 +83,7 @@ def upload_csv(request):
                 if task_id:
                     set_progress(task_id, current, total_rows)
 
-            return JsonResponse({'message': 'Data berhasil diproses'}, status=200)
+            return JsonResponse({'message': 'Data Berhasil Diproses'}, status=200)
 
         except UnicodeDecodeError:
             return JsonResponse({'error': 'File tidak dapat dibaca. Pastikan file berformat UTF-8.'}, status=400)

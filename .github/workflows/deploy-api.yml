@@ -38,13 +38,13 @@ jobs:
             cd /var/www/html/sipreti
             sudo /usr/local/bin/composer install --no-interaction --prefer-dist
 
-            sudo sed -i "s/'password' => '.*'/'password' => '\''${{ secrets.MYSQL_ROOT_PASSWORD }}'\''/" application/config/database.php
+            sudo sed -i "s|'password' => '\''.*'\''|'password' => '\''${{ secrets.MYSQL_ROOT_PASSWORD }}'\''|g" application/config/database.php
 
-            sudo sed -i "s|\$config\['base_url'\] = .*;|\$config['base_url'] = '\''http://${{ secrets.GCP_INSTANCE_IP }}/sipreti'\'';|" application/config/config.php
+            sudo sed -i "s|\$config\['base_url'\] = .*;|\$config['base_url'] = '\''http://${{ secrets.GCP_INSTANCE_IP }}/sipreti'\'';|g" application/config/config.php
 
             sudo sed -i "s|fetch('\''http://.*:8000/attendance/face-register/|fetch('\''http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register/|g" application/views/vektor_pegawai/pegawai_vektor_management.php
 
-            sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/pegawai_vektor_management.php
+            sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/pegawai_list.php
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/pegawai/pegawai_list.php
           '
@@ -83,7 +83,7 @@ jobs:
             sudo sed -i "s|http://localhost|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
             sudo sed -i "s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
 
-            sudo sed -i "s|'PASSWORD': *''|'PASSWORD': '${{ secrets.MYSQL_ROOT_PASSWORD }}'|" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|'PASSWORD': *''|'PASSWORD': '${{ secrets.MYSQL_ROOT_PASSWORD }}'|g" /var/www/html/django/sipreti/sipreti/settings.py
           '
 
       - name: Restart sipreti service
