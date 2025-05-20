@@ -298,8 +298,8 @@ class _AttendancePageState extends State<AttendancePage> {
                             const SizedBox(width: 10),
                             Text(
                               faceStatus == 1
-                                  ? "Data Valid"
-                                  : "Data Tidak Valid",
+                                  ? "Wajah Terverifikasi"
+                                  : "Wajah Tidak Terverifikasi",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

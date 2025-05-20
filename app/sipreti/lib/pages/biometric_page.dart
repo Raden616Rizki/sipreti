@@ -31,8 +31,6 @@ class _BiometricPageState extends State<BiometricPage> {
   final List<String> instructions = [
     "Kedipkan mata",
     "Tersenyum ke Kamera",
-    // "Menoleh ke Kiri",
-    // "Menoleh ke Kanan"
   ];
 
   late String currentInstruction;
@@ -131,16 +129,6 @@ class _BiometricPageState extends State<BiometricPage> {
               _onInstructionCompleted();
             }
             break;
-          case "Menoleh ke Kiri":
-            if ((face.headEulerAngleY ?? 0.0) > 20) {
-              _onInstructionCompleted();
-            }
-            break;
-          case "Menoleh ke Kanan":
-            if ((face.headEulerAngleY ?? 0.0) < -20) {
-              _onInstructionCompleted();
-            }
-            break;
         }
       }
     } catch (e) {
@@ -203,25 +191,47 @@ class _BiometricPageState extends State<BiometricPage> {
     return sum;
   }
 
-  Future<void> _captureImage() async {
-    showLoadingDialog(context);
-
-    if (_cameraController != null && _cameraController!.value.isInitialized) {
-      try {
-        final image = await _cameraController!.takePicture();
-        setState(() {
-          capturedImage = image;
-          _cameraStopped = true;
-        });
-
-        await _detectAndCropFace(image);
-      } catch (e) {
-        if (mounted) {
-          Navigator.of(context).pop();
-          showErrorDialog(context, "Error capturing image: $e");
-        }
-      }
+  Future<img.Image> _cropFace(XFile image, Rect boundingBox) async {
+    final bytes = await image.readAsBytes();
+    final originalImage = img.decodeImage(bytes);
+    if (originalImage == null) {
+      throw Exception("Error reading the original image");
     }
+
+    final int left = boundingBox.left.toInt().clamp(0, originalImage.width);
+    final int top = boundingBox.top.toInt().clamp(0, originalImage.height);
+    final int width =
+        boundingBox.width.toInt().clamp(0, originalImage.width - left);
+    final int height =
+        boundingBox.height.toInt().clamp(0, originalImage.height - top);
+    final cropped = img.copyCrop(originalImage, left, top, width, height);
+
+    return cropped;
+  }
+
+  Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
+    Float32List input = await _loadAndNormalizeImage(faceImage);
+
+    var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
+
+    var output =
+        List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
+    _interpreter?.run(reshapedInput, output);
+
+    return output[0];
+  }
+
+  Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
+    final resizedImage = img.copyResize(image, width: 112, height: 112);
+
+    final pixels = resizedImage.getBytes(format: img.Format.rgb);
+    final floatPixels = Float32List(pixels.length);
+
+    for (int i = 0; i < pixels.length; i++) {
+      floatPixels[i] = pixels[i] / 255.0;
+    }
+
+    return floatPixels;
   }
 
   Future<void> _detectAndCropFace(XFile image) async {
@@ -287,47 +297,25 @@ class _BiometricPageState extends State<BiometricPage> {
     }
   }
 
-  Future<img.Image> _cropFace(XFile image, Rect boundingBox) async {
-    final bytes = await image.readAsBytes();
-    final originalImage = img.decodeImage(bytes);
-    if (originalImage == null) {
-      throw Exception("Error reading the original image");
+  Future<void> _captureImage() async {
+    showLoadingDialog(context);
+
+    if (_cameraController != null && _cameraController!.value.isInitialized) {
+      try {
+        final image = await _cameraController!.takePicture();
+        setState(() {
+          capturedImage = image;
+          _cameraStopped = true;
+        });
+
+        await _detectAndCropFace(image);
+      } catch (e) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          showErrorDialog(context, "Error capturing image: $e");
+        }
+      }
     }
-
-    final int left = boundingBox.left.toInt().clamp(0, originalImage.width);
-    final int top = boundingBox.top.toInt().clamp(0, originalImage.height);
-    final int width =
-        boundingBox.width.toInt().clamp(0, originalImage.width - left);
-    final int height =
-        boundingBox.height.toInt().clamp(0, originalImage.height - top);
-    final cropped = img.copyCrop(originalImage, left, top, width, height);
-
-    return cropped;
-  }
-
-  Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
-    Float32List input = await _loadAndNormalizeImage(faceImage);
-
-    var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
-
-    var output =
-        List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
-    _interpreter?.run(reshapedInput, output);
-
-    return output[0];
-  }
-
-  Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
-    final resizedImage = img.copyResize(image, width: 112, height: 112);
-
-    final pixels = resizedImage.getBytes(format: img.Format.rgb);
-    final floatPixels = Float32List(pixels.length);
-
-    for (int i = 0; i < pixels.length; i++) {
-      floatPixels[i] = pixels[i] / 255.0;
-    }
-
-    return floatPixels;
   }
 
   void _showCapturedImageDialog() {
