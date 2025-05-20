@@ -125,6 +125,14 @@ class Pegawai extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->create();
 		} else {
+
+			$nip = $this->input->post('nip', TRUE);
+
+			$existing = $this->Pegawai_model->count_by_nip($nip);
+			if ($existing) {
+				$this->Pegawai_model->delete_by_nip($nip);
+			}
+
 			$upload_path = './uploads/foto_pegawai/';
 			if (!is_dir($upload_path)) {
 				mkdir($upload_path, 0777, true);
@@ -203,6 +211,14 @@ class Pegawai extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->update($this->input->post('id_pegawai', TRUE));
 		} else {
+
+			$nip = $this->input->post('nip', TRUE);
+
+			$existing = $this->Pegawai_model->count_by_nip($nip);
+			if ($existing) {
+				$this->Pegawai_model->delete_by_nip($nip);
+			}
+
 			$upload_path = './uploads/foto_pegawai/';
 			if (!is_dir($upload_path)) {
 				mkdir($upload_path, 0777, true); // Buat folder jika belum ada

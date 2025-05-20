@@ -34,20 +34,21 @@ jobs:
 
       - name: Setup CI3
         run: |
-          ssh -o StrictHostKeyChecking=no '${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}' '
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} <<'EOF'
             cd /var/www/html/sipreti
             sudo /usr/local/bin/composer install --no-interaction --prefer-dist
 
-            sudo sed -i "s|'password' => '\''.*'\''|'password' => '\''${{ secrets.MYSQL_PASSWORD }}'\''|g" application/config/database.php
+            sudo sed -i "s|'password' => '.*'|'password' => '${{ secrets.MYSQL_ROOT_PASSWORD }}'|g" application/config/database.php
 
-            sudo sed -i '\''s|\\$config\\[\\x27base_url\\x27\\] = .*;|$config[\\x27base_url\\x27] = '\''http://${{ secrets.GCP_INSTANCE_IP }}/sipreti'\'';|g'\'' application/config/config.php
+            sudo sed -i "s|\$config\['base_url'\] = .*;|\$config['base_url'] = 'http://${{ secrets.GCP_INSTANCE_IP }}/sipreti';|g" application/config/config.php
 
-            sudo sed -i "s|fetch('\''http://.*:8000/attendance/face-register/|fetch('\''http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register/|g" application/views/vektor_pegawai/pegawai_vektor_management.php
+            sudo sed -i "s|fetch('http://.*:8000/attendance/face-register/|fetch('http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register/|g" application/views/vektor_pegawai/pegawai_vektor_management.php
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/pegawai_list.php
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/pegawai/pegawai_list.php
-          '
+          EOF
+
           
       - name: Setup Django
         run: |
@@ -74,17 +75,18 @@ jobs:
 
       - name: Configure Django settings.py
         run: |
-          ssh -o StrictHostKeyChecking=no '${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}' '
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} <<'EOF'
             sudo cp /var/www/html/django/sipreti/sipreti/settings_copy.py /var/www/html/django/sipreti/sipreti/settings.py
 
             sudo sed -i "s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
-            sudo sed -i "s|^SECRET_KEY = .*|SECRET_KEY = '\''${{ secrets.DJANGO_KEY }}'\''|" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|^SECRET_KEY = .*|SECRET_KEY = '${{ secrets.DJANGO_KEY }}'|" /var/www/html/django/sipreti/sipreti/settings.py
 
             sudo sed -i "s|http://localhost|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
             sudo sed -i "s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
 
-            sudo sed -i "s|'PASSWORD': *''|'PASSWORD': '${{ secrets.MYSQL_PASSWORD }}'|g" /var/www/html/django/sipreti/sipreti/settings.py
-          '
+            sudo sed -i "s|'PASSWORD': *''|'PASSWORD': '${{ secrets.MYSQL_ROOT_PASSWORD }}'|g" /var/www/html/django/sipreti/sipreti/settings.py
+          EOF
+
 
       - name: Restart sipreti service
         run: |
