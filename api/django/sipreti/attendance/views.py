@@ -70,7 +70,7 @@ def upload_csv(request):
                             response = requests.post(settings.CI3_API_URL, data=data, files=files)
 
                             if response.status_code == 200:
-                                print(f"Data berhasil dikirim dengan ID Pegawai {id_pegawai}, foto {i+1}")
+                                print(f"Data berhasil dikirim untuk ID Pegawai {id_pegawai}, foto {i+1}")
                             else:
                                 print(f"Error response dari CI3: {response.text}")
 

@@ -48,6 +48,28 @@ jobs:
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/pegawai/pegawai_list.php
           '
+      - name: Setup Django
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
+            cd /var/www/html/django
+
+            # Buat virtual environment
+            sudo python3.8 -m venv venv
+
+            # Aktifkan virtualenv
+            source venv/bin/activate
+
+            # Ubah kepemilikan folder venv ke GCP_USERNAME
+            sudo chown -R \${{ secrets.GCP_USERNAME }}:\${{ secrets.GCP_USERNAME }} /var/www/html/django/venv/
+
+            # Install dependencies
+            pip install --upgrade pip
+            pip install -r requirements.txt
+
+            # Buat folder dan file credentials.json
+            sudo mkdir -p /var/www/html/django/sipreti/assets/auth
+            echo '${{ secrets.GCP_SA_KEY }}' | sudo tee /var/www/html/django/sipreti/assets/auth/credentials.json > /dev/null
+          "
 
       - name: Configure Django settings.py
         run: |
