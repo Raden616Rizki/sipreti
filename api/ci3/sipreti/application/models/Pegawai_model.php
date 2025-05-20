@@ -172,9 +172,19 @@ class Pegawai_model extends CI_Model
 
 	public function delete_by_nip($nip)
 	{
-		$this->db->where('nip', $nip);
-		$this->db->delete('pegawai');
+		$pegawai = $this->db->get_where('pegawai', ['nip' => $nip])->row();
+
+		if ($pegawai) {
+			$id_pegawai = $pegawai->id_pegawai;
+
+			$this->db->where('id_pegawai', $id_pegawai);
+			$this->db->delete('vektor_pegawai');
+
+			$this->db->where('nip', $nip);
+			$this->db->delete('pegawai');
+		}
 	}
+
 
 
 	public function get_all_for_csv_export()
