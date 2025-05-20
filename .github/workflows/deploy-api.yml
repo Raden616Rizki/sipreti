@@ -32,40 +32,22 @@ jobs:
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" api/django/ ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/tmp/deploy_django/
           ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/django && sudo mv /tmp/deploy_django /var/www/html/django && sudo chown -R www-data:www-data /var/www/html/django"
 
-      - name: Run Composer Install and Setup CI3
+      - name: Setup CI3
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
+          ssh -o StrictHostKeyChecking=no '${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}' '
             cd /var/www/html/sipreti
             sudo /usr/local/bin/composer install --no-interaction --prefer-dist
 
-            sudo sed -i \"s/'password' => '.*'/'password' => '${{ secrets.MYSQL_ROOT_PASSWORD }}'/\" application/config/database.php
+            sudo sed -i "s/'password' => '.*'/'password' => '\''${{ secrets.MYSQL_ROOT_PASSWORD }}'\''/" application/config/database.php
 
-            sudo sed -i \"s|\\\$config\\['base_url'\\] = '.*';|\\\$config['base_url'] = 'http://${{ secrets.GCP_INSTANCE_IP }}/sipreti';|\" application/config/config.php
+            sudo sed -i "s|\$config\['base_url'\] = .*;|\$config['base_url'] = '\''http://${{ secrets.GCP_INSTANCE_IP }}/sipreti'\'';|" application/config/config.php
 
-            sudo sed -i "s|fetch('http://.*:8000/attendance/face-register/|fetch('http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register/|g" application/views/vektor_pegawai/pegawai_vektor_management.php
+            sudo sed -i "s|fetch('\''http://.*:8000/attendance/face-register/|fetch('\''http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register/|g" application/views/vektor_pegawai/pegawai_vektor_management.php
 
-            sudo sed -i \"s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g\" application/views/vektor_pegawai/pegawai_vektor_management.php
+            sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/pegawai_vektor_management.php
 
-            sudo sed -i \"s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g\" application/views/pegawai/pegawai_list.php
-          "
-
-      - name: Setup Django
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
-            cd /var/www/html/django
-
-            sudo python3.8 -m venv venv
-
-            source venv/bin/activate
-
-            sudo chown -R ${{ secrets.GCP_USERNAME }}:${{ secrets.GCP_USERNAME }} /var/www/html/django/venv/
-
-            pip install --upgrade pip
-            pip install -r requirements.txt
-
-            sudo mkdir -p /var/www/html/django/sipreti/assets/auth
-            echo '${{ secrets.GOOGLE_DRIVE_KEY }}' | sudo tee /var/www/html/django/sipreti/assets/auth/credentials.json > /dev/null
-          "
+            sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/pegawai/pegawai_list.php
+          '
 
       - name: Configure Django settings.py
         run: |
