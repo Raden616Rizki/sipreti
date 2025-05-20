@@ -268,6 +268,21 @@
 			document.getElementById('modal-error-message').style.display = 'none';
 			modal.style.display = 'block';
 		}
+
+		function showModalError(pesan) {
+			const modal = document.getElementById('modal-global');
+			document.getElementById('modal-loader').style.display = 'none';
+			const errorBox = document.getElementById('modal-error-message');
+			const errorText = document.getElementById('modal-error-text');
+
+			errorText.textContent = pesan;
+			errorBox.style.display = 'block';
+			modal.style.display = 'block';
+
+			setTimeout(() => {
+				modal.style.display = 'none';
+			}, 3000);
+		}
 	</script>
 </body>
 

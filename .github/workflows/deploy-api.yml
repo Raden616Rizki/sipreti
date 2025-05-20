@@ -78,7 +78,9 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} <<'EOF'
             sudo cp /var/www/html/django/sipreti/sipreti/settings_copy.py /var/www/html/django/sipreti/sipreti/settings.py
 
-            sudo sed -i "s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|^CI3_API_URL = .*|CI3_API_URL = \"http://${{ secrets.GCP_INSTANCE_IP }}/sipreti/vektor_pegawai/create_api\"|" /var/www/html/django/sipreti/sipreti/settings.py
+            sudo sed -i "s|^CI3_API_PEGAWAI_URL = .*|CI3_API_PEGAWAI_URL = 'http://${{ secrets.GCP_INSTANCE_IP }}/sipreti/pegawai/create_api'|" /var/www/html/django/sipreti/sipreti/settings.py
+
             sudo sed -i "s|^SECRET_KEY = .*|SECRET_KEY = '${{ secrets.DJANGO_KEY }}'|" /var/www/html/django/sipreti/sipreti/settings.py
 
             sudo sed -i "s|http://localhost|http://${{ secrets.GCP_INSTANCE_IP }}|g" /var/www/html/django/sipreti/sipreti/settings.py
