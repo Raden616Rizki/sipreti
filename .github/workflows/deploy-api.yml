@@ -40,7 +40,7 @@ jobs:
 
             sudo sed -i "s|'password' => '\''.*'\''|'password' => '\''${{ secrets.MYSQL_PASSWORD }}'\''|g" application/config/database.php
 
-            sudo sed -i "s|\$config\['base_url'\] = .*;|\$config['base_url'] = '\''http://${{ secrets.GCP_INSTANCE_IP }}/sipreti'\'';|g" application/config/config.php
+            sudo sed -i '\''s|\\$config\\[\\x27base_url\\x27\\] = .*;|$config[\\x27base_url\\x27] = '\''http://${{ secrets.GCP_INSTANCE_IP }}/sipreti'\'';|g'\'' application/config/config.php
 
             sudo sed -i "s|fetch('\''http://.*:8000/attendance/face-register/|fetch('\''http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register/|g" application/views/vektor_pegawai/pegawai_vektor_management.php
 
