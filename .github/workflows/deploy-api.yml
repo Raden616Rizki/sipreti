@@ -48,6 +48,7 @@ jobs:
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/pegawai/pegawai_list.php
           '
+          
       - name: Setup Django
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
@@ -75,7 +76,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
  
-            cp /var/www/html/django/sipreti/sipreti/settings_copy.py /var/www/html/django/sipreti/sipreti/settings.py
+            sudo cp /var/www/html/django/sipreti/sipreti/settings_copy.py /var/www/html/django/sipreti/sipreti/settings.py
 
             sudo sed -i \"s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g\" /var/www/html/django/sipreti/sipreti/settings.py
 
@@ -85,4 +86,13 @@ jobs:
             sudo sed -i \"s|http://127.0.0.1|http://${{ secrets.GCP_INSTANCE_IP }}|g\" /var/www/html/django/sipreti/sipreti/settings.py
 
             sudo sed -i \"s|'PASSWORD': *''|'PASSWORD': '${{ secrets.MYSQL_ROOT_PASSWORD }}'|\" /var/www/html/django/sipreti/sipreti/settings.py
-          "
+          '
+
+      - name: Restart sipreti service
+        run: |
+          ssh -o StrictHostKeyChecking=no '${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}' '
+            sudo systemctl daemon-reexec
+            sudo systemctl daemon-reload
+            sudo systemctl restart sipreti
+            sudo systemctl enable sipreti
+          '
