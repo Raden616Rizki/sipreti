@@ -35,8 +35,6 @@ def face_extraction_gdrive(folder_id, id_pegawai):
         service = get_drive_service()
         interpreter = load_tflite_model()
         detector = MTCNN()
-        
-        print('Load Data Success')
 
         # Ambil daftar file gambar dari Google Drive
         query = f"'{folder_id}' in parents and mimeType contains 'image/'"
