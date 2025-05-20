@@ -32,16 +32,16 @@ jobs:
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" api/django/ ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/tmp/deploy_django/
           ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/django && sudo mv /tmp/deploy_django /var/www/html/django && sudo chown -R www-data:www-data /var/www/html/django"
 
-      - name: Import MySQL database
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
-            mysql -u root -p'${{ secrets.MYSQL_ROOT_PASSWORD }}' -e '
-              DROP DATABASE IF EXISTS sipreti_db;
-              CREATE DATABASE sipreti_db;
-              USE sipreti_db;
-              SOURCE /var/www/html/sipreti/sipreti_db.sql;
-            '
-          "
+      # - name: Import MySQL database
+      #   run: |
+      #     ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
+      #       mysql -u root -p'${{ secrets.MYSQL_ROOT_PASSWORD }}' -e '
+      #         DROP DATABASE IF EXISTS sipreti_db;
+      #         CREATE DATABASE sipreti_db;
+      #         USE sipreti_db;
+      #         SOURCE /var/www/html/sipreti/sipreti_db.sql;
+      #       '
+      #     "
 
       - name: Run Composer Install
         run: |
