@@ -93,7 +93,7 @@ def face_extraction_gdrive(folder_id, id_pegawai):
                 vectors.append(vector)
                 original_images.append(original_io)
 
-                print(f"Vektor wajah berhasil diekstrak dari {file_name}")
+                print(f"Vektor wajah berhasil diekstrak dari {original_io.name}")
 
             except Exception as img_err:
                 print(f"Kesalahan dalam memproses gambar {file_name}: {img_err}")

@@ -57,8 +57,10 @@ def upload_csv(request):
 
                     for i, vector in enumerate(vectors):
                         try:
+                            image_file = originalImages[i]
+                            image_file.seek(0)
                             files = {
-                                'url_foto': originalImages[i]
+                                'url_foto': (image_file.name, image_file, 'image/jpeg')
                             }
                             data = {
                                 'id_pegawai': id_pegawai,
@@ -89,6 +91,137 @@ def upload_csv(request):
             return JsonResponse({'error': 'Format CSV Tidak Valid.'}, status=400)
 
     return JsonResponse({'error': 'Invalid request. Harus POST dan mengandung file CSV.'}, status=400)
+
+@csrf_exempt
+def upload_csv_pegawai(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        csv_file = request.FILES["file"]
+        task_id = request.GET.get("task_id", "default")
+
+        try:
+            raw_data = csv_file.read().decode("utf-8").splitlines()
+            reader = csv.DictReader(raw_data)
+
+            required_columns = {'nip', 'nama', 'id_jabatan', 'id_unit_kerja', 'url_photo_folder'}
+            if not required_columns.issubset(reader.fieldnames):
+                return JsonResponse({
+                    'error': 'CSV harus memiliki kolom: nip, nama, id_jabatan, id_unit_kerja, url_photo_folder'
+                }, status=400)
+
+            rows = list(reader)
+            total_rows = len(rows)
+            current = 0
+
+            for row in rows:
+                nip = row.get("nip")
+                nama = row.get("nama")
+                id_jabatan = row.get("id_jabatan")
+                id_unit_kerja = row.get("id_unit_kerja")
+                folder_url = row.get("url_photo_folder")
+
+                if not all([nip, nama, id_jabatan, id_unit_kerja, folder_url]):
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
+                    continue
+
+                folder_id = extract_folder_id(folder_url)
+                if not folder_id:
+                    print(f"URL folder tidak valid: {folder_url}")
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
+                    continue
+                
+                results = face_extraction_gdrive(folder_id, nip)
+                if results:
+                    vectors, originalImages = results
+                    print(f"Berhasil mengekstrak {len(vectors)} wajah untuk NIP {nip}")
+
+                    if vectors and originalImages:
+                        try:
+                            files_pegawai = {
+                                'url_foto': originalImages[0]
+                            }
+                            data_pegawai = {
+                                'nip': nip,
+                                'nama': nama,
+                                'id_jabatan': id_jabatan,
+                                'id_unit_kerja': id_unit_kerja,
+                            }
+
+                            pegawai_response = requests.post(
+                                settings.CI3_API_PEGAWAI_URL,
+                                data=data_pegawai,
+                                files=files_pegawai
+                            )
+
+                            if pegawai_response.status_code == 200:
+                                print(f"Data pegawai berhasil dikirim: {nip}")
+                                try:
+                                    response_data = pegawai_response.json()
+                                    id_pegawai = response_data.get("id_pegawai")
+
+                                    if not id_pegawai:
+                                        print(f"Gagal ambil id_pegawai dari response untuk NIP {nip}")
+                                        current += 1
+                                        if task_id:
+                                            set_progress(task_id, current, total_rows)
+                                        continue
+                                except Exception as parse_err:
+                                    print(f"Error parsing response JSON dari CI3: {parse_err}")
+                                    current += 1
+                                    if task_id:
+                                        set_progress(task_id, current, total_rows)
+                                    continue
+
+                                for i, vector in enumerate(vectors):
+                                    try:
+                                        image_file = originalImages[i]
+                                        image_file.seek(0)
+                                        files_vector = {
+                                            'url_foto': (image_file.name, image_file, 'image/jpeg')
+                                        }
+                                        data_vector = {
+                                            'id_pegawai': id_pegawai,
+                                            'face_embeddings': json.dumps(vector)
+                                        }
+
+                                        vektor_response = requests.post(
+                                            settings.CI3_API_URL,
+                                            data=data_vector,
+                                            files=files_vector
+                                        )
+
+                                        if vektor_response.status_code == 200:
+                                            print(f"Vektor ke-{i+1} untuk {nip} berhasil dikirim")
+                                        else:
+                                            print(f"CI3 Gagal (vektor): {vektor_response.status_code} - {vektor_response.text}")
+
+                                    except Exception as send_err:
+                                        print(f"Gagal kirim vektor wajah {nip}: {send_err}")
+
+                            else:
+                                print(f"CI3 Gagal (pegawai): {pegawai_response.status_code} - {pegawai_response.text}")
+
+                        except Exception as e:
+                            print(f"Gagal mengirim data pegawai {nip}: {e}")
+                    else:
+                        print(f"Tidak ada gambar untuk NIP {nip}")
+                else:
+                    print(f"Gagal ekstraksi wajah dari folder {folder_url} untuk NIP {nip}")
+
+                current += 1
+                if task_id:
+                    set_progress(task_id, current, total_rows)
+
+            return JsonResponse({'message': 'Upload dan ekstraksi pegawai selesai'}, status=200)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Request harus POST dengan file'}, status=400)
+
 
 @csrf_exempt
 def face_register(request):

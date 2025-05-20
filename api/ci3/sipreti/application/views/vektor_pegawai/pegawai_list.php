@@ -157,7 +157,7 @@
 		});
 	});
 
-	const taskId = 'task_' + Date.now(); // ID unik
+	const taskId = 'task_' + Date.now();
 
 	document.getElementById('csvFileInput').addEventListener('change', function (event) {
 		const file = event.target.files[0];
@@ -169,14 +169,12 @@
 		const formData = new FormData();
 		formData.append('file', file);
 
-		// Tampilkan modal loading jika ingin (opsional)
 		showModalLoading();
 
 		document.getElementById('progress-wrapper').style.display = 'block';
 
-		updateProgressBar(0); // Reset awal
+		updateProgressBar(0);
 
-		// Upload dengan task_id
 		fetch(`http://127.0.0.1:8000/attendance/upload-csv/?task_id=${taskId}`, {
 			method: 'POST',
 			body: formData
@@ -198,7 +196,6 @@
 
 		let checkProgressDone = false;
 
-		// Polling progress tiap 2 detik
 		const intervalId = setInterval(() => {
 			if (checkProgressDone) {
 				clearInterval(intervalId);

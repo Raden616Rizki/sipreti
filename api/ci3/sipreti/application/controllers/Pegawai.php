@@ -312,6 +312,66 @@ class Pegawai extends CI_Controller
 		}
 	}
 
+	public function create_api()
+	{
+		$this->load->library(['upload', 'form_validation']);
+
+		$this->_rules();
+		if ($this->form_validation->run() == FALSE) {
+			echo json_encode(['error' => validation_errors()]);
+			return;
+		}
+
+		$nip = $this->input->post('nip', TRUE);
+
+		$existing = $this->Pegawai_model->count_by_nip($nip);
+		if ($existing) {
+			$this->Pegawai_model->delete_by_nip($nip);
+		}
+
+		$upload_path = './uploads/foto_pegawai/';
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0777, true);
+		}
+
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'jpg|jpeg|png';
+		$config['max_size'] = 2048;
+		$config['encrypt_name'] = TRUE;
+
+		$this->upload->initialize($config);
+
+		$foto = null;
+		if (!empty($_FILES['url_foto']['name'])) {
+			if ($this->upload->do_upload('url_foto')) {
+				$upload_data = $this->upload->data();
+				$foto = $upload_data['file_name'];
+			} else {
+				echo json_encode(['error' => $this->upload->display_errors()]);
+				return;
+			}
+		}
+
+		$data = array(
+			'id_jabatan' => $this->input->post('id_jabatan', TRUE),
+			'id_unit_kerja' => $this->input->post('id_unit_kerja', TRUE),
+			'nip' => $nip,
+			'nama' => $this->input->post('nama', TRUE),
+			'url_foto' => $foto,
+			'created_at' => date('Y-m-d H:i:s'),
+			'updated_at' => NULL,
+			'deleted_at' => NULL,
+		);
+
+		$id_pegawai = $this->Pegawai_model->insert_api($data);
+
+		echo json_encode([
+			'message' => 'Data pegawai berhasil disimpan',
+			'id_pegawai' => $id_pegawai
+		]);
+	}
+
+
 	public function _rules()
 	{
 		$this->form_validation->set_rules('id_jabatan', 'id jabatan', 'trim|required');

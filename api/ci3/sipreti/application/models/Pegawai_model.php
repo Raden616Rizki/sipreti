@@ -129,6 +129,12 @@ class Pegawai_model extends CI_Model
 		$this->db->insert($this->table, $data);
 	}
 
+	public function insert_api($data)
+	{
+		$this->db->insert($this->table, $data);
+		return $this->db->insert_id();
+	}
+
 	// update data
 	function update($id, $data)
 	{
@@ -155,6 +161,21 @@ class Pegawai_model extends CI_Model
 			return null;
 		}
 	}
+
+	public function count_by_nip($nip)
+	{
+		$this->db->where('nip', $nip);
+		$query = $this->db->get('pegawai');
+
+		return $query->num_rows() > 0 ? $query->row() : null;
+	}
+
+	public function delete_by_nip($nip)
+	{
+		$this->db->where('nip', $nip);
+		$this->db->delete('pegawai');
+	}
+
 
 	public function get_all_for_csv_export()
 	{
