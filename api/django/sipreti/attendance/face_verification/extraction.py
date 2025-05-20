@@ -154,4 +154,5 @@ def extract_folder_id(url):
     # Pola regex untuk menangkap folder ID
     pattern = r"folders/([a-zA-Z0-9_-]+)"
     match = re.search(pattern, url)
+    print(f'{url} success extracted!')
     return match.group(1) if match else None
