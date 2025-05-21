@@ -68,6 +68,7 @@ class DashboardPageState extends State<DashboardPage> {
 
     if (mounted) {
       if (dataPegawai["error"] == true) {
+        Navigator.of(context).pop();
         final String message = extractMessage(dataPegawai["message"]);
         await showErrorDialog(context, message);
         return;

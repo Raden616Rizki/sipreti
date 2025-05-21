@@ -79,7 +79,6 @@ class FormPageState extends State<FormPage> {
           await showErrorDialog(context, message);
           return;
         } else {
-          Navigator.of(context).pop();
           showSuccessDialog(context, 'Registrasi Berhasil');
           Future.delayed(const Duration(seconds: 2), () {
             Navigator.pushNamed(context, '/login');
