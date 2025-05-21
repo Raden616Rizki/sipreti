@@ -58,7 +58,7 @@
 			<a href="/sipreti/log_absensi">Absensi</a>
 			<a class="active" href="/sipreti/pegawai">Pegawai</a>
 			<a href="/sipreti/user_android">User Android</a>
-			<a href="/sipreti/vektor_pegawai">Biometrik Pegawai</a>
+			<a href="/sipreti/vektor_pegawai/list_pegawai">Biometrik Pegawai</a>
 		</div>
 	</div>
 
