@@ -42,7 +42,7 @@ def face_extraction_gdrive(folder_id, id_pegawai):
         files = results.get("files", [])
 
         if not files:
-            print(f"Tidak ada gambar ditemukan di folder {folder_id}")
+            print(f"Tidak ada gambar yang ditemukan di folder {folder_id}")
             return None, None
 
         vectors = []

@@ -22,9 +22,23 @@ jobs:
 
       - name: Deploy CI3 folder
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /tmp/deploy_ci3 && mkdir -p /tmp/deploy_ci3"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
+            timestamp=\$(date +%Y%m%d_%H%M%S) &&
+            if [ -d /var/www/html/sipreti/uploads ]; then
+              sudo mkdir -p /var/www/html/sipreti_backup &&
+              sudo cp -r /var/www/html/sipreti/uploads /var/www/html/sipreti_backup/uploads_\$timestamp
+            fi &&
+            sudo rm -rf /tmp/deploy_ci3 &&
+            mkdir -p /tmp/deploy_ci3
+          "
+
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" api/ci3/sipreti/ ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}:/tmp/deploy_ci3/
-          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "sudo rm -rf /var/www/html/sipreti && sudo mv /tmp/deploy_ci3 /var/www/html/sipreti && sudo chown -R www-data:www-data /var/www/html/sipreti"
+
+          ssh -o StrictHostKeyChecking=no ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }} "
+            sudo rm -rf /var/www/html/sipreti &&
+            sudo mv /tmp/deploy_ci3 /var/www/html/sipreti &&
+            sudo chown -R www-data:www-data /var/www/html/sipreti
+          "
 
       - name: Deploy Django folder
         run: |
@@ -89,4 +103,16 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl restart sipreti
             sudo systemctl enable sipreti
+          '
+      - name: Restore uploads backup
+        run: |
+          ssh -o StrictHostKeyChecking=no '${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_INSTANCE_IP }}' '
+            latest_backup=$(ls -dt /var/www/html/sipreti_backup/uploads_* 2>/dev/null | head -n 1)
+            if [ -n "$latest_backup" ]; then
+              sudo rm -rf /var/www/html/sipreti/uploads
+              sudo cp -r "$latest_backup" /var/www/html/sipreti/uploads
+              sudo chown -R www-data:www-data /var/www/html/sipreti/uploads
+            else
+              echo "Tidak ada backup uploads ditemukan."
+            fi
           '
