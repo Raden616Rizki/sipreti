@@ -54,7 +54,7 @@ class Vektor_pegawai_model extends CI_Model
 		if ($onlyActive) {
 			$this->db->where('(vektor_pegawai.deleted_at IS NULL OR vektor_pegawai.deleted_at = "")');
 		}
-
+		$this->db->order_by('pegawai.nama', 'ASC');
 		$this->db->limit($limit, $start);
 		return $this->db->get()->result();
 	}

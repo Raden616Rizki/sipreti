@@ -47,6 +47,7 @@ class Jabatan_model extends CI_Model
 		if ($onlyActive) {
 			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
 		}
+		$this->db->order_by('nama_jabatan', 'ASC');
 		$this->db->limit($limit, $start);
 		return $this->db->get($this->table)->result();
 	}

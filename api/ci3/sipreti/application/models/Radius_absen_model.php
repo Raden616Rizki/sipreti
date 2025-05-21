@@ -48,6 +48,7 @@ class Radius_absen_model extends CI_Model
 		if ($onlyActive) {
 			$this->db->where('(deleted_at IS NULL OR deleted_at = "")');
 		}
+		$this->db->order_by('ukuran', 'ASC');
 		$this->db->limit($limit, $start);
 		return $this->db->get($this->table)->result();
 	}

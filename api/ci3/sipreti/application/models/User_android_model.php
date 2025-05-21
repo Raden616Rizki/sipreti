@@ -59,6 +59,7 @@ class User_android_model extends CI_Model
 			$this->db->where('(user_android.deleted_at IS NULL OR user_android.deleted_at = "")');
 		}
 
+		$this->db->order_by('pegawai.nama', 'ASC');
 		$this->db->limit($limit, $start);
 
 		return $this->db->get()->result();

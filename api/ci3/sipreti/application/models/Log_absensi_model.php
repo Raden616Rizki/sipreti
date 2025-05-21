@@ -55,6 +55,8 @@ class Log_absensi_model extends CI_Model
 			$this->db->where('(log_absensi.deleted_at IS NULL OR log_absensi.deleted_at = "")');
 		}
 
+		$this->db->order_by('log_absensi.waktu_absensi', 'ASC');
+
 		$this->db->limit($limit, $start);
 		return $this->db->get()->result();
 	}

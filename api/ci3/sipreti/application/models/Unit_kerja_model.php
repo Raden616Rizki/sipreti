@@ -54,7 +54,7 @@ class Unit_kerja_model extends CI_Model
 		if ($onlyActive) {
 			$this->db->where('(unit_kerja.deleted_at IS NULL OR unit_kerja.deleted_at = "")');
 		}
-
+		$this->db->order_by('unit_kerja.nama_unit_kerja', 'ASC');
 		$this->db->limit($limit, $start);
 		return $this->db->get()->result();
 	}

@@ -116,7 +116,7 @@ class Pegawai_model extends CI_Model
 		}
 
 		$this->db->group_by('pegawai.id_pegawai');
-
+		$this->db->order_by('pegawai.nama', 'ASC');
 		$this->db->limit($limit, $start);
 
 		return $this->db->get()->result();
@@ -199,6 +199,7 @@ class Pegawai_model extends CI_Model
 		$this->db->from('pegawai p');
 		$this->db->join('unit_kerja u', 'p.id_unit_kerja = u.id_unit_kerja', 'left');
 		$this->db->where('(p.deleted_at IS NULL OR p.deleted_at = "")', null, false);
+		$this->db->order_by('p.nama', 'ASC');
 
 		return $this->db->get();
 	}
