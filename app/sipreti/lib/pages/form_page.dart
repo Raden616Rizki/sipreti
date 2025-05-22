@@ -317,7 +317,7 @@ class FormPageState extends State<FormPage> {
                       child: TextField(
                         controller: _nameController,
                         decoration: InputDecoration(
-                          hintText: "Nama Pegawai",
+                          hintText: "Username",
                           hintStyle: const TextStyle(
                             color: Colors.grey,
                             fontWeight: FontWeight.bold,

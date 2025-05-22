@@ -102,7 +102,8 @@ def upload_csv_pegawai(request):
         try:
             decoded_file = csv_file.read().decode("utf-8")
             io_string = io.StringIO(decoded_file)
-            reader = csv.DictReader(io_string)
+
+            reader = csv.DictReader(io_string, delimiter=';')
 
             required_columns = {'nip', 'nama', 'id_jabatan', 'id_unit_kerja', 'url_photo_folder'}
             if not required_columns.issubset(reader.fieldnames):
