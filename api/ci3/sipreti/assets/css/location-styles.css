@@ -30,12 +30,20 @@
 }
 
 #searchBox,
-#latitudeInput,
-#longitudeInput {
+#latitudeInput {
 	width: 85%;
 	padding: 10px 15px;
 	border: 1px solid #ccc;
 	border-radius: 8px 0 0 8px;
+	outline: none;
+	font-size: 12px;
+}
+
+#longitudeInput {
+	width: 85%;
+	padding: 10px 15px;
+	border: 1px solid #ccc;
+	border-radius: 0 8px 8px 0;
 	outline: none;
 	font-size: 12px;
 }
