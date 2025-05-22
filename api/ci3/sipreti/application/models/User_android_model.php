@@ -96,6 +96,11 @@ class User_android_model extends CI_Model
 		return $this->db->get_where('user_android', ['email' => $email])->row();
 	}
 
+	public function get_by_username($username)
+	{
+		return $this->db->get_where('user_android', ['username' => $username])->row();
+	}
+
 	public function get_by_imei($imei)
 	{
 		return $this->db->get_where('user_android', ['imei' => $imei])->row();

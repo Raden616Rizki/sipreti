@@ -257,6 +257,7 @@ class Log_absensi extends CI_Controller
 					'longitude' => $this->input->post('longitude', TRUE),
 					'nama_lokasi' => $this->input->post('nama_lokasi', TRUE),
 					'waktu_verifikasi' => $this->input->post('waktu_verifikasi', TRUE),
+					'jarak_vektor' => $this->input->post('jarak_vektor', TRUE),
 					'url_foto_presensi' => $url_foto_presensi,
 					'url_dokumen' => $url_dokumen,
 					'created_at' => date('Y-m-d H:i:s'),

@@ -54,7 +54,7 @@
 					<a href="<?php echo site_url('vektor_pegawai/list_pegawai'); ?>" class="reset-btn">Reset</a>
 				<?php endif; ?>
 			</form>
-			<div>
+			<!-- <div>
 				<form method="get" action="<?php echo site_url('vektor_pegawai/export_csv'); ?>"
 					style="display: inline;">
 					<button type="submit" class="export-csv-btn">Export CSV</button>
@@ -65,7 +65,7 @@
 					<button type="button" class="import-csv-btn"
 						onclick="document.getElementById('csvFileInput').click()">Import CSV</button>
 				</form>
-			</div>
+			</div> -->
 		</div>
 
 		<table class="data-table">

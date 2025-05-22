@@ -70,6 +70,7 @@
 					<th>Foto Presensi</th>
 					<th>Dokumen</th>
 					<th>Waktu Verifikasi</th>
+					<th>Kedekatan Vektor</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
@@ -103,6 +104,7 @@
 							?>
 						</td>
 						<td><?php echo $log_absensi->waktu_verifikasi; ?></td>
+						<td><?php echo $log_absensi->jarak_vektor; ?></td>
 						<td class="action-buttons">
 							<!-- <a href="<?php echo site_url('log_absensi/read/' . $log_absensi->id_log_absensi); ?>"
 								class="btn-action view"><i class="fas fa-eye"></i></a>
