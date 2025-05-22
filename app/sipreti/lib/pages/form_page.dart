@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:android_id/android_id.dart';
 import 'package:sipreti/utils/dialog.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class FormPage extends StatefulWidget {
   const FormPage({super.key});
@@ -16,7 +17,7 @@ class FormPage extends StatefulWidget {
 
 class FormPageState extends State<FormPage> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _noTelephoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -31,7 +32,7 @@ class FormPageState extends State<FormPage> {
 
   void submitRegistration() async {
     final email = _emailController.text.trim();
-    final username = _nameController.text.trim();
+    final username = _usernameController.text.trim();
     final noHp = _noTelephoneController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -70,6 +71,30 @@ class FormPageState extends State<FormPage> {
         validHp: validHp,
       );
 
+      Map<String, dynamic> loginResult =
+          await apiService.loginUser(username, password);
+
+      if (!mounted) return;
+
+      if (loginResult["error"] == true) {
+        Navigator.of(context).pop();
+        final String message = extractMessage(loginResult["message"]);
+        await showErrorDialog(context, message);
+        return;
+      } else {
+        final userData = loginResult['data'];
+
+        var box = Hive.box('userAndroid');
+
+        await box.put('id_user_android', userData['id_user_android']);
+        await box.put('id_pegawai', userData['id_pegawai']);
+        await box.put('username', userData['username']);
+        await box.put('email', userData['email']);
+        await box.put('no_hp', userData['no_hp']);
+
+        await getPegawaiData(userData['id_pegawai']);
+      }
+
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
@@ -81,7 +106,7 @@ class FormPageState extends State<FormPage> {
         } else {
           showSuccessDialog(context, 'Registrasi Berhasil');
           Future.delayed(const Duration(seconds: 2), () {
-            Navigator.pushNamed(context, '/login');
+            Navigator.pushNamed(context, '/');
           });
         }
       }
@@ -120,8 +145,8 @@ class FormPageState extends State<FormPage> {
       return false;
     }
 
-    if (_nameController.text.trim().isEmpty) {
-      await showErrorDialog(context, "Nama Pegawai tidak boleh kosong.");
+    if (_usernameController.text.trim().isEmpty) {
+      await showErrorDialog(context, "Username Login tidak boleh kosong.");
       return false;
     }
 
@@ -147,6 +172,34 @@ class FormPageState extends State<FormPage> {
   bool isEmailValid(String email) {
     final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return regex.hasMatch(email);
+  }
+
+  Future<void> getPegawaiData(String idPegawai) async {
+    Map<String, dynamic> dataPegawai = await apiService.getPegawai(idPegawai);
+
+    if (mounted) {
+      if (dataPegawai["error"] == true) {
+        final String message = extractMessage(dataPegawai["message"]);
+        await showErrorDialog(context, message);
+        return;
+      } else {
+        var pegawaiBox = Hive.box('pegawai');
+
+        await pegawaiBox.put('id_pegawai', dataPegawai['id_pegawai']);
+        await pegawaiBox.put('nip', dataPegawai['nip']);
+        await pegawaiBox.put('nama', dataPegawai['nama']);
+        await pegawaiBox.put('url_foto', dataPegawai['url_foto']);
+        await pegawaiBox.put('nama_jabatan', dataPegawai['nama_jabatan']);
+        await pegawaiBox.put('nama_unit_kerja', dataPegawai['nama_unit_kerja']);
+        await pegawaiBox.put(
+            'alamat_unit_kerja', dataPegawai['alamat_unit_kerja']);
+        await pegawaiBox.put('lattitude', dataPegawai['lattitude']);
+        await pegawaiBox.put('longitude', dataPegawai['longitude']);
+        await pegawaiBox.put('ukuran_radius', dataPegawai['ukuran_radius']);
+        await pegawaiBox.put('satuan_radius', dataPegawai['satuan_radius']);
+        await pegawaiBox.put('face_embeddings', dataPegawai['face_embeddings']);
+      }
+    }
   }
 
   @override
@@ -315,9 +368,9 @@ class FormPageState extends State<FormPage> {
                         ),
                       ),
                       child: TextField(
-                        controller: _nameController,
+                        controller: _usernameController,
                         decoration: InputDecoration(
-                          hintText: "Username",
+                          hintText: "Username Login",
                           hintStyle: const TextStyle(
                             color: Colors.grey,
                             fontWeight: FontWeight.bold,

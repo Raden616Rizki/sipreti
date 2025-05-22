@@ -30,6 +30,7 @@ class _AttendancePageState extends State<AttendancePage> {
   late String tanggal = '';
   late String hari = '';
   late String lamaVerifikasi = '';
+  String distances = '';
   File? supportingDocument;
   final ApiService apiService = ApiService();
 
@@ -79,6 +80,7 @@ class _AttendancePageState extends State<AttendancePage> {
           longitude: longitude!,
           namaLokasi: namaLokasi,
           lamaAbsensi: lamaVerifikasi,
+          jarakVektor: distances,
           fotoPresensi: fotoFile,
           dokumen: supportingDocument);
 
@@ -144,6 +146,10 @@ class _AttendancePageState extends State<AttendancePage> {
       checkMode = presensiBox.get('check_mode', defaultValue: 0);
       jenisAbsensi = presensiBox.get('jenis_absensi', defaultValue: 0);
       faceStatus = presensiBox.get('face_status', defaultValue: 0);
+      List<double> tempDistances =
+          List<double>.from(presensiBox.get('distances', defaultValue: []));
+      String distancesString = tempDistances.join(', ');
+      distances = distancesString;
       tanggal = DateFormat('d MMMM y', 'id_ID').format(waktuAbsensi);
       hari = DateFormat('EEEE', 'id_ID').format(waktuAbsensi);
       lamaVerifikasi =
@@ -280,6 +286,20 @@ class _AttendancePageState extends State<AttendancePage> {
                             Expanded(
                               child: Text(
                                 'Lama Verifikasi Wajah: $lamaVerifikasi',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const Icon(Icons.display_settings,
+                                color: Colors.black),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Jarak Kedekatan: $distances',
                                 style: const TextStyle(fontSize: 14),
                               ),
                             ),

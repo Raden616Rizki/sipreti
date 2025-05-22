@@ -14,7 +14,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isPasswordVisible = false;
@@ -22,10 +22,11 @@ class LoginPageState extends State<LoginPage> {
   void _loginUser() async {
     showLoadingDialog(context);
 
-    String email = _emailController.text.trim();
+    String username = _usernameController.text.trim();
     String password = _passwordController.text.trim();
 
-    Map<String, dynamic> result = await _apiService.loginUser(email, password);
+    Map<String, dynamic> result =
+        await _apiService.loginUser(username, password);
 
     if (!mounted) return;
 
@@ -60,13 +61,8 @@ class LoginPageState extends State<LoginPage> {
   }
 
   Future<bool> _validateForm() async {
-    if (_emailController.text.trim().isEmpty) {
+    if (_usernameController.text.trim().isEmpty) {
       await showErrorDialog(context, "Email tidak boleh kosong.");
-      return false;
-    }
-
-    if (!isEmailValid(_emailController.text.trim())) {
-      await showErrorDialog(context, "Format email tidak valid.");
       return false;
     }
 
@@ -76,11 +72,6 @@ class LoginPageState extends State<LoginPage> {
     }
 
     return true;
-  }
-
-  bool isEmailValid(String email) {
-    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return regex.hasMatch(email);
   }
 
   Future<void> getPegawaiData(String idPegawai) async {
@@ -176,9 +167,9 @@ class LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       child: TextField(
-                        controller: _emailController,
+                        controller: _usernameController,
                         decoration: InputDecoration(
-                          hintText: "Email",
+                          hintText: "Username",
                           hintStyle: const TextStyle(
                             color: Colors.grey,
                             fontWeight: FontWeight.bold,

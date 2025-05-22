@@ -66,17 +66,18 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> loginUser(String email, String password) async {
+  Future<Map<String, dynamic>> loginUser(
+      String username, String password) async {
     final String url = "$baseUrl/user_android/login_api";
 
     try {
       var request = http.MultipartRequest('POST', Uri.parse(url));
-      request.fields['email'] = email;
+      request.fields['username'] = username;
       request.fields['password'] = password;
 
       var response = await request.send();
       var responseBody = await response.stream.bytesToString();
-      
+
       if (response.statusCode == 200) {
         return jsonDecode(responseBody);
       } else {
@@ -156,6 +157,7 @@ class ApiService {
     required double longitude,
     required String namaLokasi,
     required String lamaAbsensi,
+    required String jarakVektor,
     required File fotoPresensi,
     File? dokumen,
   }) async {
@@ -171,6 +173,7 @@ class ApiService {
       request.fields['longitude'] = longitude.toString();
       request.fields['nama_lokasi'] = namaLokasi;
       request.fields['waktu_verifikasi'] = lamaAbsensi;
+      request.fields['jarak_vektor'] = lamaAbsensi;
 
       request.files.add(
         await http.MultipartFile.fromPath(

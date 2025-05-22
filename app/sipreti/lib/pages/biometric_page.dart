@@ -175,13 +175,13 @@ class _BiometricPageState extends State<BiometricPage> {
     }
   }
 
-  // double euclideanDistance(List<double> e1, List<double> e2) {
-  //   double sum = 0.0;
-  //   for (int i = 0; i < e1.length; i++) {
-  //     sum += pow((e1[i] - e2[i]), 2);
-  //   }
-  //   return sqrt(sum);
-  // }
+  double euclideanDistance(List<double> e1, List<double> e2) {
+    double sum = 0.0;
+    for (int i = 0; i < e1.length; i++) {
+      sum += pow((e1[i] - e2[i]), 2);
+    }
+    return sqrt(sum);
+  }
 
   double manhattanDistance(List<double> e1, List<double> e2) {
     double sum = 0.0;
@@ -248,27 +248,28 @@ class _BiometricPageState extends State<BiometricPage> {
       var pegawaiBox = Hive.box('pegawai');
 
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
-      const double threshold = 7;
+      // const double threshold = 7;
+      const double threshold = 0.8;
       bool verifikasi = false;
+
+      List<double> distances = [];
 
       for (int i = 0; i < faceEmbeddings.length; i++) {
         List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
-        double distance = manhattanDistance(embeddings, storedEmbedding);
-
-        if (distance < threshold) {
-          verifikasi = true;
-          break;
-        }
+        double distance = euclideanDistance(embeddings, storedEmbedding);
+        distance = double.parse(distance.toStringAsFixed(4));
+        distances.add(distance);
       }
 
+      verifikasi = distances.any((d) => d < threshold);
       int value = verifikasi ? 1 : 0;
 
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.put('face_status', value);
+      await presensiBox.put('distances', distances);
 
       totalTime.stop();
-      final verificationTime = '${totalTime.elapsedMicroseconds} µs | '
-          '${totalTime.elapsedMilliseconds} ms | '
+      final verificationTime =
           '${(totalTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s';
 
       await presensiBox.put('verification_time', verificationTime);
@@ -406,11 +407,15 @@ class _BiometricPageState extends State<BiometricPage> {
             else
               const Center(child: CircularProgressIndicator()),
             if (_showInstructionCard)
-              Center(
+              Positioned(
+                top: kToolbarHeight + 16,
+                left: 16,
+                right: 16,
                 child: Card(
-                  color: Colors.blue[900],
+                  color: Colors.blue,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
