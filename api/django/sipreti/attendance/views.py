@@ -1,4 +1,5 @@
 import csv
+import io
 import json
 import numpy as np
 from django.http import JsonResponse
@@ -99,8 +100,9 @@ def upload_csv_pegawai(request):
         task_id = request.GET.get("task_id", "default")
 
         try:
-            raw_data = csv_file.read().decode("utf-8").splitlines()
-            reader = csv.DictReader(raw_data)
+            decoded_file = csv_file.read().decode("utf-8")
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
 
             required_columns = {'nip', 'nama', 'id_jabatan', 'id_unit_kerja', 'url_photo_folder'}
             if not required_columns.issubset(reader.fieldnames):

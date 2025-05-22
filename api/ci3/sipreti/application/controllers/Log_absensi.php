@@ -200,7 +200,7 @@ class Log_absensi extends CI_Controller
 			// Direktori penyimpanan berdasarkan id_pegawai
 			$upload_path = './uploads/presensi/' . $id_pegawai . '/';
 			if (!is_dir($upload_path)) {
-				mkdir($upload_path, 0777, true); // Buat folder jika belum ada
+				mkdir($upload_path, 0777, true);
 			}
 
 			// Konfigurasi upload file
@@ -288,11 +288,11 @@ class Log_absensi extends CI_Controller
 		$start = intval($this->input->get('start'));
 
 		if ($q <> '') {
-			$config['base_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
-			$config['first_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
+			$config['base_url'] = base_url() . 'log_absensi/list_pegawai.html?q=' . urlencode($q);
+			$config['first_url'] = base_url() . 'log_absensi/list_pegawai.html?q=' . urlencode($q);
 		} else {
-			$config['base_url'] = base_url() . 'pegawai/index.html';
-			$config['first_url'] = base_url() . 'pegawai/index.html';
+			$config['base_url'] = base_url() . 'log_absensi/list_pegawai.html';
+			$config['first_url'] = base_url() . 'log_absensi/list_pegawai.html';
 		}
 
 		$config['per_page'] = 10;

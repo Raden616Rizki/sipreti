@@ -255,11 +255,11 @@ class Vektor_pegawai extends CI_Controller
 		$start = intval($this->input->get('start'));
 
 		if ($q <> '') {
-			$config['base_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
-			$config['first_url'] = base_url() . 'pegawai/index.html?q=' . urlencode($q);
+			$config['base_url'] = base_url() . 'vektor_pegawai/list_pegawai?q=' . urlencode($q);
+			$config['first_url'] = base_url() . 'vektor_pegawai/list_pegawai?q=' . urlencode($q);
 		} else {
-			$config['base_url'] = base_url() . 'pegawai/index.html';
-			$config['first_url'] = base_url() . 'pegawai/index.html';
+			$config['base_url'] = base_url() . 'vektor_pegawai/list_pegawai';
+			$config['first_url'] = base_url() . 'vektor_pegawai/list_pegawai';
 		}
 
 		$config['per_page'] = 10;

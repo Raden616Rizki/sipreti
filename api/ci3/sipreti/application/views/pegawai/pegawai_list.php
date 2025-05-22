@@ -223,7 +223,7 @@
 					if (result.message) {
 						checkProgressDone = true;
 						updateProgressBar(100);
-						window.location.href = "<?php echo site_url('vektor_pegawai/list_pegawai'); ?>";
+						window.location.href = "<?php echo site_url('pegawai'); ?>";
 					} else {
 						showModalError(result.error || 'Gagal memproses CSV.');
 					}
