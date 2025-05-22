@@ -1,0 +1,76 @@
+.modal {
+	display: none;
+	position: fixed;
+	z-index: 9999;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+	background-color: #f7f7f7;
+	margin: 5% auto;
+	padding: 20px;
+	border-radius: 10px;
+	width: 90%;
+	max-width: 800px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+	font-family: sans-serif;
+}
+
+/* Close button */
+.close {
+	float: right;
+	font-size: 28px;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+#searchBox,
+#latitudeInput,
+#longitudeInput {
+	width: 85%;
+	padding: 10px 15px;
+	border: 1px solid #ccc;
+	border-radius: 8px 0 0 8px;
+	outline: none;
+	font-size: 12px;
+}
+
+button[onclick="searchLocation()"] {
+	background-color: #9c27b0;
+	color: white;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 0 8px 8px 0;
+	cursor: pointer;
+	font-weight: bold;
+	font-size: 12px;
+}
+
+#map {
+	height: 400px;
+	margin-top: 15px;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+#selectedAddress {
+	background-color: #fff;
+	padding: 15px;
+	border-radius: 10px;
+	box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+	margin-top: 15px;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 15px;
+	gap: 10px;
+}

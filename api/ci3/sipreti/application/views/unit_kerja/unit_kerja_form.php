@@ -12,6 +12,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="<?php echo base_url('assets/css/styles.css?v=<?= time();'); ?>">
 	<link rel="stylesheet" href="<?php echo base_url('assets/css/form-styles.css?v=<?= time();'); ?>">
+	<link rel="stylesheet" href="<?php echo base_url('assets/css/location-styles.css?v=<?= time();'); ?>">
 
 	<!-- Leaflet -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -20,84 +21,6 @@
 	<!-- Leaflet GeoSearch -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css" />
 	<script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
-
-	<style>
-		.modal {
-			display: none;
-			position: fixed;
-			z-index: 9999;
-			left: 0;
-			top: 0;
-			width: 100%;
-			height: 100%;
-			overflow: auto;
-			background-color: rgba(0, 0, 0, 0.4);
-		}
-
-		.modal-content {
-			background-color: #f7f7f7;
-			margin: 5% auto;
-			padding: 20px;
-			border-radius: 10px;
-			width: 90%;
-			max-width: 800px;
-			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-			font-family: sans-serif;
-		}
-
-		/* Close button */
-		.close {
-			float: right;
-			font-size: 28px;
-			font-weight: bold;
-			cursor: pointer;
-		}
-
-		#searchBox {
-			width: 85%;
-			padding: 10px 15px;
-			border: 1px solid #ccc;
-			border-radius: 8px 0 0 8px;
-			outline: none;
-			font-size: 12px;
-		}
-
-		button[onclick="searchLocation()"] {
-			background-color: #9c27b0;
-			color: white;
-			padding: 10px 20px;
-			border: none;
-			border-radius: 0 8px 8px 0;
-			cursor: pointer;
-			font-weight: bold;
-			font-size: 12px;
-		}
-
-		#map {
-			height: 400px;
-			margin-top: 15px;
-			border-radius: 8px;
-			overflow: hidden;
-		}
-
-		#selectedAddress {
-			background-color: #fff;
-			padding: 15px;
-			border-radius: 10px;
-			box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-			margin-top: 15px;
-			font-size: 14px;
-			font-weight: 500;
-		}
-
-		.modal-footer {
-			display: flex;
-			justify-content: flex-end;
-			margin-top: 15px;
-			gap: 10px;
-		}
-	</style>
-
 </head>
 
 <body>
@@ -194,10 +117,20 @@
 		<div class="modal-content">
 			<span class="close" onclick="closeMapModal()">&times;</span>
 
-			<div style="display: flex;">
-				<input type="text" id="searchBox" placeholder="Cari lokasi..." />
+			<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+				<div style="flex: 1;">
+					<input type="text" id="searchBox" placeholder="Cari lokasi..." style="width: 100%;" />
+				</div>
 				<button onclick="searchLocation()">Cari</button>
 			</div>
+
+			<div style="display: flex; gap: 10px; margin-top: 10px;">
+				<input type="text" id="latitudeInput" placeholder="Masukkan Latitude" style="flex: 1;"
+					oninput="updateMapFromLatLng()" />
+				<input type="text" id="longitudeInput" placeholder="Masukkan Longitude" style="flex: 1;"
+					oninput="updateMapFromLatLng()" />
+			</div>
+
 
 			<div id="map"></div>
 
@@ -278,6 +211,22 @@
 				fetchAddress(result.y, result.x);
 			}
 		});
+	}
+
+	document.getElementById('latitudeInput').value = selectedLatLng.lat;
+	document.getElementById('longitudeInput').value = selectedLatLng.lng;
+
+	function updateMapFromLatLng() {
+		const lat = parseFloat(document.getElementById('latitudeInput').value);
+		const lng = parseFloat(document.getElementById('longitudeInput').value);
+
+		if (!isNaN(lat) && !isNaN(lng)) {
+			const latlng = [lat, lng];
+			map.setView(latlng, 16);
+			marker.setLatLng(latlng);
+			selectedLatLng = { lat: lat, lng: lng };
+			fetchAddress(lat, lng);
+		}
 	}
 
 	function fetchAddress(lat, lng) {
