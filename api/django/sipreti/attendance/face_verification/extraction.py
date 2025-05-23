@@ -68,11 +68,10 @@ def face_extraction_gdrive(folder_id, id_pegawai):
                     continue
 
                 x, y, width, height = faces[0]['box']
-                # x = max(x, 0)
-                # y = max(y, 0)
+                x = max(x, 0)
+                y = max(y, 0)
         
                 face_crop = img_array[y:y+height, x:x+width]
-                # face_crop = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
 
                 # Resize dan normalisasi wajah
                 face_crop_resized = cv2.resize(face_crop, (112, 112))
@@ -96,14 +95,14 @@ def face_extraction_gdrive(folder_id, id_pegawai):
                 img.save(original_io, format=original_format)
                 original_io.seek(0)
                 
-                crop_io = BytesIO()
-                crop_image = Image.fromarray(face_crop)
-                crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
-                crop_image.save(crop_io, format='JPEG')
-                crop_io.seek(0)
+                # crop_io = BytesIO()
+                # crop_image = Image.fromarray(face_crop)
+                # crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
+                # crop_image.save(crop_io, format='JPEG')
+                # crop_io.seek(0)
 
                 vectors.append(vector)
-                original_images.append(crop_io)
+                original_images.append(original_io)
 
                 print(f"Vektor wajah berhasil diekstrak dari {original_io.name}")
 
@@ -136,7 +135,6 @@ def face_extraction(uploaded_file, id_pegawai):
         y = max(y, 0)
         
         face_crop = img_array[y:y+height, x:x+width]
-        face_crop = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
 
         face_crop_resized = cv2.resize(face_crop, (112, 112))
         face_crop_resized = face_crop_resized.astype(np.float32) / 255.0
