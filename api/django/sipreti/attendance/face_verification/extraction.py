@@ -155,13 +155,13 @@ def face_extraction(uploaded_file, id_pegawai):
         img.save(original_io, format=original_format)
         original_io.seek(0)
         
-        crop_io = BytesIO()
-        crop_image = Image.fromarray(face_crop)
-        crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
-        crop_image.save(crop_io, format='JPEG')
-        crop_io.seek(0)
+        # crop_io = BytesIO()
+        # crop_image = Image.fromarray(face_crop)
+        # crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
+        # crop_image.save(crop_io, format='JPEG')
+        # crop_io.seek(0)
 
-        return vector, crop_io
+        return vector, original_io
 
     except Exception as e:
         print(f"Kesalahan saat ekstraksi wajah tunggal: {e}")
