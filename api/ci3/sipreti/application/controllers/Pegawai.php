@@ -130,7 +130,9 @@ class Pegawai extends CI_Controller
 
 			$existing = $this->Pegawai_model->count_by_nip($nip);
 			if ($existing) {
-				$this->Pegawai_model->delete_by_nip($nip);
+				$this->session->set_flashdata('message', 'NIP sudah digunakan');
+				redirect(site_url('pegawai'));
+				return;
 			}
 
 			$upload_path = './uploads/foto_pegawai/';
@@ -211,12 +213,18 @@ class Pegawai extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->update($this->input->post('id_pegawai', TRUE));
 		} else {
-
 			$nip = $this->input->post('nip', TRUE);
+
+			$existing = $this->Pegawai_model->count_by_nip($nip);
+			if ($existing) {
+				$this->session->set_flashdata('message', 'NIP sudah digunakan');
+				redirect(site_url('pegawai'));
+				return;
+			}
 
 			$upload_path = './uploads/foto_pegawai/';
 			if (!is_dir($upload_path)) {
-				mkdir($upload_path, 0777, true); // Buat folder jika belum ada
+				mkdir($upload_path, 0777, true);
 			}
 
 			$config['upload_path'] = $upload_path;
@@ -236,7 +244,6 @@ class Pegawai extends CI_Controller
 				$this->upload->initialize($config);
 
 				if ($this->upload->do_upload('url_foto')) {
-					// Hapus file lama jika ada
 					if (!empty($foto) && file_exists($upload_path . $foto)) {
 						unlink($upload_path . $foto);
 					}
@@ -335,8 +342,11 @@ class Pegawai extends CI_Controller
 
 		$nip = $this->input->post('nip', TRUE);
 
-		$existing = $this->Pegawai_model->count_by_nip($nip);
-		if ($existing) {
+		$id_pegawai_lama = null;
+
+		$pegawai_lama = $this->Pegawai_model->get_by_nip($nip);
+		if ($pegawai_lama) {
+			$id_pegawai_lama = $pegawai_lama->id_pegawai;
 			$this->Pegawai_model->delete_by_nip($nip);
 		}
 
@@ -374,13 +384,19 @@ class Pegawai extends CI_Controller
 			'deleted_at' => NULL,
 		);
 
-		$id_pegawai = $this->Pegawai_model->insert_api($data);
+		$id_pegawai_baru = $this->Pegawai_model->insert_api($data);
+
+		if ($id_pegawai_lama) {
+			$this->Pegawai_model->update_relation($id_pegawai_lama, $id_pegawai_baru);
+		}
+
 
 		echo json_encode([
 			'message' => 'Data pegawai berhasil disimpan',
-			'id_pegawai' => $id_pegawai
+			'id_pegawai' => $id_pegawai_baru
 		]);
 	}
+
 
 
 	public function _rules()

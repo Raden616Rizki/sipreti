@@ -142,6 +142,16 @@ class Pegawai_model extends CI_Model
 		$this->db->update($this->table, $data);
 	}
 
+	public function update_relation($id_pegawai_lama, $id_pegawai_baru)
+	{
+		$this->db->where('id_pegawai', $id_pegawai_lama);
+		$this->db->update('user_android', ['id_pegawai' => $id_pegawai_baru]);
+
+		$this->db->where('id_pegawai', $id_pegawai_lama);
+		$this->db->update('log_absensi', ['id_pegawai' => $id_pegawai_baru]);
+	}
+
+
 	// delete data
 	function delete($id)
 	{
