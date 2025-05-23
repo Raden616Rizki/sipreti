@@ -248,15 +248,15 @@ class _BiometricPageState extends State<BiometricPage> {
       var pegawaiBox = Hive.box('pegawai');
 
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
-      // const double threshold = 7;
-      const double threshold = 0.8;
+      const double threshold = 7;
+      // const double threshold = 0.8;
       bool verifikasi = false;
 
       List<double> distances = [];
 
       for (int i = 0; i < faceEmbeddings.length; i++) {
         List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
-        double distance = euclideanDistance(embeddings, storedEmbedding);
+        double distance = manhattanDistance(embeddings, storedEmbedding);
         distance = double.parse(distance.toStringAsFixed(4));
         distances.add(distance);
       }

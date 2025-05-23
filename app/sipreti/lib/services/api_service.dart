@@ -173,7 +173,7 @@ class ApiService {
       request.fields['longitude'] = longitude.toString();
       request.fields['nama_lokasi'] = namaLokasi;
       request.fields['waktu_verifikasi'] = lamaAbsensi;
-      request.fields['jarak_vektor'] = lamaAbsensi;
+      request.fields['jarak_vektor'] = jarakVektor;
 
       request.files.add(
         await http.MultipartFile.fromPath(
