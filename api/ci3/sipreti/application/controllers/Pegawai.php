@@ -333,8 +333,8 @@ class Pegawai extends CI_Controller
 	public function create_api()
 	{
 		$this->load->library(['upload', 'form_validation']);
-
 		$this->_rules();
+
 		if ($this->form_validation->run() == FALSE) {
 			echo json_encode(['error' => validation_errors()]);
 			return;
@@ -342,13 +342,7 @@ class Pegawai extends CI_Controller
 
 		$nip = $this->input->post('nip', TRUE);
 
-		$id_pegawai_lama = null;
-
 		$pegawai_lama = $this->Pegawai_model->get_by_nip($nip);
-		if ($pegawai_lama) {
-			$id_pegawai_lama = $pegawai_lama->id_pegawai;
-			$this->Pegawai_model->delete_by_nip($nip);
-		}
 
 		$upload_path = './uploads/foto_pegawai/';
 		if (!is_dir($upload_path)) {
@@ -378,27 +372,28 @@ class Pegawai extends CI_Controller
 			'id_unit_kerja' => $this->input->post('id_unit_kerja', TRUE),
 			'nip' => $nip,
 			'nama' => $this->input->post('nama', TRUE),
-			'url_foto' => $foto,
-			'created_at' => date('Y-m-d H:i:s'),
-			'updated_at' => NULL,
-			'deleted_at' => NULL,
+			'updated_at' => date('Y-m-d H:i:s'),
 		);
 
-		$id_pegawai_baru = $this->Pegawai_model->insert_api($data);
-
-		if ($id_pegawai_lama) {
-			$this->Pegawai_model->update_relation($id_pegawai_lama, $id_pegawai_baru);
+		if ($foto !== null) {
+			$data['url_foto'] = $foto;
 		}
 
+		if ($pegawai_lama) {
+			$this->Pegawai_model->update($pegawai_lama->id_pegawai, $data);
+			$id_pegawai = $pegawai_lama->id_pegawai;
+		} else {
+			$data['created_at'] = date('Y-m-d H:i:s');
+			$data['deleted_at'] = NULL;
+			$id_pegawai = $this->Pegawai_model->insert_api($data);
+		}
 
 		echo json_encode([
-			'message' => 'Data pegawai berhasil disimpan',
-			'id_pegawai' => $id_pegawai_baru
+			'message' => 'Data pegawai berhasil disimpan/diperbarui',
+			'id_pegawai' => $id_pegawai
 		]);
 	}
-
-
-
+	
 	public function _rules()
 	{
 		$this->form_validation->set_rules('id_jabatan', 'id jabatan', 'trim|required');
