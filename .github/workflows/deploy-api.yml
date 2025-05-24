@@ -60,6 +60,8 @@ jobs:
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/pegawai_list.php
 
+            sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/vektor_pegawai_list.php
+
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/pegawai/pegawai_list.php
           EOF
 

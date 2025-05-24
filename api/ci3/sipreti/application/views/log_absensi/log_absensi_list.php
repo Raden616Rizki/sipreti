@@ -25,7 +25,7 @@
 		<div class="navbar-right">
 			<a href="/sipreti/dashboard">Dashboard</a>
 			<div class="dropdown">
-				<a href="/sipreti/dashboard" class="dropdown-toggle">Data Master ▾</a>
+				<a href="#" class="dropdown-toggle">Data Master ▾</a>
 				<div class="dropdown-menu">
 					<a href="/sipreti/jabatan">Jabatan</a>
 					<a href="/sipreti/unit_kerja">Unit Kerja</a>

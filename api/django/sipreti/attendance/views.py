@@ -436,16 +436,29 @@ def evaluate_face_recognition(request):
     build_pairs_and_evaluate("manhattan", distance.cityblock, [6, 7, 8, 9])
     build_pairs_and_evaluate("euclidean", distance.euclidean, [0.6, 0.7, 0.8, 0.9])
 
-    # Grafik jumlah embeddings per label pegawai
-    fig, ax = plt.subplots(figsize=(18, 6))
-    keys = list(label_counts.keys())
-    vals = list(label_counts.values())
+    sorted_items = sorted(label_counts.items())  # urutkan berdasarkan label
+    keys = [str(k) for k, v in sorted_items]     # label pegawai sebagai string
+    vals = [v for k, v in sorted_items]
+
+    # Ukuran figure dinamis mengikuti jumlah label
+    fig, ax = plt.subplots(figsize=(max(12, len(keys) * 0.3), 6))
+
+    # Plot bar chart
     ax.bar(keys, vals, color='skyblue')
-    ax.set_title("Jumlah Embeddings per Label Pegawai")
-    ax.set_xlabel("Label Pegawai")
-    ax.set_ylabel("Jumlah Embeddings")
-    plt.xticks(rotation=90)
-    ax.grid(axis='y')
+
+    # Label dan judul
+    ax.set_title("Jumlah Embeddings per Label Pegawai", fontsize=16)
+    ax.set_xlabel("Label Pegawai", fontsize=12)
+    ax.set_ylabel("Jumlah Embeddings", fontsize=12)
+
+    # Rotasi dan ukuran label X agar terbaca
+    plt.xticks(rotation=90, fontsize=8)
+
+    # Tambah garis bantu horizontal
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Tata letak otomatis agar tidak terpotong
+    plt.tight_layout()
 
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png')
@@ -492,6 +505,13 @@ def evaluate_roc_curve(request):
 
         return pos_pairs + neg_pairs
 
+    def encode_plot_to_base64(fig):
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', bbox_inches='tight')
+        plt.close(fig)
+        buf.seek(0)
+        return f"data:image/png;base64,{base64.b64encode(buf.read()).decode('utf-8')}"
+
     def compute_roc(method_name, method):
         pairs = get_pairs()
         y_true = []
@@ -499,40 +519,46 @@ def evaluate_roc_curve(request):
 
         for a, b, label in pairs:
             dist = method(a, b)
-            score = -dist  # negative distance => higher similarity
+            score = -dist  # negative distance = higher similarity
             y_true.append(label)
             y_scores.append(score)
 
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
         roc_auc = auc(fpr, tpr)
 
-        # Cari threshold terbaik (dengan jarak ke (0,1) minimum)
-        optimal_idx = np.argmax(tpr - fpr)
+        # Gunakan threshold optimal berdasarkan jarak minimum ke titik (0, 1)
+        distances = np.sqrt((1 - tpr) ** 2 + fpr ** 2)
+        optimal_idx = np.argmin(distances)
         optimal_threshold = thresholds[optimal_idx]
 
-        # Plot ROC Curve
-        fig, ax = plt.subplots()
-        ax.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.4f})')
-        ax.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
-        ax.set_xlim([0.0, 1.0])
-        ax.set_ylim([0.0, 1.05])
-        ax.set_xlabel('False Positive Rate')
-        ax.set_ylabel('True Positive Rate')
-        ax.set_title(f'Receiver Operating Characteristic - {method_name}')
-        ax.legend(loc="lower right")
+        # --- ROC Curve ---
+        fig1, ax1 = plt.subplots()
+        ax1.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.4f})')
+        ax1.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
+        ax1.set_xlim([0.0, 1.0])
+        ax1.set_ylim([0.0, 1.05])
+        ax1.set_xlabel('False Positive Rate')
+        ax1.set_ylabel('True Positive Rate')
+        ax1.set_title(f'Receiver Operating Characteristic - {method_name}')
+        ax1.legend(loc="lower right")
+        roc_curve_base64 = encode_plot_to_base64(fig1)
 
-        # Convert plot to base64
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        plt.close(fig)
-        buf.seek(0)
-        image_base64 = base64.b64encode(buf.read()).decode('utf-8')
-        image_url = f"data:image/png;base64,{image_base64}"
+        # --- TPR/FPR vs Threshold ---
+        fig2, ax2 = plt.subplots()
+        ax2.plot(-thresholds, tpr, label='True Positive Rate (TPR)')
+        ax2.plot(-thresholds, fpr, label='False Positive Rate (FPR)')
+        ax2.axvline(x=-optimal_threshold, color='red', linestyle='--', label='Optimal Threshold')
+        ax2.set_xlabel('Threshold (Distance)')
+        ax2.set_ylabel('Rate')
+        ax2.set_title(f'TPR / FPR vs Threshold - {method_name}')
+        ax2.legend()
+        threshold_plot_base64 = encode_plot_to_base64(fig2)
 
         return {
             "auc": round(roc_auc, 4),
-            "optimal_threshold": round(-optimal_threshold, 4),  # balik karena skor = -distance
-            "roc_curve_image": image_url
+            "optimal_threshold": round(-optimal_threshold, 4),  # kembali ke nilai distance (positif)
+            "roc_curve_image": roc_curve_base64,
+            "threshold_plot_image": threshold_plot_base64
         }
 
     results = {
