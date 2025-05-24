@@ -87,8 +87,8 @@ Future<void> showErrorDialog(BuildContext context, String message) {
                   message,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
@@ -98,7 +98,7 @@ Future<void> showErrorDialog(BuildContext context, String message) {
                   height: 40,
                   child: TextButton(
                     style: TextButton.styleFrom(
-                      backgroundColor: Color(0xFFFD5765),
+                      backgroundColor: const Color(0xFFFD5765),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -173,8 +173,8 @@ Future<void> showSuccessDialog(BuildContext context, String message) {
                   message,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
