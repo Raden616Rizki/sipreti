@@ -307,7 +307,7 @@
 				}
 
 				content.innerHTML = `
-				<div style="font-size: 12px;">
+				<div style="font-size: 12px; margin-top: 16px;">
 					<h5 style="margin-bottom: 4px; font-size: 12px;">Statistik Dataset</h5>
 					<p><strong>Total Embeddings:</strong> ${statistics.total_embeddings}</p>
 					<p><strong>Total Pegawai (Label):</strong> ${statistics.total_labels}</p>
