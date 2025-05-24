@@ -311,7 +311,7 @@ def face_verification(request):
 
 @csrf_exempt
 def evaluate_face_recognition(request):
-    queryset = VektorPegawai.objects.all()
+    queryset = VektorPegawai.objects.filter(deleted_at__isnull=True)
     embeddings = []
     labels = []
     label_counts = defaultdict(int)
