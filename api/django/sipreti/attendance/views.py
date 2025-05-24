@@ -13,9 +13,13 @@ import requests
 from django.conf import settings
 from .progress_tracker import set_progress, get_progress
 from collections import defaultdict
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_curve, auc
 from itertools import combinations
 import random
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import base64
 
 @csrf_exempt
 def upload_csv(request):
@@ -402,6 +406,92 @@ def evaluate_face_recognition(request):
 
     build_pairs_and_evaluate("manhattan", distance.cityblock, [6, 7, 8, 9])
     build_pairs_and_evaluate("euclidean", distance.euclidean, [0.6, 0.7, 0.8, 0.9])
+
+    return JsonResponse(results, json_dumps_params={"indent": 2})
+
+@csrf_exempt
+def evaluate_roc_curve(request):
+    queryset = VektorPegawai.objects.filter(deleted_at__isnull=True)
+    embeddings = []
+    labels = []
+    grouped = defaultdict(list)
+
+    for obj in queryset:
+        try:
+            vector = json.loads(obj.face_embeddings)
+            if isinstance(vector, list):
+                embeddings.append(vector)
+                labels.append(obj.id_pegawai)
+                grouped[obj.id_pegawai].append(vector)
+        except json.JSONDecodeError:
+            continue
+
+    def get_pairs():
+        pos_pairs = []
+        neg_pairs = []
+        label_list = list(grouped.keys())
+
+        for vectors in grouped.values():
+            if len(vectors) < 2:
+                continue
+            for a, b in combinations(vectors, 2):
+                pos_pairs.append((a, b, 1))
+
+        for _ in range(len(pos_pairs)):
+            id1, id2 = random.sample(label_list, 2)
+            a = random.choice(grouped[id1])
+            b = random.choice(grouped[id2])
+            neg_pairs.append((a, b, 0))
+
+        return pos_pairs + neg_pairs
+
+    def compute_roc(method_name, method):
+        pairs = get_pairs()
+        y_true = []
+        y_scores = []
+
+        for a, b, label in pairs:
+            dist = method(a, b)
+            score = -dist  # negative distance => higher similarity
+            y_true.append(label)
+            y_scores.append(score)
+
+        fpr, tpr, thresholds = roc_curve(y_true, y_scores)
+        roc_auc = auc(fpr, tpr)
+
+        # Cari threshold terbaik (dengan jarak ke (0,1) minimum)
+        optimal_idx = np.argmax(tpr - fpr)
+        optimal_threshold = thresholds[optimal_idx]
+
+        # Plot ROC Curve
+        fig, ax = plt.subplots()
+        ax.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc:.4f})')
+        ax.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
+        ax.set_xlim([0.0, 1.0])
+        ax.set_ylim([0.0, 1.05])
+        ax.set_xlabel('False Positive Rate')
+        ax.set_ylabel('True Positive Rate')
+        ax.set_title(f'Receiver Operating Characteristic - {method_name}')
+        ax.legend(loc="lower right")
+
+        # Convert plot to base64
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        plt.close(fig)
+        buf.seek(0)
+        image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+        image_url = f"data:image/png;base64,{image_base64}"
+
+        return {
+            "auc": round(roc_auc, 4),
+            "optimal_threshold": round(-optimal_threshold, 4),  # balik karena skor = -distance
+            "roc_curve_image": image_url
+        }
+
+    results = {
+        "manhattan": compute_roc("Manhattan", distance.cityblock),
+        "euclidean": compute_roc("Euclidean", distance.euclidean)
+    }
 
     return JsonResponse(results, json_dumps_params={"indent": 2})
 

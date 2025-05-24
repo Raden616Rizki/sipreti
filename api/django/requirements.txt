@@ -13,3 +13,4 @@ voyager
 scipy
 django-cors-headers
 scikit-learn
+matplotlib==3.3.4
