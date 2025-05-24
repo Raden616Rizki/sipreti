@@ -12,3 +12,4 @@ google-auth-oauthlib
 voyager
 scipy
 django-cors-headers
+scikit-learn

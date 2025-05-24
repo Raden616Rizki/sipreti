@@ -12,6 +12,10 @@ from scipy.spatial import distance
 import requests
 from django.conf import settings
 from .progress_tracker import set_progress, get_progress
+from collections import defaultdict
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from itertools import combinations
+import random
 
 @csrf_exempt
 def upload_csv(request):
@@ -304,6 +308,102 @@ def face_verification(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Metode tidak diizinkan"}, status=405)
+
+@csrf_exempt
+def evaluate_face_recognition(request):
+    queryset = VektorPegawai.objects.all()
+    embeddings = []
+    labels = []
+    label_counts = defaultdict(int)
+
+    # Load embeddings dan label
+    for obj in queryset:
+        try:
+            vector = json.loads(obj.face_embeddings)
+            if isinstance(vector, list):
+                embeddings.append(vector)
+                labels.append(obj.id_pegawai)
+                label_counts[obj.id_pegawai] += 1
+        except json.JSONDecodeError:
+            continue
+
+    embeddings = np.array(embeddings)
+    labels = np.array(labels)
+
+    results = {
+        "statistics": {
+            "total_embeddings": len(embeddings),
+            "total_labels": len(set(labels)),
+            "embeddings_per_label": dict(label_counts)
+        },
+        "manhattan": {},
+        "euclidean": {}
+    }
+
+    def build_pairs_and_evaluate(method_name, method, thresholds):
+        for threshold in thresholds:
+            grouped = defaultdict(list)
+            for i, label in enumerate(labels):
+                grouped[label].append(embeddings[i])
+
+            pos_pairs = []
+            neg_pairs = []
+
+            for vectors in grouped.values():
+                if len(vectors) < 2:
+                    continue
+                for a, b in combinations(vectors, 2):
+                    pos_pairs.append((a, b, 1))  # match
+
+            label_list = list(grouped.keys())
+            for _ in range(len(pos_pairs)):
+                id1, id2 = random.sample(label_list, 2)
+                a = random.choice(grouped[id1])
+                b = random.choice(grouped[id2])
+                neg_pairs.append((a, b, 0))  # non-match
+
+            pairs = pos_pairs + neg_pairs
+            y_true = []
+            y_pred = []
+
+            TP = FP = TN = FN = 0
+
+            for a, b, label in pairs:
+                dist = method(a, b)
+                pred = 1 if dist < threshold else 0
+                y_true.append(label)
+                y_pred.append(pred)
+
+                if label == 1 and pred == 1:
+                    TP += 1
+                elif label == 0 and pred == 1:
+                    FP += 1
+                elif label == 0 and pred == 0:
+                    TN += 1
+                elif label == 1 and pred == 0:
+                    FN += 1
+
+            acc = accuracy_score(y_true, y_pred)
+            prec = precision_score(y_true, y_pred, zero_division=0)
+            rec = recall_score(y_true, y_pred, zero_division=0)
+            f1 = f1_score(y_true, y_pred, zero_division=0)
+
+            results[method_name][str(threshold)] = {
+                "accuracy": round(acc, 4),
+                "precision": round(prec, 4),
+                "recall": round(rec, 4),
+                "f1": round(f1, 4),
+                "true_positive": TP,
+                "false_positive": FP,
+                "true_negative": TN,
+                "false_negative": FN,
+                "total_pairs": len(pairs)
+            }
+
+    build_pairs_and_evaluate("manhattan", distance.cityblock, [6, 7, 8, 9])
+    build_pairs_and_evaluate("euclidean", distance.euclidean, [0.6, 0.7, 0.8, 0.9])
+
+    return JsonResponse(results, json_dumps_params={"indent": 2})
 
 @csrf_exempt  
 def distance_comparasion(request):
