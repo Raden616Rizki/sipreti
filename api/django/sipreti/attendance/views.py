@@ -320,7 +320,6 @@ def evaluate_face_recognition(request):
     labels = []
     label_counts = defaultdict(int)
 
-    # Load embeddings dan label
     for obj in queryset:
         try:
             vector = json.loads(obj.face_embeddings)
@@ -341,10 +340,15 @@ def evaluate_face_recognition(request):
             "embeddings_per_label": dict(label_counts)
         },
         "manhattan": {},
-        "euclidean": {}
+        "euclidean": {},
+        "plots": {}
     }
 
     def build_pairs_and_evaluate(method_name, method, thresholds):
+        metrics_by_threshold = {
+            "accuracy": [], "precision": [], "recall": [], "f1": [], "thresholds": []
+        }
+
         for threshold in thresholds:
             grouped = defaultdict(list)
             for i, label in enumerate(labels):
@@ -404,8 +408,51 @@ def evaluate_face_recognition(request):
                 "total_pairs": len(pairs)
             }
 
+            metrics_by_threshold["thresholds"].append(threshold)
+            metrics_by_threshold["accuracy"].append(acc)
+            metrics_by_threshold["precision"].append(prec)
+            metrics_by_threshold["recall"].append(rec)
+            metrics_by_threshold["f1"].append(f1)
+
+        # Generate plot
+        fig, ax = plt.subplots()
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["accuracy"], label="Accuracy", marker='o', color="orange")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["precision"], label="Precision", marker='o', color="orangered")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["recall"], label="Recall", marker='o', color="crimson")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["f1"], label="F1 Score", marker='o', color="deeppink")
+        ax.set_xlabel("Threshold")
+        ax.set_ylabel("Score")
+        ax.set_title(f"{method_name.capitalize()} - Metric Scores vs Threshold")
+        ax.legend()
+        ax.grid(True)
+
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        plt.close(fig)
+        buffer.seek(0)
+        img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        results["plots"][method_name] = img_base64
+
     build_pairs_and_evaluate("manhattan", distance.cityblock, [6, 7, 8, 9])
     build_pairs_and_evaluate("euclidean", distance.euclidean, [0.6, 0.7, 0.8, 0.9])
+
+    # Grafik jumlah embeddings per label pegawai
+    fig, ax = plt.subplots(figsize=(18, 6))
+    keys = list(label_counts.keys())
+    vals = list(label_counts.values())
+    ax.bar(keys, vals, color='skyblue')
+    ax.set_title("Jumlah Embeddings per Label Pegawai")
+    ax.set_xlabel("Label Pegawai")
+    ax.set_ylabel("Jumlah Embeddings")
+    plt.xticks(rotation=90)
+    ax.grid(axis='y')
+
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close(fig)
+    buffer.seek(0)
+    embedding_dist_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    results["plots"]["embeddings_per_label"] = embedding_dist_base64
 
     return JsonResponse(results, json_dumps_params={"indent": 2})
 
