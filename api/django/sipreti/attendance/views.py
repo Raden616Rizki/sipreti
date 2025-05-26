@@ -20,6 +20,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import base64
+import cv2
+from io import BytesIO
+from PIL import Image
+from datetime import datetime
 
 @csrf_exempt
 def upload_csv(request):
@@ -235,41 +239,115 @@ def upload_csv_pegawai(request):
 
 @csrf_exempt
 def face_register(request):
-    if request.method == 'POST':
-        id_pegawai = request.POST.get('id_pegawai')
-        uploaded_file = request.FILES.get('uploaded_file')
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Metode harus POST'}, status=405)
 
-        if not id_pegawai or not uploaded_file:
-            return JsonResponse({'error': 'id_pegawai dan file foto wajib diisi'}, status=400)
+    id_pegawai = request.POST.get('id_pegawai')
+    uploaded_file = request.FILES.get('uploaded_file')
 
-        try:
-            result = face_extraction(uploaded_file, id_pegawai)
+    if not id_pegawai or not uploaded_file:
+        return JsonResponse({'error': 'id_pegawai dan file foto wajib diisi'}, status=400)
+
+    try:
+        img = Image.open(BytesIO(uploaded_file.read())).convert("RGB")
+        base_img = np.array(img)
+
+        versions = {
+            "original": base_img,
+            "gamma": apply_gamma_correction(base_img),
+            "clahe": apply_clahe(base_img),
+            "gamma_clahe": apply_clahe(apply_gamma_correction(base_img))
+        }
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        errors = []
+
+        for version_name, version_array in versions.items():
+            version_img = Image.fromarray(version_array)
+            img_io = BytesIO()
+            img_io.name = f"{timestamp}_{id_pegawai}_{version_name}.jpg"
+            version_img.save(img_io, format='JPEG')
+            img_io.seek(0)
+
+            result = face_extraction(img_io, id_pegawai)
             if not result:
-                return JsonResponse({'error': 'Wajah tidak berhasil dideteksi'}, status=422)
+                errors.append(version_name)
+                continue
 
-            vector, original_io = result
-            
-            files = {
-                'url_foto': original_io
-            }
+            vector, cropped_io = result
+
             data = {
                 'id_pegawai': id_pegawai,
-                'face_embeddings': json.dumps(vector) 
+                'face_embeddings': json.dumps(vector),
+                'version': version_name
+            }
+
+            files = {
+                'url_foto': cropped_io
             }
 
             ci3_url = settings.CI3_API_URL
             response = requests.post(ci3_url, data=data, files=files)
 
-            if response.status_code == 200:
-                return JsonResponse({'message': 'Data berhasil dikirim ke CI3'}, status=200)
-            else:
-                return JsonResponse({'error': f"Error dari CI3: {response.text}"}, status=response.status_code)
+            if response.status_code != 200:
+                errors.append(f"{version_name}: {response.text}")
 
-        except Exception as e:
-            return JsonResponse({'error': f'Gagal memproses: {e}'}, status=500)
+        if errors:
+            return JsonResponse({'warning': 'Beberapa versi gagal diproses', 'details': errors}, status=207)
+        return JsonResponse({'message': 'Semua versi berhasil diproses'}, status=200)
 
-    return JsonResponse({'error': 'Metode harus POST'}, status=405)
+    except Exception as e:
+        return JsonResponse({'error': f'Gagal memproses: {e}'}, status=500)
 
+# @csrf_exempt
+# def face_register(request):
+#     if request.method == 'POST':
+#         id_pegawai = request.POST.get('id_pegawai')
+#         uploaded_file = request.FILES.get('uploaded_file')
+
+#         if not id_pegawai or not uploaded_file:
+#             return JsonResponse({'error': 'id_pegawai dan file foto wajib diisi'}, status=400)
+
+#         try:
+#             result = face_extraction(uploaded_file, id_pegawai)
+#             if not result:
+#                 return JsonResponse({'error': 'Wajah tidak berhasil dideteksi'}, status=422)
+
+#             vector, original_io = result
+            
+#             files = {
+#                 'url_foto': original_io
+#             }
+#             data = {
+#                 'id_pegawai': id_pegawai,
+#                 'face_embeddings': json.dumps(vector) 
+#             }
+
+#             ci3_url = settings.CI3_API_URL
+#             response = requests.post(ci3_url, data=data, files=files)
+
+#             if response.status_code == 200:
+#                 return JsonResponse({'message': 'Data berhasil dikirim ke CI3'}, status=200)
+#             else:
+#                 return JsonResponse({'error': f"Error dari CI3: {response.text}"}, status=response.status_code)
+
+#         except Exception as e:
+#             return JsonResponse({'error': f'Gagal memproses: {e}'}, status=500)
+
+#     return JsonResponse({'error': 'Metode harus POST'}, status=405)
+
+def apply_gamma_correction(image, gamma=1.5):
+    invGamma = 1.0 / gamma
+    table = np.array([(i / 255.0) ** invGamma * 255 for i in np.arange(256)]).astype("uint8")
+    return cv2.LUT(image, table)
+
+def apply_clahe(image):
+    lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
+    l, a, b = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    cl = clahe.apply(l)
+    merged = cv2.merge((cl, a, b))
+    return cv2.cvtColor(merged, cv2.COLOR_LAB2RGB)
 
 @csrf_exempt
 def face_verification(request):
