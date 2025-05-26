@@ -158,50 +158,53 @@
 		}
 	}
 
-	document.getElementById('uploadInput').addEventListener('change', function (event) {
-		const files = event.target.files;
+	document.getElementById('uploadInput').addEventListener('change', async function (event) {
+		const files = Array.from(event.target.files);
 
 		if (!files || files.length === 0) {
 			alert("Tidak ada file yang dipilih.");
 			return;
 		}
 
-		showModalLoading(); // tampilkan loader
+		if (jumlahBiometrik + files.length > 10) {
+			showModalError('Kuota biometrik penuh. Maksimal 10 foto.');
+			return;
+		}
 
-		let uploadsSelesai = 0;
+		showModalLoading();
+
+		let errorOccurred = false;
 
 		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+
 			const formData = new FormData();
 			formData.append('id_pegawai', idPegawai);
-			formData.append('uploaded_file', files[i]);
+			formData.append('uploaded_file', file);
 
-			fetch('http://127.0.0.1:8000/attendance/face-register/', {
-				method: 'POST',
-				body: formData
-			})
-				.then(response => {
-					return response.json().then(data => ({
-						status: response.status,
-						ok: response.ok,
-						data: data
-					}));
-				})
-				.then(result => {
-					uploadsSelesai++;
-
-					if (!result.ok || !result.data.message) {
-						showModalError(result.data.error || 'Terjadi kesalahan saat mengunggah gambar');
-					}
-
-					// Jika semua upload selesai dan tidak ada error, reload halaman
-					if (uploadsSelesai === files.length && result.ok && result.data.message) {
-						window.location.href = "<?= site_url('vektor_pegawai/read_vektor_pegawai/' . $pegawai->id_pegawai) ?>";
-					}
-				})
-				.catch(error => {
-					console.error(`Error saat upload gambar ke-${i + 1}:`, error);
-					showModalError('Terjadi kesalahan saat mengunggah gambar');
+			try {
+				const response = await fetch('http://127.0.0.1:8000/attendance/face-register/', {
+					method: 'POST',
+					body: formData
 				});
+
+				const result = await response.json();
+
+				if (!response.ok || !result.message) {
+					errorOccurred = true;
+					showModalError(result.error || `Gagal mengunggah gambar ke-${i + 1}`);
+					break;
+				}
+			} catch (error) {
+				console.error(`Error saat upload gambar ke-${i + 1}:`, error);
+				showModalError(`Terjadi kesalahan saat mengunggah gambar ke-${i + 1}`);
+				errorOccurred = true;
+				break;
+			}
+		}
+
+		if (!errorOccurred) {
+			window.location.href = "<?= site_url('vektor_pegawai/read_vektor_pegawai/' . $pegawai->id_pegawai) ?>";
 		}
 	});
 
