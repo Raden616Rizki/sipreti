@@ -95,16 +95,16 @@ def face_extraction_gdrive(folder_id, id_pegawai):
                 img.save(original_io, format=original_format)
                 original_io.seek(0)
                 
-                # crop_io = BytesIO()
-                # crop_image = Image.fromarray(face_crop)
-                # crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
-                # crop_image.save(crop_io, format='JPEG')
-                # crop_io.seek(0)
+                crop_io = BytesIO()
+                crop_image = Image.fromarray(face_crop)
+                crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
+                crop_image.save(crop_io, format='JPEG')
+                crop_io.seek(0)
 
                 vectors.append(vector)
-                original_images.append(original_io)
+                original_images.append(crop_io)
 
-                print(f"Vektor wajah berhasil diekstrak dari {original_io.name}")
+                print(f"Vektor wajah berhasil diekstrak dari {crop_io.name}")
 
             except Exception as img_err:
                 print(f"Kesalahan dalam memproses gambar {file_name}: {img_err}")
@@ -155,13 +155,13 @@ def face_extraction(uploaded_file, id_pegawai):
         img.save(original_io, format=original_format)
         original_io.seek(0)
         
-        # crop_io = BytesIO()
-        # crop_image = Image.fromarray(face_crop)
-        # crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
-        # crop_image.save(crop_io, format='JPEG')
-        # crop_io.seek(0)
+        crop_io = BytesIO()
+        crop_image = Image.fromarray(face_crop)
+        crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
+        crop_image.save(crop_io, format='JPEG')
+        crop_io.seek(0)
 
-        return vector, original_io
+        return vector, crop_io
 
     except Exception as e:
         print(f"Kesalahan saat ekstraksi wajah tunggal: {e}")
