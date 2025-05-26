@@ -344,7 +344,7 @@ class Pegawai extends CI_Controller
 
 		$config['upload_path'] = $upload_path;
 		$config['allowed_types'] = 'jpg|jpeg|png';
-		$config['max_size'] = 2048;
+		$config['max_size'] = 10240;
 		$config['encrypt_name'] = TRUE;
 
 		$this->upload->initialize($config);

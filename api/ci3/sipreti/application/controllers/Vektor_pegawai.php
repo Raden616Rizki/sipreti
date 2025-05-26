@@ -122,7 +122,7 @@ class Vektor_pegawai extends CI_Controller
 			// Konfigurasi upload file
 			$config['upload_path'] = $upload_path;
 			$config['allowed_types'] = 'jpg|jpeg|png';
-			$config['max_size'] = 2048; // Maksimal 2MB
+			$config['max_size'] = 10240; // Maksimal 10MB
 			$this->load->library('upload', $config);
 
 			$url_foto = NULL;
