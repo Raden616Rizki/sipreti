@@ -24,8 +24,7 @@ def get_drive_service():
 
 # Fungsi untuk memuat model MobileFaceNet (TFLite)
 def load_tflite_model():
-    # model_path = os.path.join(settings.BASE_DIR, "assets/model/mobilefacenet.tflite")
-    model_path = os.path.join(settings.BASE_DIR, "assets/model/small_mobilefacenet.tflite")
+    model_path = os.path.join(settings.BASE_DIR, "assets/model/mobilefacenet.tflite")
     interpreter = tf.lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
     return interpreter
