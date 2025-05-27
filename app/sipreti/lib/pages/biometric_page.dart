@@ -198,13 +198,31 @@ class _BiometricPageState extends State<BiometricPage> {
       throw Exception("Error reading the original image");
     }
 
-    final int left = boundingBox.left.toInt().clamp(0, originalImage.width);
-    final int top = boundingBox.top.toInt().clamp(0, originalImage.height);
-    final int width =
-        boundingBox.width.toInt().clamp(0, originalImage.width - left);
-    final int height =
-        boundingBox.height.toInt().clamp(0, originalImage.height - top);
-    final cropped = img.copyCrop(originalImage, left, top, width, height);
+    const double widthReductionRatio = 0.3;
+    const double heightReductionRatio = 0.1;
+
+    // Hitung pengurangan absolut
+    final double deltaWidth = boundingBox.width * widthReductionRatio;
+    final double deltaHeight = boundingBox.height * heightReductionRatio;
+
+    // Hitung bounding box baru
+    final double newLeft = (boundingBox.left + deltaWidth / 2)
+        .clamp(0, originalImage.width.toDouble());
+    final double newTop = (boundingBox.top + deltaHeight / 2)
+        .clamp(0, originalImage.height.toDouble());
+
+    final double newWidth = (boundingBox.width - deltaWidth)
+        .clamp(0, originalImage.width - newLeft);
+    final double newHeight = (boundingBox.height - deltaHeight)
+        .clamp(0, originalImage.height - newTop);
+
+    final cropped = img.copyCrop(
+      originalImage,
+      newLeft.toInt(),
+      newTop.toInt(),
+      newWidth.toInt(),
+      newHeight.toInt(),
+    );
 
     return cropped;
   }
@@ -222,10 +240,11 @@ class _BiometricPageState extends State<BiometricPage> {
   }
 
   Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
-    final resizedImage = img.copyResize(image, width: 112, height: 112);
+    final resizedImage = img.copyResize(image,
+        width: 112, height: 112, interpolation: img.Interpolation.linear);
 
     final pixels = resizedImage.getBytes(format: img.Format.rgb);
-    final floatPixels = Float32List(pixels.length);
+    final Float32List floatPixels = Float32List(112 * 112 * 3);
 
     for (int i = 0; i < pixels.length; i++) {
       floatPixels[i] = pixels[i] / 255.0;
@@ -248,15 +267,14 @@ class _BiometricPageState extends State<BiometricPage> {
       var pegawaiBox = Hive.box('pegawai');
 
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
-      const double threshold = 7;
-      // const double threshold = 0.8;
+      const double threshold = 0.9;
       bool verifikasi = false;
 
       List<double> distances = [];
 
       for (int i = 0; i < faceEmbeddings.length; i++) {
         List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
-        double distance = manhattanDistance(embeddings, storedEmbedding);
+        double distance = euclideanDistance(embeddings, storedEmbedding);
         distance = double.parse(distance.toStringAsFixed(4));
         distances.add(distance);
       }

@@ -158,7 +158,7 @@ class ApiService {
     required String namaLokasi,
     required String lamaAbsensi,
     required String jarakVektor,
-    required File fotoPresensi,
+    File? fotoPresensi,
     File? dokumen,
   }) async {
     final String url = "$baseUrl/log_absensi/create_api";
@@ -175,10 +175,70 @@ class ApiService {
       request.fields['waktu_verifikasi'] = lamaAbsensi;
       request.fields['jarak_vektor'] = jarakVektor;
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-            'url_foto_presensi', fotoPresensi.path),
-      );
+      if (fotoPresensi != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+              'url_foto_presensi', fotoPresensi.path),
+        );
+      }
+
+      if (dokumen != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('url_dokumen', dokumen.path),
+        );
+      }
+
+      var response = await request.send();
+      var responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        return jsonDecode(responseBody);
+      } else {
+        return {
+          "error": true,
+          "message": "Error: ${response.statusCode} - $responseBody"
+        };
+      }
+    } catch (e) {
+      return {"error": true, "message": "Exception: $e"};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateAttendance({
+    required int idLogAbsensi,
+    required int jenisAbsensi,
+    required int idPegawai,
+    required int checkMode,
+    required String waktuAbsensi,
+    required double latitude,
+    required double longitude,
+    required String namaLokasi,
+    required String lamaAbsensi,
+    required String jarakVektor,
+    File? fotoPresensi,
+    File? dokumen,
+  }) async {
+    final String url = "$baseUrl/log_absensi/update_api";
+
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      request.fields['id_log_absensi'] = idLogAbsensi.toString();
+      request.fields['jenis_absensi'] = jenisAbsensi.toString();
+      request.fields['id_pegawai'] = idPegawai.toString();
+      request.fields['check_mode'] = checkMode.toString();
+      request.fields['waktu_absensi'] = waktuAbsensi;
+      request.fields['lattitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
+      request.fields['nama_lokasi'] = namaLokasi;
+      request.fields['waktu_verifikasi'] = lamaAbsensi;
+      request.fields['jarak_vektor'] = jarakVektor;
+
+      if (fotoPresensi != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+              'url_foto_presensi', fotoPresensi.path),
+        );
+      }
 
       if (dokumen != null) {
         request.files.add(

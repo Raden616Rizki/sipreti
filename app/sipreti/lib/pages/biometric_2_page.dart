@@ -4,24 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:sipreti/pages/attendance_page.dart';
+import 'package:sipreti/utils/dialog.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sipreti/services/api_service.dart';
 
-class Biometric2Page extends StatefulWidget {
-  const Biometric2Page({super.key});
+class BiometricPage extends StatefulWidget {
+  const BiometricPage({super.key});
 
   @override
-  State<Biometric2Page> createState() => _Biometric2PageState();
+  State<BiometricPage> createState() => _BiometricPageState();
 }
 
-class _Biometric2PageState extends State<Biometric2Page> {
+class _BiometricPageState extends State<BiometricPage> {
   CameraController? _cameraController;
   List<CameraDescription>? cameras;
   XFile? capturedImage;
   Interpreter? _interpreter;
-  final ApiService _apiService = ApiService();
 
   bool _showInstructionCard = true;
   // bool _cameraButtonEnabled = false;
@@ -32,8 +31,6 @@ class _Biometric2PageState extends State<Biometric2Page> {
   final List<String> instructions = [
     "Kedipkan mata",
     "Tersenyum ke Kamera",
-    // "Menoleh ke Kiri",
-    // "Menoleh ke Kanan"
   ];
 
   late String currentInstruction;
@@ -65,23 +62,6 @@ class _Biometric2PageState extends State<Biometric2Page> {
   void _selectRandomInstruction() {
     final random = Random();
     currentInstruction = instructions[random.nextInt(instructions.length)];
-  }
-
-  Future<void> verifyFace(String idPegawai, List<double> faceEmbeddings) async {
-    Map<String, dynamic> result = await _apiService.faceVerification(
-      idPegawai,
-      faceEmbeddings,
-    );
-
-    if (!mounted) return;
-
-    if (result["success"] == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"] ?? "Terjadi kesalahan")),
-      );
-    } else {
-      debugPrint(result.toString());
-    }
   }
 
   InputImageRotation _rotationFromCamera(int sensorOrientation) {
@@ -149,20 +129,12 @@ class _Biometric2PageState extends State<Biometric2Page> {
               _onInstructionCompleted();
             }
             break;
-          case "Menoleh ke Kiri":
-            if ((face.headEulerAngleY ?? 0.0) > 20) {
-              _onInstructionCompleted();
-            }
-            break;
-          case "Menoleh ke Kanan":
-            if ((face.headEulerAngleY ?? 0.0) < -20) {
-              _onInstructionCompleted();
-            }
-            break;
         }
       }
     } catch (e) {
-      debugPrint("Face processing error: $e");
+      if (mounted) {
+        showErrorDialog(context, "Face processing error: $e");
+      }
     } finally {
       await Future.delayed(const Duration(milliseconds: 300));
       _isProcessing = false;
@@ -184,6 +156,7 @@ class _Biometric2PageState extends State<Biometric2Page> {
       _cameraController = CameraController(
         cameras![1],
         ResolutionPreset.high,
+        enableAudio: false,
       );
 
       await _cameraController!.initialize();
@@ -196,8 +169,18 @@ class _Biometric2PageState extends State<Biometric2Page> {
     try {
       _interpreter = await Interpreter.fromAsset('model/mobilefacenet.tflite');
     } catch (e) {
-      debugPrint("Error loading model: $e");
+      if (mounted) {
+        showErrorDialog(context, "Error loading model: $e");
+      }
     }
+  }
+
+  double euclideanDistance(List<double> e1, List<double> e2) {
+    double sum = 0.0;
+    for (int i = 0; i < e1.length; i++) {
+      sum += pow((e1[i] - e2[i]), 2);
+    }
+    return sqrt(sum);
   }
 
   double manhattanDistance(List<double> e1, List<double> e2) {
@@ -208,25 +191,70 @@ class _Biometric2PageState extends State<Biometric2Page> {
     return sum;
   }
 
-  Future<void> _captureImage() async {
-    _showLoadingDialog();
-
-    if (_cameraController != null && _cameraController!.value.isInitialized) {
-      try {
-        final image = await _cameraController!.takePicture();
-        setState(() {
-          capturedImage = image;
-          _cameraStopped = true;
-        });
-
-        await _detectAndCropFace(image);
-      } catch (e) {
-        debugPrint("Error capturing image: $e");
-      }
+  Future<img.Image> _cropFace(XFile image, Rect boundingBox) async {
+    final bytes = await image.readAsBytes();
+    final originalImage = img.decodeImage(bytes);
+    if (originalImage == null) {
+      throw Exception("Error reading the original image");
     }
+
+    const double widthReductionRatio = 0.3;
+    const double heightReductionRatio = 0.1;
+
+    // Hitung pengurangan absolut
+    final double deltaWidth = boundingBox.width * widthReductionRatio;
+    final double deltaHeight = boundingBox.height * heightReductionRatio;
+
+    // Hitung bounding box baru
+    final double newLeft = (boundingBox.left + deltaWidth / 2)
+        .clamp(0, originalImage.width.toDouble());
+    final double newTop = (boundingBox.top + deltaHeight / 2)
+        .clamp(0, originalImage.height.toDouble());
+
+    final double newWidth = (boundingBox.width - deltaWidth)
+        .clamp(0, originalImage.width - newLeft);
+    final double newHeight = (boundingBox.height - deltaHeight)
+        .clamp(0, originalImage.height - newTop);
+
+    final cropped = img.copyCrop(
+      originalImage,
+      newLeft.toInt(),
+      newTop.toInt(),
+      newWidth.toInt(),
+      newHeight.toInt(),
+    );
+
+    return cropped;
   }
 
-  Future<void> _detectAndCropFace(XFile image) async {
+  Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
+    Float32List input = await _loadAndNormalizeImage(faceImage);
+
+    var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
+
+    var output =
+        List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
+    _interpreter?.run(reshapedInput, output);
+
+    return output[0];
+  }
+
+  Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
+    final resizedImage = img.copyResize(image,
+        width: 112, height: 112, interpolation: img.Interpolation.linear);
+
+    final pixels = resizedImage.getBytes(format: img.Format.rgb);
+    final Float32List floatPixels = Float32List(112 * 112 * 3);
+
+    for (int i = 0; i < pixels.length; i++) {
+      floatPixels[i] = pixels[i] / 255.0;
+    }
+
+    return floatPixels;
+  }
+
+  Future<void> _detectAndCropFace(
+      XFile image, PreprocessingMethod method) async {
     final totalTime = Stopwatch()..start();
 
     final inputImage = InputImage.fromFilePath(image.path);
@@ -236,39 +264,58 @@ class _Biometric2PageState extends State<Biometric2Page> {
       final face = faces.first;
       final croppedFace = await _cropFace(image, face.boundingBox);
 
-      final embeddings = await _getFaceEmbeddings(croppedFace);
+      final processedFace = _applyPreprocessing(croppedFace, method);
+
+      // Tampilkan hasil preprocessing sementara
+      final pngBytes = Uint8List.fromList(img.encodePng(processedFace));
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Image.memory(pngBytes),
+              ),
+            );
+          },
+        );
+      }
+
+      // Auto dismiss after 3 seconds
+      await Future.delayed(const Duration(seconds: 3));
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      final embeddings = await _getFaceEmbeddings(processedFace);
       var pegawaiBox = Hive.box('pegawai');
 
-      // String idPegawai = pegawaiBox.get('id_pegawai');
       List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
+      const double threshold = 0.9;
+      bool verifikasi = false;
 
-      List<double> distances2 = [];
+      List<double> distances = [];
 
       for (int i = 0; i < faceEmbeddings.length; i++) {
         List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
-        double distance = manhattanDistance(embeddings, storedEmbedding);
-        distances2.add(distance);
+        double distance = euclideanDistance(embeddings, storedEmbedding);
+        distance = double.parse(distance.toStringAsFixed(4));
+        distances.add(distance);
       }
 
-      // Cek apakah ada jarak di bawah threshold (misal 7)
-      const double threshold = 7;
-      bool verifikasi = distances2.any((d) => d < threshold);
-
-      String message =
-          verifikasi ? "Wajah terverifikasi" : "Wajah tidak terverifikasi";
+      verifikasi = distances.any((d) => d < threshold);
       int value = verifikasi ? 1 : 0;
-
-      // Tampilkan hasil akhir
-      debugPrint('Jarak Kedekatan: $distances2');
-      debugPrint('message: $message');
-      debugPrint('Value: $value');
 
       final presensiBox = await Hive.openBox('presensi');
       await presensiBox.put('face_status', value);
+      await presensiBox.put('distances', distances);
 
       totalTime.stop();
-      final verificationTime = '${totalTime.elapsedMicroseconds} µs | '
-          '${totalTime.elapsedMilliseconds} ms | '
+      final verificationTime =
           '${(totalTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s';
 
       await presensiBox.put('verification_time', verificationTime);
@@ -284,6 +331,10 @@ class _Biometric2PageState extends State<Biometric2Page> {
         );
       }
     } else {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
       _showCapturedImageDialog();
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
@@ -293,49 +344,97 @@ class _Biometric2PageState extends State<Biometric2Page> {
     }
   }
 
-  Future<img.Image> _cropFace(XFile image, Rect boundingBox) async {
-    final bytes = await image.readAsBytes();
-    final originalImage = img.decodeImage(bytes);
-    if (originalImage == null) {
-      throw Exception("Error reading the original image");
+  Future<void> _captureImage() async {
+    showLoadingDialog(context);
+
+    if (_cameraController != null && _cameraController!.value.isInitialized) {
+      try {
+        final image = await _cameraController!.takePicture();
+        setState(() {
+          capturedImage = image;
+          _cameraStopped = true;
+        });
+
+        await _detectAndCropFace(image, PreprocessingMethod.gamma);
+      } catch (e) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          showErrorDialog(context, "Error capturing image: $e");
+        }
+      }
     }
-
-    final int left = boundingBox.left.toInt().clamp(0, originalImage.width);
-    final int top = boundingBox.top.toInt().clamp(0, originalImage.height);
-    final int width =
-        boundingBox.width.toInt().clamp(0, originalImage.width - left);
-    final int height =
-        boundingBox.height.toInt().clamp(0, originalImage.height - top);
-    final cropped = img.copyCrop(originalImage, left, top, width, height);
-
-    return cropped;
   }
 
-  Future<List<double>> _getFaceEmbeddings(img.Image faceImage) async {
-    Float32List input = await _loadAndNormalizeImage(faceImage);
-
-    final Stopwatch reshapeTime = Stopwatch()..start();
-    var reshapedInput = input.buffer.asFloat32List().reshape([1, 112, 112, 3]);
-    reshapeTime.stop();
-
-    var output =
-        List<List<double>>.generate(1, (_) => List<double>.filled(192, 0.0));
-    _interpreter?.run(reshapedInput, output);
-
-    return output[0];
+  img.Image _applyPreprocessing(img.Image image, PreprocessingMethod method) {
+    switch (method) {
+      case PreprocessingMethod.gamma:
+        return _applyGammaCorrection(image, gamma: 0.8);
+      case PreprocessingMethod.clahe:
+        return _applyClahe(image);
+      case PreprocessingMethod.gammaClahe:
+        final gammaCorrected = _applyGammaCorrection(image, gamma: 0.8);
+        return _applyClahe(gammaCorrected);
+      case PreprocessingMethod.original:
+      default:
+        return image;
+    }
   }
 
-  Future<Float32List> _loadAndNormalizeImage(img.Image image) async {
-    final resizedImage = img.copyResize(image, width: 112, height: 112);
+  img.Image _applyGammaCorrection(img.Image image, {double gamma = 1.0}) {
+    final lut = List<int>.generate(256, (i) {
+      return ((255.0 * pow(i / 255.0, 1.0 / gamma)).clamp(0.0, 255.0)).toInt();
+    });
 
-    final pixels = resizedImage.getBytes(format: img.Format.rgb);
-    final floatPixels = Float32List(pixels.length);
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        final pixel = image.getPixel(x, y);
+        final r = img.getRed(pixel);
+        final g = img.getGreen(pixel);
+        final b = img.getBlue(pixel);
+        image.setPixelRgba(x, y, lut[r], lut[g], lut[b]);
+      }
+    }
+    return image;
+  }
 
-    for (int i = 0; i < pixels.length; i++) {
-      floatPixels[i] = pixels[i] / 255.0;
+  img.Image _applyClahe(img.Image image) {
+    // Simulasi CLAHE sederhana: histogram equalization manual.
+    // Implementasi asli CLAHE membutuhkan native OpenCV.
+    final gray = img.grayscale(image);
+    final hist = List<int>.filled(256, 0);
+
+    for (final p in gray.getBytes()) {
+      hist[p]++;
     }
 
-    return floatPixels;
+    final cdf = List<int>.filled(256, 0);
+    cdf[0] = hist[0];
+    for (int i = 1; i < 256; i++) {
+      cdf[i] = cdf[i - 1] + hist[i];
+    }
+
+    final cdfMin = cdf.firstWhere((x) => x > 0);
+    final totalPixels = gray.width * gray.height;
+    final lut = List<int>.generate(256, (i) {
+      return (((cdf[i] - cdfMin) / (totalPixels - cdfMin)) * 255)
+          .clamp(0, 255)
+          .toInt();
+    });
+
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        final pixel = image.getPixel(x, y);
+        final r = img.getRed(pixel);
+        final g = img.getGreen(pixel);
+        final b = img.getBlue(pixel);
+
+        final grayValue = (0.299 * r + 0.587 * g + 0.114 * b).toInt();
+        final eq = lut[grayValue];
+
+        image.setPixelRgba(x, y, eq, eq, eq);
+      }
+    }
+    return image;
   }
 
   void _showCapturedImageDialog() {
@@ -344,7 +443,7 @@ class _Biometric2PageState extends State<Biometric2Page> {
       barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: Colors.red.withOpacity(0.5),
+          backgroundColor: const Color(0xFFFD5765),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -354,7 +453,7 @@ class _Biometric2PageState extends State<Biometric2Page> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "No face detected, please try again.",
+                  "Wajah Tidak Terdeteksi, Mohon Ulangi",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -366,49 +465,6 @@ class _Biometric2PageState extends State<Biometric2Page> {
           ),
         );
       },
-    );
-  }
-
-  void _showLoadingDialog() {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: "Loading",
-      pageBuilder: (_, __, ___) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              elevation: 8,
-              color: Colors.white,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 20),
-                    Text(
-                      "Harap Tunggu",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (_, anim, __, child) {
-        return FadeTransition(
-          opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
-          child: child,
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 250),
     );
   }
 
@@ -469,11 +525,15 @@ class _Biometric2PageState extends State<Biometric2Page> {
             else
               const Center(child: CircularProgressIndicator()),
             if (_showInstructionCard)
-              Center(
+              Positioned(
+                top: kToolbarHeight + 16,
+                left: 16,
+                right: 16,
                 child: Card(
                   color: Colors.blue,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
@@ -491,4 +551,11 @@ class _Biometric2PageState extends State<Biometric2Page> {
           ],
         ));
   }
+}
+
+enum PreprocessingMethod {
+  original,
+  gamma,
+  clahe,
+  gammaClahe,
 }

@@ -82,6 +82,7 @@ flutter:
   assets:
     - assets/images/
     - assets/model/mobilefacenet.tflite
+    - assets/model/small_mobilefacenet.tflite
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

@@ -34,6 +34,8 @@ class _AttendancePageState extends State<AttendancePage> {
   File? supportingDocument;
   final ApiService apiService = ApiService();
 
+  bool includePhoto = true;
+
   String? urlFoto;
   final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
 
@@ -49,6 +51,7 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   void submitAttendance() async {
+    final submitTime = Stopwatch()..start();
     showLoadingDialog(context);
 
     final DateTime now = DateTime.now();
@@ -68,7 +71,9 @@ class _AttendancePageState extends State<AttendancePage> {
 
     String idPegawai = pegawaiBox.get('id_pegawai');
 
-    final File fotoFile = File(widget.capturedImage!.path);
+    final File? fotoFile = includePhoto && widget.capturedImage != null
+        ? File(widget.capturedImage!.path)
+        : null;
 
     try {
       final result = await apiService.storeAttendance(
@@ -83,6 +88,24 @@ class _AttendancePageState extends State<AttendancePage> {
           jarakVektor: distances,
           fotoPresensi: fotoFile,
           dokumen: supportingDocument);
+
+      submitTime.stop();
+      final submissionTime =
+          '${(submitTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s';
+
+      final lamaAbsensiBaru =
+          'Lama Verifikasi Wajah: $lamaVerifikasi, Lama Pengiriman Presensi: $submissionTime';
+
+      if (result['status'] == 200 && result['data'] != null) {
+        final int idLogAbsensi =
+            int.parse(result['data']['id_log_absensi'].toString());
+        updateAttendance(idLogAbsensi, lamaAbsensiBaru);
+      } else {
+        if (mounted) {
+          showErrorDialog(
+              context, 'Gagal menyimpan update absensi: ${result['message']}');
+        }
+      }
 
       if (mounted) Navigator.pop(context);
 
@@ -111,6 +134,45 @@ class _AttendancePageState extends State<AttendancePage> {
           Future.delayed(const Duration(seconds: 2), () {
             Navigator.pushNamed(context, '/');
           });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        showErrorDialog(context, 'Terjadi kesalahan: $e');
+      }
+    }
+  }
+
+  void updateAttendance(int idLogAbsensi, String lamaAbsensiBaru) async {
+    var pegawaiBox = Hive.box('pegawai');
+
+    String idPegawai = pegawaiBox.get('id_pegawai');
+
+    final File? fotoFile = includePhoto && widget.capturedImage != null
+        ? File(widget.capturedImage!.path)
+        : null;
+
+    try {
+      final result = await apiService.updateAttendance(
+          idLogAbsensi: idLogAbsensi,
+          jenisAbsensi: jenisAbsensi!,
+          idPegawai: int.parse(idPegawai),
+          checkMode: checkMode!,
+          waktuAbsensi: waktuAbsensi.toString(),
+          latitude: latitude!,
+          longitude: longitude!,
+          namaLokasi: namaLokasi,
+          lamaAbsensi: lamaAbsensiBaru,
+          jarakVektor: distances,
+          fotoPresensi: fotoFile,
+          dokumen: supportingDocument);
+
+      if (mounted) {
+        if (result['error'] == true) {
+          final String message = extractMessage(result["message"]);
+          await showErrorDialog(context, message);
+          return;
         }
       }
     } catch (e) {
@@ -205,30 +267,66 @@ class _AttendancePageState extends State<AttendancePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
+                  if (includePhoto)
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                      ),
+                      child: widget.capturedImage != null
+                          ? Image.file(
+                              File(widget.capturedImage!.path),
+                              width: double.infinity,
+                              height: 200,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.asset(
+                              'assets/images/default_profile.png',
+                              width: double.infinity,
+                              height: 200,
+                              fit: BoxFit.cover,
+                            ),
                     ),
-                    child: widget.capturedImage != null
-                        ? Image.file(
-                            File(widget.capturedImage!.path),
-                            width: double.infinity,
-                            height: 200,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.asset(
-                            'assets/images/default_profile.png',
-                            width: double.infinity,
-                            height: 200,
-                            fit: BoxFit.cover,
-                          ),
-                  ),
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Kirim data dengan foto?",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Row(
+                              children: [
+                                Text(
+                                  includePhoto ? 'Ya' : 'Tidak',
+                                  style: TextStyle(
+                                    color: includePhoto
+                                        ? Colors.green
+                                        : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Switch(
+                                  value: includePhoto,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      includePhoto = value;
+                                    });
+                                  },
+                                  activeColor: Colors.green,
+                                  inactiveThumbColor: Colors.red,
+                                  inactiveTrackColor: Colors.grey[300],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
                             const Icon(Icons.bookmark, color: Colors.black),
