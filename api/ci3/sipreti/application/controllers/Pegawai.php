@@ -142,7 +142,7 @@ class Pegawai extends CI_Controller
 
 			$config['upload_path'] = $upload_path;
 			$config['allowed_types'] = 'jpg|jpeg|png';
-			$config['max_size'] = 2048; // 2MB
+			$config['max_size'] = 10240; // 10MB
 			$config['encrypt_name'] = FALSE;
 
 			$foto = null;
@@ -213,16 +213,14 @@ class Pegawai extends CI_Controller
 		if ($this->form_validation->run() == FALSE) {
 			$this->update($this->input->post('id_pegawai', TRUE));
 		} else {
-			$nip = $this->input->post('nip', TRUE);
-
 			$upload_path = './uploads/foto_pegawai/';
 			if (!is_dir($upload_path)) {
-				mkdir($upload_path, 0777, true);
+				mkdir($upload_path, 0777, true); // Buat folder jika belum ada
 			}
 
 			$config['upload_path'] = $upload_path;
 			$config['allowed_types'] = 'jpg|jpeg|png';
-			$config['max_size'] = 2048; // 2MB
+			$config['max_size'] = 10240; // 10MB
 			$config['encrypt_name'] = FALSE;
 
 			$foto = $this->input->post('existing_foto');
@@ -237,6 +235,7 @@ class Pegawai extends CI_Controller
 				$this->upload->initialize($config);
 
 				if ($this->upload->do_upload('url_foto')) {
+					// Hapus file lama jika ada
 					if (!empty($foto) && file_exists($upload_path . $foto)) {
 						unlink($upload_path . $foto);
 					}
