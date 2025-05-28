@@ -86,7 +86,7 @@
 				<?php endif; ?>
 			</form>
 			<div>
-				<button type="button" class="import-csv-btn" onclick="showROC()">Tampilkan ROC</button>
+				<!-- <button type="button" class="import-csv-btn" onclick="showROC()">Tampilkan ROC</button> -->
 				<button type="button" class="export-csv-btn" onclick="showAccuracy()">Tampilkan Akurasi</button>
 				<a href="<?php echo site_url('vektor_pegawai/list_pegawai'); ?>" class="add-btn">Kelola Biometrik</a>
 			</div>

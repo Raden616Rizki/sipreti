@@ -19,6 +19,7 @@ import random
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import base64
 import cv2
 from io import BytesIO
@@ -436,8 +437,8 @@ def evaluate_face_recognition(request):
         img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         results["plots"][method_name] = img_base64
 
-    build_pairs_and_evaluate("manhattan", distance.cityblock, [6, 7, 8, 9])
-    build_pairs_and_evaluate("euclidean", distance.euclidean, [0.6, 0.7, 0.8, 0.9])
+    # build_pairs_and_evaluate("manhattan", distance.cityblock, [3, 4, 5, 6, 7, 8, 9])
+    build_pairs_and_evaluate("euclidean", distance.euclidean, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 
     sorted_items = sorted(label_counts.items())  # urutkan berdasarkan label
     keys = [str(k) for k, v in sorted_items]     # label pegawai sebagai string
@@ -459,6 +460,7 @@ def evaluate_face_recognition(request):
 
     # Tambah garis bantu horizontal
     ax.grid(axis='y', linestyle='--', alpha=0.7)
+    ax.yaxis.set_major_locator(MultipleLocator(1))
 
     # Tata letak otomatis agar tidak terpotong
     plt.tight_layout()
