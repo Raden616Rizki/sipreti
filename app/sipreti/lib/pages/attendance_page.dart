@@ -8,6 +8,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:sipreti/services/api_service.dart';
 import 'package:sipreti/utils/dialog.dart';
+import 'dart:typed_data';
+import 'package:image/image.dart' as img;
 
 class AttendancePage extends StatefulWidget {
   final XFile? capturedImage;
@@ -50,6 +52,32 @@ class _AttendancePageState extends State<AttendancePage> {
     });
   }
 
+  Future<File?> resizeImageFile(File originalFile, double scaleFactor) async {
+    // Baca file sebagai byte
+    final bytes = await originalFile.readAsBytes();
+
+    // Decode menjadi image
+    final image = img.decodeImage(bytes);
+    if (image == null) return null;
+
+    // Hitung ukuran baru
+    final newWidth = (image.width * scaleFactor).round();
+    final newHeight = (image.height * scaleFactor).round();
+
+    // Resize
+    final resized = img.copyResize(image, width: newWidth, height: newHeight);
+
+    // Encode ke PNG (bisa juga JPG jika perlu)
+    final resizedBytes = Uint8List.fromList(img.encodeJpg(resized));
+
+    // Simpan ke file sementara
+    final tempDir = Directory.systemTemp;
+    final resizedFile = await File('${tempDir.path}/resized_image.jpg')
+        .writeAsBytes(resizedBytes);
+
+    return resizedFile;
+  }
+
   void submitAttendance() async {
     final submitTime = Stopwatch()..start();
     showLoadingDialog(context);
@@ -72,7 +100,7 @@ class _AttendancePageState extends State<AttendancePage> {
     String idPegawai = pegawaiBox.get('id_pegawai');
 
     final File? fotoFile = includePhoto && widget.capturedImage != null
-        ? File(widget.capturedImage!.path)
+        ? await resizeImageFile(File(widget.capturedImage!.path), 0.25)
         : null;
 
     try {
