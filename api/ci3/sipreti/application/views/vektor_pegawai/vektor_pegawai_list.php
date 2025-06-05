@@ -322,11 +322,6 @@
 					${generateTable(euclidean)}
 					<img src="data:image/png;base64,${plots.euclidean}" alt="Plot Euclidean"
 						style="width: 70%; border:1px solid #ccc; display: block; margin: 12px auto;" />
-
-					<h4 style="margin-top: 24px; font-size: 12px;">Evaluasi Metode Manhattan</h4>
-					${generateTable(manhattan)}
-					<img src="data:image/png;base64,${plots.manhattan}" alt="Plot Manhattan"
-						style="width: 70%; border:1px solid #ccc; display: block; margin: 12px auto;" />
 				</div>
 			`;
 			})

@@ -343,7 +343,6 @@ def evaluate_face_recognition(request):
             "total_labels": len(set(labels)),
             "embeddings_per_label": dict(label_counts)
         },
-        "manhattan": {},
         "euclidean": {},
         "plots": {}
     }
@@ -436,8 +435,7 @@ def evaluate_face_recognition(request):
         buffer.seek(0)
         img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         results["plots"][method_name] = img_base64
-
-    build_pairs_and_evaluate("manhattan", distance.cityblock, [3, 4, 5, 6, 7, 8, 9])
+        
     build_pairs_and_evaluate("euclidean", distance.euclidean, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 
     sorted_items = sorted(label_counts.items())  # urutkan berdasarkan label
