@@ -79,7 +79,6 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   void submitAttendance() async {
-    final submitTime = Stopwatch()..start();
     showLoadingDialog(context);
 
     final DateTime now = DateTime.now();
@@ -102,6 +101,8 @@ class _AttendancePageState extends State<AttendancePage> {
     final File? fotoFile = includePhoto && widget.capturedImage != null
         ? await resizeImageFile(File(widget.capturedImage!.path), 0.25)
         : null;
+
+    final submitTime = Stopwatch()..start();
 
     try {
       final result = await apiService.storeAttendance(
