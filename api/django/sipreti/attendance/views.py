@@ -473,6 +473,83 @@ def evaluate_face_recognition(request):
     return JsonResponse(results, json_dumps_params={"indent": 2})
 
 @csrf_exempt
+def evaluate_face_recognition_api(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Only GET method is allowed."}, status=405)
+
+    try:
+        queryset = VektorPegawai.objects.filter(deleted_at__isnull=True)
+        embeddings = []
+        labels = []
+        label_counts = defaultdict(int)
+
+        for obj in queryset:
+            try:
+                vector = json.loads(obj.face_embeddings)
+                if isinstance(vector, list):
+                    embeddings.append(vector)
+                    labels.append(obj.id_pegawai)
+                    label_counts[obj.id_pegawai] += 1
+            except json.JSONDecodeError:
+                continue
+
+        embeddings = np.array(embeddings)
+        labels = np.array(labels)
+
+        if len(embeddings) == 0:
+            return JsonResponse({"error": "No valid embeddings found in database."}, status=404)
+
+        n = len(embeddings)
+        pairs = list(combinations(range(n), 2))
+        thresholds = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+        results = {}
+
+        for threshold in thresholds:
+            y_true = []
+            y_pred = []
+            TP = TN = FP = FN = 0
+
+            for i, j in pairs:
+                true_match = int(labels[i] == labels[j])
+                distance = distance.euclidean(embeddings[i], embeddings[j])
+                pred_match = int(distance < threshold)
+
+                y_true.append(true_match)
+                y_pred.append(pred_match)
+
+                if true_match and pred_match:
+                    TP += 1
+                elif not true_match and pred_match:
+                    FP += 1
+                elif not true_match and not pred_match:
+                    TN += 1
+                elif true_match and not pred_match:
+                    FN += 1
+
+            acc = accuracy_score(y_true, y_pred)
+            prec = precision_score(y_true, y_pred, zero_division=0)
+            rec = recall_score(y_true, y_pred, zero_division=0)
+            f1 = f1_score(y_true, y_pred, zero_division=0)
+
+            results[str(threshold)] = {
+                "accuracy": round(acc, 4),
+                "precision": round(prec, 4),
+                "recall": round(rec, 4),
+                "f1_score": round(f1, 4),
+                "true_positive": TP,
+                "false_positive": FP,
+                "true_negative": TN,
+                "false_negative": FN,
+                "total_pairs": len(pairs)
+            }
+
+        return JsonResponse({"results": results})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+@csrf_exempt
 def evaluate_roc_curve(request):
     queryset = VektorPegawai.objects.filter(deleted_at__isnull=True)
     embeddings = []
