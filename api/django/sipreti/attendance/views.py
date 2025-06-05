@@ -512,8 +512,8 @@ def evaluate_face_recognition_api(request):
 
             for i, j in pairs:
                 true_match = int(labels[i] == labels[j])
-                distance = distance.euclidean(embeddings[i], embeddings[j])
-                pred_match = int(distance < threshold)
+                dist = distance.euclidean(embeddings[i], embeddings[j])
+                pred_match = int(dist < threshold)
 
                 y_true.append(true_match)
                 y_pred.append(pred_match)
