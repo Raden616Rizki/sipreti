@@ -102,12 +102,13 @@ class FormPageState extends State<FormPage> {
             await getPegawaiData(userData['id_pegawai']);
           }
 
-          if (mounted) Navigator.pop(context);
-
-          showSuccessDialog(context, 'Registrasi Berhasil');
-          Future.delayed(const Duration(seconds: 2), () {
-            Navigator.pushNamed(context, '/');
-          });
+          if (mounted) {
+            Navigator.pop(context);
+            showSuccessDialog(context, 'Registrasi Berhasil');
+            Future.delayed(const Duration(seconds: 2), () {
+              Navigator.pushNamed(context, '/');
+            });
+          }
         }
       }
     } catch (e) {
