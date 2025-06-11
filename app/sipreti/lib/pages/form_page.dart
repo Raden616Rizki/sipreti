@@ -71,32 +71,6 @@ class FormPageState extends State<FormPage> {
         validHp: validHp,
       );
 
-      Map<String, dynamic> loginResult =
-          await apiService.loginUser(username, password);
-
-      if (!mounted) return;
-
-      if (loginResult["error"] == true) {
-        Navigator.of(context).pop();
-        final String message = extractMessage(loginResult["message"]);
-        await showErrorDialog(context, message);
-        return;
-      } else {
-        final userData = loginResult['data'];
-
-        var box = Hive.box('userAndroid');
-
-        await box.put('id_user_android', userData['id_user_android']);
-        await box.put('id_pegawai', userData['id_pegawai']);
-        await box.put('username', userData['username']);
-        await box.put('email', userData['email']);
-        await box.put('no_hp', userData['no_hp']);
-
-        await getPegawaiData(userData['id_pegawai']);
-      }
-
-      if (mounted) Navigator.pop(context);
-
       if (mounted) {
         if (result['error'] == true) {
           Navigator.of(context).pop();
@@ -104,6 +78,32 @@ class FormPageState extends State<FormPage> {
           await showErrorDialog(context, message);
           return;
         } else {
+          Map<String, dynamic> loginResult =
+              await apiService.loginUser(username, password);
+
+          if (!mounted) return;
+
+          if (loginResult["error"] == true) {
+            Navigator.of(context).pop();
+            final String message = extractMessage(loginResult["message"]);
+            await showErrorDialog(context, message);
+            return;
+          } else {
+            final userData = loginResult['data'];
+
+            var box = Hive.box('userAndroid');
+
+            await box.put('id_user_android', userData['id_user_android']);
+            await box.put('id_pegawai', userData['id_pegawai']);
+            await box.put('username', userData['username']);
+            await box.put('email', userData['email']);
+            await box.put('no_hp', userData['no_hp']);
+
+            await getPegawaiData(userData['id_pegawai']);
+          }
+
+          if (mounted) Navigator.pop(context);
+
           showSuccessDialog(context, 'Registrasi Berhasil');
           Future.delayed(const Duration(seconds: 2), () {
             Navigator.pushNamed(context, '/');

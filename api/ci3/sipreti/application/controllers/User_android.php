@@ -178,7 +178,10 @@ class User_android extends CI_Controller
 		$this->_rules();
 
 		if ($this->form_validation->run() == FALSE) {
-			$this->create(); // Jika validasi form gagal
+			$response = array(
+				'status' => 400,
+				'message' => validation_errors()
+			);
 		} else {
 			$idPegawai = $this->input->post('id_pegawai', TRUE);
 			$username = $this->input->post('username', TRUE);
