@@ -28,9 +28,21 @@ class _BiometricPageState extends State<BiometricPage> {
   bool _isProcessing = false;
   bool _cameraStopped = false;
 
+  bool wasLeftEyeClosed = false;
+  bool wasRightEyeClosed = false;
+  bool isBlinkCompleted = false;
+
+  bool isRightEyeClosed = false;
+  bool isLeftEyeClosed = false;
+
+  bool wasSmiling = true;
+  bool isSmilingCompleted = false;
+
   final List<String> instructions = [
-    "Kedipkan mata",
+    "Kedipkan Kedua Mata",
     "Tersenyum ke Kamera",
+    "Kedipkan Mata Kanan",
+    "Kedipkan Mata Kiri",
   ];
 
   late String currentInstruction;
@@ -78,6 +90,17 @@ class _BiometricPageState extends State<BiometricPage> {
     }
   }
 
+  void _resetBlinkFlags() {
+    wasLeftEyeClosed = false;
+    wasRightEyeClosed = false;
+    isBlinkCompleted = false;
+  }
+
+  void _resetSmileFlags() {
+    wasSmiling = true;
+    isSmilingCompleted = false;
+  }
+
   Future<void> _processCameraImage(CameraImage image) async {
     if (_isProcessing || !_showInstructionCard) return;
     _isProcessing = true;
@@ -101,13 +124,11 @@ class _BiometricPageState extends State<BiometricPage> {
           imageRotation: imageRotation,
           inputImageFormat: InputImageFormat.nv21,
           planeData: image.planes
-              .map(
-                (plane) => InputImagePlaneMetadata(
-                  bytesPerRow: plane.bytesPerRow,
-                  height: plane.height,
-                  width: plane.width,
-                ),
-              )
+              .map((plane) => InputImagePlaneMetadata(
+                    bytesPerRow: plane.bytesPerRow,
+                    height: plane.height,
+                    width: plane.width,
+                  ))
               .toList(),
         ),
       );
@@ -118,14 +139,95 @@ class _BiometricPageState extends State<BiometricPage> {
         final face = faces.first;
 
         switch (currentInstruction) {
-          case "Kedipkan mata":
-            if ((face.leftEyeOpenProbability ?? 1.0) < 0.2 &&
-                (face.rightEyeOpenProbability ?? 1.0) < 0.2) {
+          case "Kedipkan Kedua Mata":
+            final leftEye = face.leftEyeOpenProbability ?? 1.0;
+            final rightEye = face.rightEyeOpenProbability ?? 1.0;
+
+            if (!wasLeftEyeClosed &&
+                !wasRightEyeClosed &&
+                leftEye > 0.8 &&
+                rightEye > 0.8) {
+              wasLeftEyeClosed = false;
+              wasRightEyeClosed = false;
+            }
+
+            if (leftEye < 0.2 && rightEye < 0.2) {
+              wasLeftEyeClosed = true;
+              wasRightEyeClosed = true;
+            }
+
+            if (wasLeftEyeClosed &&
+                wasRightEyeClosed &&
+                leftEye > 0.8 &&
+                rightEye > 0.8) {
+              isBlinkCompleted = true;
+            }
+
+            if (isBlinkCompleted) {
+              _resetBlinkFlags();
               _onInstructionCompleted();
             }
             break;
+
+          case "Kedipkan Mata Kanan":
+            final rightEye = face.rightEyeOpenProbability ?? 1.0;
+            final leftEye = face.leftEyeOpenProbability ?? 1.0;
+
+            if (!wasRightEyeClosed && rightEye > 0.8 && leftEye > 0.8) {
+              wasRightEyeClosed = false;
+            }
+
+            if (!wasRightEyeClosed && rightEye < 0.2 && leftEye >= 0.2) {
+              wasRightEyeClosed = true;
+            }
+
+            if (wasRightEyeClosed && rightEye > 0.8 && leftEye > 0.8) {
+              wasRightEyeClosed = false;
+              isBlinkCompleted = true;
+            }
+
+            if (isBlinkCompleted) {
+              _resetBlinkFlags();
+              _onInstructionCompleted();
+            }
+            break;
+
+          case "Kedipkan Mata Kiri":
+            final leftEye = face.leftEyeOpenProbability ?? 1.0;
+            final rightEye = face.rightEyeOpenProbability ?? 1.0;
+
+            if (!wasLeftEyeClosed && leftEye > 0.8 && rightEye > 0.8) {
+              wasLeftEyeClosed = false;
+            }
+
+            if (!wasLeftEyeClosed && leftEye < 0.2 && rightEye >= 0.2) {
+              wasLeftEyeClosed = true;
+            }
+
+            if (wasLeftEyeClosed && leftEye > 0.8 && rightEye > 0.8) {
+              wasLeftEyeClosed = false;
+              isBlinkCompleted = true;
+            }
+
+            if (isBlinkCompleted) {
+              _resetBlinkFlags();
+              _onInstructionCompleted();
+            }
+            break;
+
           case "Tersenyum ke Kamera":
-            if ((face.smilingProbability ?? 0.0) > 0.7) {
+            final smileProb = face.smilingProbability ?? 0.0;
+
+            if (smileProb < 0.3) {
+              wasSmiling = false;
+            }
+
+            if (!wasSmiling && smileProb > 0.7) {
+              isSmilingCompleted = true;
+            }
+
+            if (isSmilingCompleted) {
+              _resetSmileFlags();
               _onInstructionCompleted();
             }
             break;
