@@ -277,30 +277,37 @@ def face_register(request):
 
 @csrf_exempt
 def face_verification(request):
-    if request.method == "POST":
+    if request.method == 'POST':
+        id_pegawai = request.POST.get('id_pegawai')
+        uploaded_file = request.FILES.get('uploaded_file')
+
+        if not id_pegawai or not uploaded_file:
+            return JsonResponse({'error': 'id_pegawai dan file foto wajib diisi'}, status=400)
+
         try:
-            # Parsing request JSON
-            data = json.loads(request.body)
-            
-            id_pegawai = data.get("id_pegawai")
-            vektor_presensi = np.array(data.get("vektor_presensi"), dtype=np.float32)
+            # Ekstraksi vektor wajah dari gambar
+            result = face_extraction(uploaded_file, id_pegawai)
+            if not result:
+                return JsonResponse({'error': 'Wajah tidak berhasil dideteksi'}, status=422)
 
-            if not id_pegawai or vektor_presensi is None:
-                return JsonResponse({"error": "id_pegawai dan vektor_presensi wajib diisi"}, status=400)
+            vektor_presensi, _ = result  # dapatkan face embedding dari hasil ekstraksi
 
-            # Ambil face embeddings dari database berdasarkan id_pegawai dan deleted_at kosong
-            embeddings_data = VektorPegawai.objects.filter(id_pegawai=id_pegawai, deleted_at__isnull=True).values_list("face_embeddings", flat=True)
+            # Ambil face embeddings dari database
+            embeddings_data = VektorPegawai.objects.filter(
+                id_pegawai=id_pegawai, deleted_at__isnull=True
+            ).values_list("face_embeddings", flat=True)
 
             if not embeddings_data:
                 return JsonResponse({"error": "Data face embeddings tidak ditemukan"}, status=404)
 
             # Konversi face embeddings dari JSON string ke numpy array
             embeddings = [np.array(json.loads(embedding), dtype=np.float32) for embedding in embeddings_data]
-        
-            distances = [float(distance.cityblock(vektor_presensi, embedding)) for embedding in embeddings]
-            
-            # Cek apakah ada jarak di bawah 1 (threshold)
-            verifikasi = any(d < 7 for d in distances)
+
+            # Hitung jarak Euclidean
+            distances = [float(distance.euclidean(vektor_presensi, emb)) for emb in embeddings]
+
+            # Verifikasi jika ada jarak di bawah threshold
+            verifikasi = any(d < 0.9 for d in distances)
             pesan = "Wajah terverifikasi" if verifikasi else "Wajah tidak terverifikasi"
             value = 1 if verifikasi else 0
 
@@ -310,7 +317,6 @@ def face_verification(request):
                 "pesan": pesan,
                 "value": value
             })
-
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
