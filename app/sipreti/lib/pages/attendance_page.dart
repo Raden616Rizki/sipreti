@@ -349,7 +349,7 @@ class _AttendancePageState extends State<AttendancePage> {
                                   },
                                   activeColor: Colors.green,
                                   inactiveThumbColor: Colors.red,
-                                  inactiveTrackColor: Colors.grey[300],
+                                  inactiveTrackColor: Colors.red[200],
                                 ),
                               ],
                             ),

@@ -55,6 +55,7 @@ dependencies:
   flutter_device_imei: ^0.0.4
   file_picker: ^8.0.5
   android_id: ^0.4.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

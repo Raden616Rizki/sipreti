@@ -27,12 +27,17 @@ class DashboardPageState extends State<DashboardPage> {
   String checkin = '-';
   String checkout = '-';
 
+  // bool kameraDepan = false;
+  // bool uploadFoto = false;
+  // bool spamAbsensi = false;
+
   @override
   void initState() {
     super.initState();
 
     var box = Hive.box('userAndroid');
     var pegawaiBox = Hive.box('pegawai');
+    // var testBox = Hive.box('test');
 
     setState(() {
       username = box.get('username');
@@ -42,6 +47,10 @@ class DashboardPageState extends State<DashboardPage> {
       nip = pegawaiBox.get('nip');
       namaJabatan = pegawaiBox.get('nama_jabatan');
       urlFoto = pegawaiBox.get('url_foto');
+
+      // kameraDepan = testBox.get('kameraDepan', defaultValue: false);
+      // uploadFoto = testBox.get('uploadFoto', defaultValue: false);
+      // spamAbsensi = testBox.get('spamAbsensi', defaultValue: false);
     });
     initializeDateFormatting('id_ID', null);
     _loadTodayAttendance();
@@ -483,6 +492,44 @@ class DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(color: Colors.white)),
                     onTap: updatePegawaiData,
                   ),
+                  // const Divider(color: Colors.white54),
+                  // SwitchListTile(
+                  //   title: const Text("Kamera Depan",
+                  //       style: TextStyle(color: Colors.white)),
+                  //   value: kameraDepan,
+                  //   onChanged: (value) {
+                  //     kameraDepan = value;
+                  //     Hive.box('test').put('kameraDepan', value);
+                  //   },
+                  //   activeColor: Colors.green,
+                  //   inactiveThumbColor: Colors.red,
+                  //   inactiveTrackColor: Colors.red[200],
+                  // ),
+                  // SwitchListTile(
+                  //   title: const Text("Upload Foto",
+                  //       style: TextStyle(color: Colors.white)),
+                  //   value: uploadFoto,
+                  //   onChanged: (value) {
+                  //     uploadFoto = value;
+                  //     Hive.box('test').put('uploadFoto', value);
+                  //   },
+                  //   activeColor: Colors.green,
+                  //   inactiveThumbColor: Colors.red,
+                  //   inactiveTrackColor: Colors.red[200],
+                  // ),
+                  // SwitchListTile(
+                  //   title: const Text("Spam Absensi",
+                  //       style: TextStyle(color: Colors.white)),
+                  //   value: spamAbsensi,
+                  //   onChanged: (value) {
+                  //     spamAbsensi = value;
+                  //     spamAbsensi = value;
+                  //     Hive.box('test').put('spamAbsensi', value);
+                  //   },
+                  //   activeColor: Colors.green,
+                  //   inactiveThumbColor: Colors.red,
+                  //   inactiveTrackColor: Colors.red[200],
+                  // ),
                 ],
               ),
             ),

@@ -9,14 +9,14 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
 
-class BiometricPage extends StatefulWidget {
-  const BiometricPage({super.key});
+class Biometric3Page extends StatefulWidget {
+  const Biometric3Page({super.key});
 
   @override
-  State<BiometricPage> createState() => _BiometricPageState();
+  State<Biometric3Page> createState() => _Biometric3PageState();
 }
 
-class _BiometricPageState extends State<BiometricPage> {
+class _Biometric3PageState extends State<Biometric3Page> {
   CameraController? _cameraController;
   List<CameraDescription>? cameras;
   XFile? capturedImage;
