@@ -202,13 +202,14 @@ class _BiometricPageState extends State<BiometricPage> {
   }
 
   Future<void> _initializeCamera() async {
-    var testBox = Hive.box('test');
-    bool kameraDepan = testBox.get('kameraDepan', defaultValue: false);
+    // var testBox = Hive.box('test');
+    // bool kameraDepan = testBox.get('kameraDepan', defaultValue: false);
 
     cameras = await availableCameras();
     if (cameras != null && cameras!.isNotEmpty) {
       _cameraController = CameraController(
-        kameraDepan ? cameras![1] : cameras![0],
+        // kameraDepan ? cameras![1] : cameras![0],
+        cameras![0],
         ResolutionPreset.high,
         enableAudio: false,
       );

@@ -3,11 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
-import 'package:sipreti/pages/attendance_page.dart';
+// import 'package:sipreti/pages/attendance_page.dart';
 import 'package:sipreti/utils/dialog.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:sipreti/services/api_service.dart';
+import 'dart:convert';
 
 class Biometric3Page extends StatefulWidget {
   const Biometric3Page({super.key});
@@ -44,6 +46,8 @@ class _Biometric3PageState extends State<Biometric3Page> {
 
   String? urlFoto;
   final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
+
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -308,8 +312,6 @@ class _Biometric3PageState extends State<Biometric3Page> {
   }
 
   Future<void> _detectAndCropFace(XFile image) async {
-    final totalTime = Stopwatch()..start();
-
     final inputImage = InputImage.fromFilePath(image.path);
     final faces = await _faceDetector.processImage(inputImage);
 
@@ -318,43 +320,65 @@ class _Biometric3PageState extends State<Biometric3Page> {
       final croppedFace = await _cropFace(image, face.boundingBox);
 
       final embeddings = await _getFaceEmbeddings(croppedFace);
-      var pegawaiBox = Hive.box('pegawai');
+      // var pegawaiBox = Hive.box('pegawai');
 
-      List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
+      // List<dynamic> faceEmbeddings = pegawaiBox.get('face_embeddings');
       const double threshold = 0.9;
       bool verifikasi = false;
 
       List<double> distances = [];
 
-      for (int i = 0; i < faceEmbeddings.length; i++) {
-        List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
-        double distance = euclideanDistance(embeddings, storedEmbedding);
-        distance = double.parse(distance.toStringAsFixed(4));
-        distances.add(distance);
+      List<String> idPegawaiList = [
+        '316',
+        '362',
+        '363',
+        '367',
+        '370',
+        '371',
+        '382',
+        '384',
+        '387',
+        '388',
+        '389',
+        '391',
+        '399',
+        '401',
+        '404',
+        '405',
+        '406',
+        '410',
+        '415',
+        '416',
+        '419'
+      ];
+
+      for (String idPegawai in idPegawaiList) {
+        var faceEmbeddings = await getPegawaiData(idPegawai);
+
+        if (faceEmbeddings != null) {
+          for (int i = 0; i < faceEmbeddings.length; i++) {
+            List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
+            double distance = euclideanDistance(embeddings, storedEmbedding);
+            distance = double.parse(distance.toStringAsFixed(4));
+            distances.add(distance);
+          }
+
+          verifikasi = distances.any((d) => d < threshold);
+          int value = verifikasi ? 1 : 0;
+
+          final presensiBox = await Hive.openBox('presensi');
+          await presensiBox.put('face_status', value);
+          await presensiBox.put('distances', distances);
+          await presensiBox.put('verification_time', value);
+
+          await presensiBox.delete('face_status');
+          await presensiBox.delete('distances');
+          await presensiBox.delete('verification_time');
+        }
       }
 
-      verifikasi = distances.any((d) => d < threshold);
-      int value = verifikasi ? 1 : 0;
-
-      final presensiBox = await Hive.openBox('presensi');
-      await presensiBox.put('face_status', value);
-      await presensiBox.put('distances', distances);
-
-      totalTime.stop();
-      final verificationTime =
-          '${(totalTime.elapsedMilliseconds / 1000).toStringAsFixed(3)} s';
-
-      await presensiBox.put('verification_time', verificationTime);
-
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AttendancePage(
-              capturedImage: capturedImage,
-            ),
-          ),
-        );
+        Navigator.pushNamed(context, '/');
       }
     } else {
       if (mounted) {
@@ -367,6 +391,30 @@ class _Biometric3PageState extends State<Biometric3Page> {
           Navigator.pushNamed(context, '/biometric');
         }
       });
+    }
+  }
+
+  String extractMessage(String rawMessage) {
+    try {
+      final jsonPart = rawMessage.split('-').last.trim();
+      final decoded = json.decode(jsonPart);
+      return decoded['message'] ?? 'Terjadi kesalahan';
+    } catch (e) {
+      return 'Terjadi kesalahan';
+    }
+  }
+
+  Future<dynamic> getPegawaiData(String idPegawai) async {
+    Map<String, dynamic> dataPegawai = await _apiService.getPegawai(idPegawai);
+
+    if (mounted) {
+      if (dataPegawai["error"] == true) {
+        final String message = extractMessage(dataPegawai["message"]);
+        await showErrorDialog(context, message);
+        return null;
+      } else {
+        return dataPegawai['face_embeddings'];
+      }
     }
   }
 

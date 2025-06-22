@@ -28,7 +28,6 @@ class DashboardPageState extends State<DashboardPage> {
   String checkout = '-';
 
   // bool kameraDepan = false;
-  // bool uploadFoto = false;
   // bool spamAbsensi = false;
 
   @override
@@ -49,7 +48,6 @@ class DashboardPageState extends State<DashboardPage> {
       urlFoto = pegawaiBox.get('url_foto');
 
       // kameraDepan = testBox.get('kameraDepan', defaultValue: false);
-      // uploadFoto = testBox.get('uploadFoto', defaultValue: false);
       // spamAbsensi = testBox.get('spamAbsensi', defaultValue: false);
     });
     initializeDateFormatting('id_ID', null);
@@ -500,18 +498,6 @@ class DashboardPageState extends State<DashboardPage> {
                   //   onChanged: (value) {
                   //     kameraDepan = value;
                   //     Hive.box('test').put('kameraDepan', value);
-                  //   },
-                  //   activeColor: Colors.green,
-                  //   inactiveThumbColor: Colors.red,
-                  //   inactiveTrackColor: Colors.red[200],
-                  // ),
-                  // SwitchListTile(
-                  //   title: const Text("Upload Foto",
-                  //       style: TextStyle(color: Colors.white)),
-                  //   value: uploadFoto,
-                  //   onChanged: (value) {
-                  //     uploadFoto = value;
-                  //     Hive.box('test').put('uploadFoto', value);
                   //   },
                   //   activeColor: Colors.green,
                   //   inactiveThumbColor: Colors.red,

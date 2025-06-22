@@ -10,7 +10,6 @@ import 'package:sipreti/pages/login_page.dart';
 import 'package:sipreti/pages/nip_page.dart';
 import 'package:sipreti/pages/option_page.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sipreti/pages/upload_biometric_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,7 +45,6 @@ class MyApp extends StatelessWidget {
         '/biometric': (context) => const BiometricPage(),
         '/biometric2': (context) => const Biometric2Page(),
         '/biometric3': (context) => const Biometric3Page(),
-        '/upload': (context) => const UploadBiometricPage(),
         '/option': (context) => const OptionPage(),
         '/login': (context) => const LoginPage(),
         '/nip': (context) => const NIPPage(),

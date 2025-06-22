@@ -28,6 +28,7 @@ class _LocationPageState extends State<LocationPage> {
   final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
 
   bool isProcessing = true;
+  double jarak = 0;
 
   @override
   void initState() {
@@ -86,12 +87,12 @@ class _LocationPageState extends State<LocationPage> {
     final userLocation = LatLng(position.latitude, position.longitude);
 
     const distance = Distance();
-    final double jarak = distance(userLocation, kantorLocation);
 
     setState(() {
+      jarak = distance(userLocation, kantorLocation);
       currentLocation = userLocation;
       currentAddress =
-          "${place.name}, ${place.street}, ${place.subLocality}, ${place.locality}, ${place.administrativeArea}, ${place.postalCode}, ${place.country}";
+          "${place.name}, ${place.street}, ${place.subLocality}, ${place.locality}, ${place.administrativeArea}, ${place.postalCode}, ${place.country} - ${jarak.toString()} meter dari Kantor";
       isWithinRadius = jarak <= radiusMeter;
     });
 
@@ -118,8 +119,7 @@ class _LocationPageState extends State<LocationPage> {
     if (mounted) {
       Navigator.pushNamed(
         context,
-        // uploadFoto ? '/upload' : '/biometric',
-        '/biometric3',
+        '/biometric',
       );
     }
   }
