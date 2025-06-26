@@ -99,6 +99,38 @@ class Pegawai extends CI_Controller
 			redirect(site_url('pegawai'));
 		}
 	}
+	public function read_facenet_api($id)
+	{
+		$row = $this->Pegawai_model->get_by_id_facenet_api($id);
+
+		if ($row && empty($row['deleted_at'])) {
+			$data = array(
+				'id_pegawai' => $row['id_pegawai'],
+				'nip' => $row['nip'],
+				'nama' => $row['nama'],
+				'url_foto' => $row['url_foto'],
+				'nama_jabatan' => $row['nama_jabatan'],
+
+				// Data Unit Kerja
+				'nama_unit_kerja' => $row['nama_unit_kerja'],
+				'alamat_unit_kerja' => $row['alamat'],
+				'lattitude' => $row['lattitude'],
+				'longitude' => $row['longitude'],
+
+				// Data Radius Absen
+				'ukuran_radius' => $row['ukuran'],
+
+				// Data Face Embeddings sebagai array
+				'face_embeddings' => $row['face_embeddings'],
+			);
+
+			header('Content-Type: application/json');
+			echo json_encode($data);
+		} else {
+			$this->session->set_flashdata('message', 'Data pegawai tidak ditemukan');
+			redirect(site_url('pegawai'));
+		}
+	}
 
 
 	public function create()

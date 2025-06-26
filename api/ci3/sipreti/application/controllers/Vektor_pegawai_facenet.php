@@ -3,12 +3,12 @@
 if (!defined('BASEPATH'))
 	exit('No direct script access allowed');
 
-class Vektor_pegawai extends CI_Controller
+class Vektor_pegawai_facenet extends CI_Controller
 {
 	function __construct()
 	{
 		parent::__construct();
-		$this->load->model('Vektor_pegawai_model');
+		$this->load->model('Vektor_pegawai_facenet_model');
 		$this->load->model('Pegawai_model');
 		$this->load->library('form_validation');
 	}
@@ -19,35 +19,35 @@ class Vektor_pegawai extends CI_Controller
 		$start = intval($this->input->get('start'));
 
 		if ($q <> '') {
-			$config['base_url'] = base_url() . 'vektor_pegawai/index.html?q=' . urlencode($q);
-			$config['first_url'] = base_url() . 'vektor_pegawai/index.html?q=' . urlencode($q);
+			$config['base_url'] = base_url() . 'vektor_pegawai_facenet/index.html?q=' . urlencode($q);
+			$config['first_url'] = base_url() . 'vektor_pegawai_facenet/index.html?q=' . urlencode($q);
 		} else {
-			$config['base_url'] = base_url() . 'vektor_pegawai/index.html';
-			$config['first_url'] = base_url() . 'vektor_pegawai/index.html';
+			$config['base_url'] = base_url() . 'vektor_pegawai_facenet/index.html';
+			$config['first_url'] = base_url() . 'vektor_pegawai_facenet/index.html';
 		}
 
 		$config['per_page'] = 10;
 		$config['page_query_string'] = TRUE;
-		$config['total_rows'] = $this->Vektor_pegawai_model->total_rows($q, TRUE);
-		$vektor_pegawai = $this->Vektor_pegawai_model->get_limit_data($config['per_page'], $start, $q, TRUE);
+		$config['total_rows'] = $this->Vektor_pegawai_facenet_model->total_rows($q);
+		$vektor_pegawai_facenet = $this->Vektor_pegawai_facenet_model->get_limit_data($config['per_page'], $start, $q);
 
 		$this->load->library('pagination');
 		$this->pagination->initialize($config);
 
 		$data = array(
-			'vektor_pegawai_data' => $vektor_pegawai,
+			'vektor_pegawai_facenet_data' => $vektor_pegawai_facenet,
 			'q' => $q,
 			'pagination' => $this->pagination->create_links(),
 			'total_rows' => $config['total_rows'],
 			'start' => $start,
 		);
-		$this->load->view('vektor_pegawai/vektor_pegawai_list', $data);
+		$this->load->view('vektor_pegawai_facenet/vektor_pegawai_facenet_list', $data);
 	}
 
 	public function read($id)
 	{
-		$row = $this->Vektor_pegawai_model->get_by_id($id);
-		if ($row && empty($row->deleted_at)) {
+		$row = $this->Vektor_pegawai_facenet_model->get_by_id($id);
+		if ($row) {
 			$data = array(
 				'id_vektor_pegawai' => $row->id_vektor_pegawai,
 				'id_pegawai' => $row->id_pegawai,
@@ -57,10 +57,10 @@ class Vektor_pegawai extends CI_Controller
 				'updated_at' => $row->updated_at,
 				'deleted_at' => $row->deleted_at,
 			);
-			$this->load->view('vektor_pegawai/vektor_pegawai_read', $data);
+			$this->load->view('vektor_pegawai_facenet/vektor_pegawai_facenet_read', $data);
 		} else {
 			$this->session->set_flashdata('message', 'Record Not Found');
-			redirect(site_url('vektor_pegawai'));
+			redirect(site_url('vektor_pegawai_facenet'));
 		}
 	}
 
@@ -68,13 +68,13 @@ class Vektor_pegawai extends CI_Controller
 	{
 		$data = array(
 			'button' => 'Create',
-			'action' => site_url('vektor_pegawai/create_action'),
+			'action' => site_url('vektor_pegawai_facenet/create_action'),
 			'id_vektor_pegawai' => set_value('id_vektor_pegawai'),
 			'id_pegawai' => set_value('id_pegawai'),
 			'face_embeddings' => set_value('face_embeddings'),
 			'url_foto' => set_value('url_foto'),
 		);
-		$this->load->view('vektor_pegawai/vektor_pegawai_form', $data);
+		$this->load->view('vektor_pegawai_facenet/vektor_pegawai_facenet_form', $data);
 	}
 
 	public function create_action()
@@ -93,9 +93,9 @@ class Vektor_pegawai extends CI_Controller
 				'deleted_at' => NULL,
 			);
 
-			$this->Vektor_pegawai_model->insert($data);
+			$this->Vektor_pegawai_facenet_model->insert($data);
 			$this->session->set_flashdata('message', 'Create Record Success');
-			redirect(site_url('vektor_pegawai'));
+			redirect(site_url('vektor_pegawai_facenet'));
 		}
 	}
 
@@ -111,10 +111,10 @@ class Vektor_pegawai extends CI_Controller
 		} else {
 			$id_pegawai = $this->input->post('id_pegawai', TRUE);
 			$face_embeddings = $this->input->post('face_embeddings', TRUE);
-			$this->Vektor_pegawai_model->soft_delete_if_limit_exceeded($id_pegawai);
+			$this->Vektor_pegawai_facenet_model->soft_delete_if_limit_exceeded($id_pegawai);
 
 			// Direktori penyimpanan foto berdasarkan id_pegawai
-			$upload_path = './uploads/vektor_pegawai/' . $id_pegawai . '/';
+			$upload_path = './uploads/vektor_pegawai_facenet/' . $id_pegawai . '/';
 			if (!is_dir($upload_path)) {
 				mkdir($upload_path, 0777, true);
 			}
@@ -156,7 +156,7 @@ class Vektor_pegawai extends CI_Controller
 					'deleted_at' => NULL,
 				);
 
-				$this->Vektor_pegawai_model->insert($data);
+				$this->Vektor_pegawai_facenet_model->insert($data);
 
 				$response = array(
 					'status' => 200,
@@ -175,21 +175,21 @@ class Vektor_pegawai extends CI_Controller
 
 	public function update($id)
 	{
-		$row = $this->Vektor_pegawai_model->get_by_id($id);
+		$row = $this->Vektor_pegawai_facenet_model->get_by_id($id);
 
 		if ($row) {
 			$data = array(
 				'button' => 'Update',
-				'action' => site_url('vektor_pegawai/update_action'),
+				'action' => site_url('vektor_pegawai_facenet/update_action'),
 				'id_vektor_pegawai' => set_value('id_vektor_pegawai', $row->id_vektor_pegawai),
 				'id_pegawai' => set_value('id_pegawai', $row->id_pegawai),
 				'face_embeddings' => set_value('face_embeddings', $row->face_embeddings),
 				'url_foto' => set_value('url_foto', $row->url_foto),
 			);
-			$this->load->view('vektor_pegawai/vektor_pegawai_form', $data);
+			$this->load->view('vektor_pegawai_facenet/vektor_pegawai_facenet_form', $data);
 		} else {
 			$this->session->set_flashdata('message', 'Record Not Found');
-			redirect(site_url('vektor_pegawai'));
+			redirect(site_url('vektor_pegawai_facenet'));
 		}
 	}
 
@@ -207,39 +207,40 @@ class Vektor_pegawai extends CI_Controller
 				'updated_at' => date('Y-m-d H:i:s'),
 			);
 
-			$this->Vektor_pegawai_model->update($this->input->post('id_vektor_pegawai', TRUE), $data);
+			$this->Vektor_pegawai_facenet_model->update($this->input->post('id_vektor_pegawai', TRUE), $data);
 			$this->session->set_flashdata('message', 'Update Record Success');
-			redirect(site_url('vektor_pegawai'));
+			redirect(site_url('vektor_pegawai_facenet'));
 		}
 	}
 
 	public function delete($id)
 	{
-		$row = $this->Vektor_pegawai_model->get_by_id($id);
+		$row = $this->Vektor_pegawai_facenet_model->get_by_id($id);
 
 		if ($row) {
 			$data = array(
 				'deleted_at' => date('Y-m-d H:i:s'),
 			);
 
-			$this->Vektor_pegawai_model->update($id, $data);
+			$this->Vektor_pegawai_facenet_model->update($id, $data);
 			$this->session->set_flashdata('message', 'Delete Record Success');
-			redirect(site_url('vektor_pegawai'));
+			redirect(site_url('vektor_pegawai_facenet'));
 		} else {
 			$this->session->set_flashdata('message', 'Record Not Found');
-			redirect(site_url('vektor_pegawai'));
+			redirect(site_url('vektor_pegawai_facenet'));
 		}
 	}
+
 	public function delete_from_pegawai($id_pegawai, $id)
 	{
-		$row = $this->Vektor_pegawai_model->get_by_id($id);
+		$row = $this->Vektor_pegawai_facenet_model->get_by_id($id);
 
 		if ($row) {
 			$data = array(
 				'deleted_at' => date('Y-m-d H:i:s'),
 			);
 
-			$this->Vektor_pegawai_model->update($id, $data);
+			$this->Vektor_pegawai_facenet_model->update($id, $data);
 			$this->session->set_flashdata('message', 'Delete Record Success');
 			redirect(site_url('vektor_pegawai/read_vektor_pegawai/' . $id_pegawai));
 		} else {
@@ -254,17 +255,17 @@ class Vektor_pegawai extends CI_Controller
 		$start = intval($this->input->get('start'));
 
 		if ($q <> '') {
-			$config['base_url'] = base_url() . 'vektor_pegawai/list_pegawai?q=' . urlencode($q);
-			$config['first_url'] = base_url() . 'vektor_pegawai/list_pegawai?q=' . urlencode($q);
+			$config['base_url'] = base_url() . 'vektor_pegawai_facenet/list_pegawai?q=' . urlencode($q);
+			$config['first_url'] = base_url() . 'vektor_pegawai_facenet/list_pegawai?q=' . urlencode($q);
 		} else {
-			$config['base_url'] = base_url() . 'vektor_pegawai/list_pegawai';
-			$config['first_url'] = base_url() . 'vektor_pegawai/list_pegawai';
+			$config['base_url'] = base_url() . 'vektor_pegawai_facenet/list_pegawai';
+			$config['first_url'] = base_url() . 'vektor_pegawai_facenet/list_pegawai';
 		}
 
 		$config['per_page'] = 10;
 		$config['page_query_string'] = TRUE;
 		$config['total_rows'] = $this->Pegawai_model->total_rows($q, TRUE);
-		$pegawai = $this->Pegawai_model->get_limit_data($config['per_page'], $start, $q, TRUE);
+		$pegawai = $this->Pegawai_model->get_limit_data_facenet($config['per_page'], $start, $q, TRUE);
 
 		$this->load->library('pagination');
 		$this->pagination->initialize($config);
@@ -276,7 +277,7 @@ class Vektor_pegawai extends CI_Controller
 			'total_rows' => $config['total_rows'],
 			'start' => $start,
 		);
-		$this->load->view('vektor_pegawai/pegawai_list', $data);
+		$this->load->view('vektor_pegawai_facenet/pegawai_list', $data);
 	}
 
 	public function read_vektor_pegawai($id)
@@ -292,14 +293,14 @@ class Vektor_pegawai extends CI_Controller
 			return;
 		}
 
-		$biometrik = $this->Vektor_pegawai_model->get_by_id_pegawai($id);
+		$biometrik = $this->Vektor_pegawai_facenet_model->get_by_id_pegawai($id);
 
 		$data = [
 			'pegawai' => $pegawai,
 			'biometrik' => $biometrik,
 		];
 
-		$this->load->view('vektor_pegawai/pegawai_vektor_management', $data);
+		$this->load->view('vektor_pegawai_facenet/pegawai_vektor_management', $data);
 	}
 
 	public function export_csv()
@@ -334,8 +335,8 @@ class Vektor_pegawai extends CI_Controller
 
 }
 
-/* End of file Vektor_pegawai.php */
-/* Location: ./application/controllers/Vektor_pegawai.php */
+/* End of file Vektor_pegawai_facenet.php */
+/* Location: ./application/controllers/Vektor_pegawai_facenet.php */
 /* Please DO NOT modify this information : */
-/* Generated by Harviacode Codeigniter CRUD Generator 2025-03-12 08:26:56 */
+/* Generated by Harviacode Codeigniter CRUD Generator 2025-06-26 05:38:18 */
 /* http://harviacode.com */
