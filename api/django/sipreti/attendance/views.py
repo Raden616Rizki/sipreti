@@ -462,7 +462,7 @@ def face_register(request):
         try:
             result = face_extraction(uploaded_file, id_pegawai)
             if not result:
-                return JsonResponse({'error': 'Wajah tidak berhasil dideteksi'}, status=422)
+                return JsonResponse({'error': 'Wajah tidak berhasil diekstraksi'}, status=422)
 
             vector, original_io = result
             
@@ -499,7 +499,7 @@ def face_register_facenet(request):
         try:
             result = face_extraction_facenet(uploaded_file, id_pegawai)
             if not result:
-                return JsonResponse({'error': 'Wajah tidak berhasil dideteksi'}, status=422)
+                return JsonResponse({'error': 'Wajah tidak berhasil diesktraksi'}, status=422)
 
             vector, original_io = result
             
@@ -537,7 +537,7 @@ def face_verification(request):
             # Ekstraksi vektor wajah dari gambar
             result = face_extraction(uploaded_file, id_pegawai)
             if not result:
-                return JsonResponse({'error': 'Wajah tidak berhasil dideteksi'}, status=422)
+                return JsonResponse({'error': 'Wajah tidak berhasil diekstraksi'}, status=422)
 
             vektor_presensi, _ = result  # dapatkan face embedding dari hasil ekstraksi
 
