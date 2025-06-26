@@ -124,7 +124,7 @@ def face_extraction_gdrive(folder_id, id_pegawai):
 def face_extraction_gdrive_facenet(folder_id, id_pegawai):
     try:
         service = get_drive_service()
-        interpreter = load_tflite_facenet_model()  # pastikan ini memuat 'facenet.tflite'
+        interpreter = load_tflite_facenet_model()
         detector = MTCNN()
 
         query = f"'{folder_id}' in parents and mimeType contains 'image/'"
@@ -261,7 +261,7 @@ def face_extraction(uploaded_file, id_pegawai):
     
 def face_extraction_facenet(uploaded_file, id_pegawai):
     try:
-        interpreter = load_tflite_facenet_model()  # pastikan ini load 'facenet.tflite'
+        interpreter = load_tflite_facenet_model()
         detector = MTCNN()
 
         # Buka gambar dari upload
