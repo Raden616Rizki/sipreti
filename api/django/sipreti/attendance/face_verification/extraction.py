@@ -29,6 +29,12 @@ def load_tflite_model():
     interpreter.allocate_tensors()
     return interpreter
 
+def load_tflite_facenet_model():
+    model_path = os.path.join(settings.BASE_DIR, "assets/model/facenet.tflite")
+    interpreter = tf.lite.Interpreter(model_path=model_path)
+    interpreter.allocate_tensors()
+    return interpreter
+
 # Fungsi ekstraksi vektor wajah dari Google Drive tanpa menyimpan file lokal
 def face_extraction_gdrive(folder_id, id_pegawai):
     try:
@@ -115,6 +121,92 @@ def face_extraction_gdrive(folder_id, id_pegawai):
         print(f"Error dalam face_extraction: {e}")
         return None, None
     
+def face_extraction_gdrive_facenet(folder_id, id_pegawai):
+    try:
+        service = get_drive_service()
+        interpreter = load_tflite_facenet_model()  # pastikan ini memuat 'facenet.tflite'
+        detector = MTCNN()
+
+        query = f"'{folder_id}' in parents and mimeType contains 'image/'"
+        results = service.files().list(q=query, fields="files(id, name)").execute()
+        files = results.get("files", [])
+
+        if not files:
+            print(f"Tidak ada gambar ditemukan di folder {folder_id}")
+            return None, None
+
+        vectors = []
+        original_images = []
+
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+
+        # Ambil info kuantisasi untuk konversi ke float
+        output_scale, output_zero_point = output_details[0]['quantization']
+
+        for i, file in enumerate(files):
+            file_id = file["id"]
+            file_name = file["name"]
+
+            try:
+                request = service.files().get_media(fileId=file_id)
+                image_data = BytesIO(request.execute())
+
+                img = Image.open(image_data).convert("RGB")
+                img_array = np.array(img)
+
+                # Deteksi wajah
+                faces = detector.detect_faces(img_array)
+                if not faces:
+                    print(f"Tidak ada wajah di {file_name}")
+                    continue
+
+                x, y, w, h = faces[0]['box']
+                x = max(x, 0)
+                y = max(y, 0)
+                face_crop = img_array[y:y+h, x:x+w]
+
+                # Resize ke 160x160 (sesuai model)
+                face_crop_resized = cv2.resize(face_crop, (160, 160))
+                face_input = face_crop_resized.astype(np.uint8)
+                face_input = np.expand_dims(face_input, axis=0)
+
+                # Inference
+                interpreter.set_tensor(input_details[0]['index'], face_input)
+                interpreter.invoke()
+                output_data = interpreter.get_tensor(output_details[0]['index'])[0]
+
+                # Konversi ke float32
+                vector = [(val - output_zero_point) * output_scale for val in output_data]
+
+                # Simpan gambar asli & crop
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                original_io = BytesIO()
+                original_format = img.format or 'JPEG'
+                ext = original_format.lower()
+                original_io.name = f"{timestamp}_{id_pegawai}_original_{i+1}.{ext}"
+                img.save(original_io, format=original_format)
+                original_io.seek(0)
+
+                crop_io = BytesIO()
+                crop_img = Image.fromarray(face_crop)
+                crop_io.name = f"{timestamp}_{id_pegawai}_crop_{i+1}.jpg"
+                crop_img.save(crop_io, format='JPEG')
+                crop_io.seek(0)
+
+                vectors.append(vector)
+                original_images.append(crop_io)
+                print(f"Vektor wajah diekstrak dari {crop_io.name}")
+
+            except Exception as img_err:
+                print(f"Kesalahan gambar {file_name}: {img_err}")
+
+        return vectors, original_images
+
+    except Exception as e:
+        print(f"Error utama di face_extraction_gdrive_facenet: {e}")
+        return None, None
+    
 def face_extraction(uploaded_file, id_pegawai):
     try:
         interpreter = load_tflite_model()
@@ -165,6 +257,68 @@ def face_extraction(uploaded_file, id_pegawai):
 
     except Exception as e:
         print(f"Kesalahan saat ekstraksi wajah tunggal: {e}")
+        return None
+    
+def face_extraction_facenet(uploaded_file, id_pegawai):
+    try:
+        interpreter = load_tflite_facenet_model()  # pastikan ini load 'facenet.tflite'
+        detector = MTCNN()
+
+        # Buka gambar dari upload
+        image_data = BytesIO(uploaded_file.read())
+        img = Image.open(image_data).convert("RGB")
+        img_array = np.array(img)
+
+        # Deteksi wajah pertama
+        faces = detector.detect_faces(img_array)
+        if not faces:
+            print("Tidak ada wajah terdeteksi.")
+            return None
+
+        x, y, width, height = faces[0]['box']
+        x = max(x, 0)
+        y = max(y, 0)
+        face_crop = img_array[y:y+height, x:x+width]
+
+        # Resize ke 160x160 seperti diminta model
+        face_crop_resized = cv2.resize(face_crop, (160, 160))
+
+        # Konversi ke uint8 (model expects uint8)
+        face_input = face_crop_resized.astype(np.uint8)
+        face_input = np.expand_dims(face_input, axis=0)
+
+        # Inference dengan TFLite
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+
+        interpreter.set_tensor(input_details[0]['index'], face_input)
+        interpreter.invoke()
+
+        output_data = interpreter.get_tensor(output_details[0]['index'])[0]
+
+        # Output dalam bentuk uint8, konversi ke float32 jika ingin
+        scale = output_details[0]['quantization'][0]
+        zero_point = output_details[0]['quantization'][1]
+        vector = [(val - zero_point) * scale for val in output_data]
+
+        # Simpan file asli dan crop untuk CI3
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        original_io = BytesIO()
+        original_format = img.format or 'JPEG'
+        original_io.name = f"{timestamp}_{id_pegawai}_original.{original_format.lower()}"
+        img.save(original_io, format=original_format)
+        original_io.seek(0)
+
+        crop_io = BytesIO()
+        crop_image = Image.fromarray(face_crop)
+        crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
+        crop_image.save(crop_io, format='JPEG')
+        crop_io.seek(0)
+
+        return vector, crop_io
+
+    except Exception as e:
+        print(f"Kesalahan saat ekstraksi wajah (FaceNet): {e}")
         return None
 
 # Extract folder ID from Google Drive folder URL

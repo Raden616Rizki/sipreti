@@ -17,6 +17,7 @@ pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CI3_API_URL = "http://127.0.0.1/sipreti/vektor_pegawai/create_api"
+CI3_API_URL_FACENET = "http://127.0.0.1/sipreti/vektor_pegawai_facenet/create_api"
 CI3_API_PEGAWAI_URL = 'http://127.0.0.1/sipreti/pegawai/create_api'
 
 # Quick-start development settings - unsuitable for production
