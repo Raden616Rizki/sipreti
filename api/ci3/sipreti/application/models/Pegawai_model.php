@@ -173,8 +173,8 @@ class Pegawai_model extends CI_Model
         jabatan.nama_jabatan, 
         unit_kerja.nama_unit_kerja, 
         COUNT(CASE 
-            WHEN vektor_pegawai.id_vektor_pegawai IS NOT NULL 
-                 AND (vektor_pegawai.deleted_at IS NULL OR vektor_pegawai.deleted_at = "") 
+            WHEN vektor_pegawai_facenet.id_vektor_pegawai IS NOT NULL 
+                 AND (vektor_pegawai_facenet.deleted_at IS NULL OR vektor_pegawai_facenet.deleted_at = "") 
             THEN 1 
             ELSE NULL 
         END) AS jumlah_biometrik
