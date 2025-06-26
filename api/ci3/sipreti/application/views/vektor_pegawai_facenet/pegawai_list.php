@@ -36,7 +36,7 @@
 			<a href="/sipreti/log_absensi">Absensi</a>
 			<a href="/sipreti/pegawai">Pegawai</a>
 			<a href="/sipreti/user_android">User Android</a>
-			<a class="active" href="/sipreti/vektor_pegawai">Biometrik Pegawai</a>
+			<a class="active" href="/sipreti/vektor_pegawai_facenet">Biometrik Pegawai</a>
 		</div>
 	</div>
 
@@ -89,7 +89,7 @@
 						<td><?php echo $pegawai->jumlah_biometrik; ?>/10</td>
 
 						<td class="action-buttons">
-							<a href="<?php echo site_url('vektor_pegawai/read_vektor_pegawai/' . $pegawai->id_pegawai); ?>"
+							<a href="<?php echo site_url('vektor_pegawai_facenet/read_vektor_pegawai/' . $pegawai->id_pegawai); ?>"
 								class="btn-action view" style="font-size: 12px;">Kelola Biometrik</i></a>
 						</td>
 					</tr>
@@ -184,7 +184,7 @@
 				if (result.message) {
 					checkProgressDone = true;
 					updateProgressBar(100);
-					window.location.href = "<?php echo site_url('vektor_pegawai/list_pegawai'); ?>";
+					window.location.href = "<?php echo site_url('vektor_pegawai_facenet/list_pegawai'); ?>";
 				} else {
 					showModalError(result.error || 'Gagal memproses CSV.');
 				}

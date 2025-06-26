@@ -183,7 +183,7 @@
 			formData.append('uploaded_file', file);
 
 			try {
-				const response = await fetch('http://127.0.0.1:8000/attendance/face-register/', {
+				const response = await fetch('http://127.0.0.1:8000/attendance/face-register-facenet/', {
 					method: 'POST',
 					body: formData
 				});
@@ -204,7 +204,7 @@
 		}
 
 		if (!errorOccurred) {
-			window.location.href = "<?= site_url('vektor_pegawai/read_vektor_pegawai/' . $pegawai->id_pegawai) ?>";
+			window.location.href = "<?= site_url('vektor_pegawai_pegawai/read_vektor_pegawai/' . $pegawai->id_pegawai) ?>";
 		}
 	});
 
