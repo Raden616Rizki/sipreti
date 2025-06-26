@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import upload_csv, face_register, face_verification, distance_comparasion, check_progress, upload_csv_pegawai, evaluate_face_recognition, evaluate_roc_curve, evaluate_face_recognition_api
+from .views import upload_csv, face_register, face_verification, distance_comparasion, check_progress, upload_csv_pegawai, evaluate_face_recognition, evaluate_roc_curve, evaluate_face_recognition_api, upload_csv_pegawai_facenet, face_register_facenet
 
 urlpatterns = [
     path('upload-csv/', upload_csv, name='upload_csv'),
