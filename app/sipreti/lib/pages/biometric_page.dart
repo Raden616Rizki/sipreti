@@ -209,7 +209,7 @@ class _BiometricPageState extends State<BiometricPage> {
     if (cameras != null && cameras!.isNotEmpty) {
       _cameraController = CameraController(
         // kameraDepan ? cameras![1] : cameras![0],
-        cameras![0],
+        cameras![1],
         ResolutionPreset.high,
         enableAudio: false,
       );
@@ -236,14 +236,6 @@ class _BiometricPageState extends State<BiometricPage> {
       sum += pow((e1[i] - e2[i]), 2);
     }
     return sqrt(sum);
-  }
-
-  double manhattanDistance(List<double> e1, List<double> e2) {
-    double sum = 0.0;
-    for (int i = 0; i < e1.length; i++) {
-      sum += (e1[i] - e2[i]).abs();
-    }
-    return sum;
   }
 
   Future<img.Image> _cropFace(XFile image, Rect boundingBox) async {

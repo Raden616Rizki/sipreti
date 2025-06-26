@@ -113,13 +113,10 @@ class _LocationPageState extends State<LocationPage> {
     await presensiBox.put('longitude', longitude);
     await presensiBox.put('waktu_absensi', now);
 
-    // var testBox = Hive.box('test');
-    // bool uploadFoto = testBox.get('uploadFoto', defaultValue: false);
-
     if (mounted) {
       Navigator.pushNamed(
         context,
-        '/biometric',
+        '/biometric3',
       );
     }
   }

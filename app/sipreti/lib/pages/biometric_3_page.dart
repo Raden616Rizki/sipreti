@@ -3,13 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
-// import 'package:sipreti/pages/attendance_page.dart';
 import 'package:sipreti/utils/dialog.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sipreti/services/api_service.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class Biometric3Page extends StatefulWidget {
   const Biometric3Page({super.key});
@@ -43,6 +45,19 @@ class _Biometric3PageState extends State<Biometric3Page> {
   final List<String> instructions = ["Kedipkan Mata", "Tersenyum ke Kamera"];
 
   late String currentInstruction;
+
+  late String namaLokasi = '';
+  double? latitude;
+  double? longitude;
+  late DateTime waktuAbsensi = DateTime.now();
+  String? jamAbsensi;
+  int? checkMode;
+  int? jenisAbsensi;
+  int? faceStatus;
+  late String tanggal = '';
+  late String hari = '';
+  late String lamaVerifikasi = '';
+  String distances = '';
 
   String? urlFoto;
   final String baseUrl = 'http://35.187.225.70/sipreti/uploads/foto_pegawai/';
@@ -206,13 +221,10 @@ class _Biometric3PageState extends State<Biometric3Page> {
   }
 
   Future<void> _initializeCamera() async {
-    var testBox = Hive.box('test');
-    bool kameraDepan = testBox.get('kameraDepan', defaultValue: false);
-
     cameras = await availableCameras();
     if (cameras != null && cameras!.isNotEmpty) {
       _cameraController = CameraController(
-        kameraDepan ? cameras![1] : cameras![0],
+        cameras![1],
         ResolutionPreset.high,
         enableAudio: false,
       );
@@ -239,14 +251,6 @@ class _Biometric3PageState extends State<Biometric3Page> {
       sum += pow((e1[i] - e2[i]), 2);
     }
     return sqrt(sum);
-  }
-
-  double manhattanDistance(List<double> e1, List<double> e2) {
-    double sum = 0.0;
-    for (int i = 0; i < e1.length; i++) {
-      sum += (e1[i] - e2[i]).abs();
-    }
-    return sum;
   }
 
   Future<img.Image> _cropFace(XFile image, Rect boundingBox) async {
@@ -326,8 +330,6 @@ class _Biometric3PageState extends State<Biometric3Page> {
       const double threshold = 0.9;
       bool verifikasi = false;
 
-      List<double> distances = [];
-
       List<String> idPegawaiList = [
         '316',
         '362',
@@ -347,15 +349,24 @@ class _Biometric3PageState extends State<Biometric3Page> {
         '405',
         '406',
         '410',
+        '411',
         '415',
         '416',
         '419'
       ];
 
+      if (mounted) {
+        showLoadingDialog(context);
+      }
+
       for (String idPegawai in idPegawaiList) {
+        var pegawaiBox = Hive.box('pegawai');
+        await pegawaiBox.put('id_pegawai', idPegawai);
         var faceEmbeddings = await getPegawaiData(idPegawai);
 
         if (faceEmbeddings != null) {
+          List<double> distances = [];
+
           for (int i = 0; i < faceEmbeddings.length; i++) {
             List<double> storedEmbedding = List<double>.from(faceEmbeddings[i]);
             double distance = euclideanDistance(embeddings, storedEmbedding);
@@ -365,11 +376,16 @@ class _Biometric3PageState extends State<Biometric3Page> {
 
           verifikasi = distances.any((d) => d < threshold);
           int value = verifikasi ? 1 : 0;
+          String verificationText =
+              value == 1 ? "Wajah Terverifikasi" : "Wajah Tidak Terverifikasi";
 
           final presensiBox = await Hive.openBox('presensi');
           await presensiBox.put('face_status', value);
           await presensiBox.put('distances', distances);
-          await presensiBox.put('verification_time', value);
+          await presensiBox.put('verification_time', verificationText);
+
+          await _loadPresensiData();
+          await submitAttendance();
 
           await presensiBox.delete('face_status');
           await presensiBox.delete('distances');
@@ -378,6 +394,8 @@ class _Biometric3PageState extends State<Biometric3Page> {
       }
 
       if (mounted) {
+        showSuccessDialog(context, 'Berhasil Presensi');
+
         Navigator.pushNamed(context, '/');
       }
     } else {
@@ -391,6 +409,93 @@ class _Biometric3PageState extends State<Biometric3Page> {
           Navigator.pushNamed(context, '/biometric');
         }
       });
+    }
+  }
+
+  Future<void> _loadPresensiData() async {
+    final presensiBox = await Hive.openBox('presensi');
+    await initializeDateFormatting('id_ID', null);
+
+    setState(() {
+      namaLokasi =
+          presensiBox.get('nama_lokasi', defaultValue: 'Tidak diketahui');
+      latitude = presensiBox.get('lattitude', defaultValue: 0.0);
+      longitude = presensiBox.get('longitude', defaultValue: 0.0);
+      waktuAbsensi =
+          presensiBox.get('waktu_absensi', defaultValue: DateTime.now());
+      jamAbsensi = DateFormat('HH:mm').format(waktuAbsensi);
+      checkMode = presensiBox.get('check_mode', defaultValue: 0);
+      jenisAbsensi = presensiBox.get('jenis_absensi', defaultValue: 0);
+      faceStatus = presensiBox.get('face_status', defaultValue: 0);
+      List<double> tempDistances =
+          List<double>.from(presensiBox.get('distances', defaultValue: []));
+      String distancesString = tempDistances.join(', ');
+      distances = distancesString;
+      tanggal = DateFormat('d MMMM y', 'id_ID').format(waktuAbsensi);
+      hari = DateFormat('EEEE', 'id_ID').format(waktuAbsensi);
+      lamaVerifikasi =
+          presensiBox.get('verification_time', defaultValue: 'Tidak diketahui');
+    });
+  }
+
+  Future<void> submitAttendance() async {
+    final DateTime now = DateTime.now();
+    final DateTime absensiTime = DateTime.parse(waktuAbsensi.toString());
+
+    final Duration difference = now.difference(absensiTime).abs();
+
+    if (difference > const Duration(minutes: 5)) {
+      Navigator.pop(context);
+      showErrorDialog(
+          context, 'Waktu absensi tidak valid (lebih dari 5 menit)');
+      Navigator.pushReplacementNamed(context, '/');
+      return;
+    }
+
+    var pegawaiBox = Hive.box('pegawai');
+
+    String idPegawai = pegawaiBox.get('id_pegawai');
+
+    final File? fotoFile =
+        capturedImage != null ? File(capturedImage!.path) : null;
+
+    try {
+      final result = await _apiService.storeAttendance(
+          jenisAbsensi: jenisAbsensi!,
+          idPegawai: int.parse(idPegawai),
+          checkMode: checkMode!,
+          waktuAbsensi: waktuAbsensi.toString(),
+          latitude: latitude!,
+          longitude: longitude!,
+          namaLokasi: namaLokasi,
+          lamaAbsensi: lamaVerifikasi,
+          jarakVektor: distances,
+          fotoPresensi: fotoFile);
+
+      final dashboardBox = await Hive.openBox('dashboard');
+      if (checkMode == 0) {
+        await dashboardBox.put('checkin', jamAbsensi);
+      } else if (checkMode == 1) {
+        await dashboardBox.put('checkout', jamAbsensi);
+      } else {
+        debugPrint("Invalid check mode: $checkMode");
+      }
+
+      final tanggalPresensi = DateFormat('yyyy-MM-dd').format(waktuAbsensi);
+      await dashboardBox.put('tanggal_presensi', tanggalPresensi);
+
+      if (mounted) {
+        if (result['error'] == true) {
+          final String message = extractMessage(result["message"]);
+          await showErrorDialog(context, message);
+          return;
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        showErrorDialog(context, 'Terjadi kesalahan: $e');
+      }
     }
   }
 
