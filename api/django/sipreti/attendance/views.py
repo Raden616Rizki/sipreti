@@ -107,6 +107,86 @@ def upload_csv(request):
     return JsonResponse({'error': 'Invalid request. Harus POST dan mengandung file CSV.'}, status=400)
 
 @csrf_exempt
+def upload_csv_facenet(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        csv_file = request.FILES["file"]
+        task_id = request.GET.get("task_id", "default")
+
+        try:
+            raw_data = csv_file.read().decode("utf-8").splitlines()
+            reader = csv.DictReader(raw_data)
+
+            required_columns = {'id_pegawai', 'url_photo_folder'}
+            if not required_columns.issubset(reader.fieldnames):
+                return JsonResponse({
+                    'error': 'CSV Tidak Valid. Pastikan terdapat kolom: id_pegawai dan url_photo_folder.'
+                }, status=400)
+
+            rows = list(reader)
+            total_rows = len(rows)
+            current = 0
+
+            for row in rows:
+                id_pegawai = row.get("id_pegawai")
+                folder_url = row.get("url_photo_folder")
+
+                if not id_pegawai or not folder_url:
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
+                    continue
+
+                folder_id = extract_folder_id(folder_url)
+                if not folder_id:
+                    print(f"URL folder tidak valid: {folder_url}")
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
+                    continue
+
+                results = face_extraction_gdrive_facenet(folder_id, id_pegawai)
+                if results:
+                    vectors, originalImages = results
+                    print(f"Berhasil mengekstrak {len(vectors)} vektor wajah untuk ID pegawai {id_pegawai}")
+
+                    for i, vector in enumerate(vectors):
+                        try:
+                            image_file = originalImages[i]
+                            image_file.seek(0)
+                            files = {
+                                'url_foto': (image_file.name, image_file, 'image/jpeg')
+                            }
+                            data = {
+                                'id_pegawai': id_pegawai,
+                                'face_embeddings': json.dumps(vector)
+                            }
+
+                            response = requests.post(settings.CI3_API_URL_FACENET, data=data, files=files)
+
+                            if response.status_code == 200:
+                                print(f"Data berhasil dikirim untuk ID Pegawai {id_pegawai}, foto {i+1}")
+                            else:
+                                print(f"Error response dari CI3: {response.text}")
+
+                        except Exception as send_err:
+                            print(f"Gagal mengirim data ke CI3: {send_err}")
+                else:
+                    print(f"Tidak ada vektor wajah yang diekstrak untuk ID pegawai {id_pegawai}")
+
+                current += 1
+                if task_id:
+                    set_progress(task_id, current, total_rows)
+
+            return JsonResponse({'message': 'Data Berhasil Diproses'}, status=200)
+
+        except UnicodeDecodeError:
+            return JsonResponse({'error': 'File tidak dapat dibaca. Pastikan file berformat UTF-8.'}, status=400)
+        except csv.Error:
+            return JsonResponse({'error': 'Format CSV Tidak Valid.'}, status=400)
+
+    return JsonResponse({'error': 'Invalid request. Harus POST dan mengandung file CSV.'}, status=400)
+
+@csrf_exempt
 def upload_csv_pegawai(request):
     if request.method == "POST" and request.FILES.get("file"):
         csv_file = request.FILES["file"]
