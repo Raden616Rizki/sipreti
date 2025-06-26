@@ -183,7 +183,7 @@ class Pegawai_model extends CI_Model
 
 		$this->db->join('jabatan', 'pegawai.id_jabatan = jabatan.id_jabatan', 'left');
 		$this->db->join('unit_kerja', 'pegawai.id_unit_kerja = unit_kerja.id_unit_kerja', 'left');
-		$this->db->join('vektor_pegawai_facenet', 'pegawai.id_pegawai = vektor_pegawai.id_pegawai', 'left');
+		$this->db->join('vektor_pegawai_facenet', 'pegawai.id_pegawai = vektor_pegawai_facenet.id_pegawai', 'left');
 
 		if (!empty($q)) {
 			$this->db->like('pegawai.nama', $q);
