@@ -181,7 +181,7 @@
 	<div id="accuracyModal" class="modal-detail" style="display:none;">
 		<div class="modal-content-detail">
 			<span class="close" onclick="document.getElementById('accuracyModal').style.display='none'">&times;</span>
-			<h4 style="margin-bottom: 16px;">Evaluasi Akurasi Face Recognition</h4>
+			<h4 style="margin-bottom: 16px;">Evaluasi Akurasi Face Recognition Facenet</h4>
 			<hr>
 			<div id="accuracyContent">Memuat data akurasi...</div>
 		</div>
