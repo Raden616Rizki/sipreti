@@ -536,7 +536,7 @@ def re_extraction_facenet(request):
         for vektor in queryset:
             id_pegawai = vektor.id_pegawai
             file_name = vektor.url_foto
-            full_url = f"{base_url}{file_name}"
+            full_url = f"{base_url}{id_pegawai}/{file_name}"
 
             print(f"Proses: Pegawai {id_pegawai} - {file_name}")
 
