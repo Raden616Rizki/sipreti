@@ -204,7 +204,7 @@
 		}
 
 		if (!errorOccurred) {
-			window.location.href = "<?= site_url('vektor_pegawai_pegawai/read_vektor_pegawai/' . $pegawai->id_pegawai) ?>";
+			window.location.href = "<?= site_url('vektor_pegawai_facenet/read_vektor_pegawai/' . $pegawai->id_pegawai) ?>";
 		}
 	});
 
