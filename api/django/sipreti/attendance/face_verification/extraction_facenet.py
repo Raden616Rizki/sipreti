@@ -167,6 +167,41 @@ def face_extraction_facenet(uploaded_file, id_pegawai):
         print(f"Kesalahan saat ekstraksi wajah tunggal: {e}")
         return None
     
+def extract_cropped_face(cropped_file, id_pegawai):
+    try:
+        # Load TFLite FaceNet interpreter
+        interpreter = load_tflite_model()
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+
+        # Baca file wajah yang sudah ter-crop
+        image_data = BytesIO(cropped_file.read())
+        img = Image.open(image_data).convert("RGB")
+        img = img.resize((160, 160))  # Ukuran input FaceNet
+
+        # Preprocessing: ubah ke np.array dan normalisasi ke [-1, 1]
+        img_array = np.asarray(img).astype('float32')
+        normalized = (img_array - 127.5) / 127.5
+        input_tensor = np.expand_dims(normalized, axis=0)
+
+        # Set input ke interpreter dan jalankan
+        interpreter.set_tensor(input_details[0]['index'], input_tensor)
+        interpreter.invoke()
+        embedding = interpreter.get_tensor(output_details[0]['index'])[0]
+
+        # Simpan ulang wajah crop jika perlu
+        processed_io = BytesIO()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        processed_io.name = f"{timestamp}_{id_pegawai}_processed.jpg"
+        img.save(processed_io, format='JPEG')
+        processed_io.seek(0)
+
+        return embedding, processed_io
+
+    except Exception as e:
+        print(f"Kesalahan saat ekstraksi embedding dari wajah crop: {e}")
+        return None, None
+    
 # Extract folder ID from Google Drive folder URL
 def extract_folder_id(url):
     # Pola regex untuk menangkap folder ID

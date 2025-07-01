@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import VektorPegawai, VektorPegawaiFacenet
 from .face_verification.extraction import face_extraction_gdrive, extract_folder_id, face_extraction
-from .face_verification.extraction_facenet import face_extraction_gdrive_facenet, face_extraction_facenet
+from .face_verification.extraction_facenet import face_extraction_gdrive_facenet, face_extraction_facenet, extract_cropped_face
 from voyager import Index, Space
 import time
 from scipy.spatial import distance
@@ -524,6 +524,79 @@ def face_register_facenet(request):
             return JsonResponse({'error': f'Gagal memproses: {e}'}, status=500)
 
     return JsonResponse({'error': 'Metode harus POST'}, status=405)
+
+@csrf_exempt
+def re_extraction_facenet(request):
+    try:
+        base_url = settings.BASE_URL_VEKTOR_FOTO
+        queryset = VektorPegawai.objects.filter(deleted_at__isnull=True)
+
+        results = []
+
+        for vektor in queryset:
+            id_pegawai = vektor.id_pegawai
+            file_name = vektor.url_foto
+            full_url = f"{base_url}{file_name}"
+
+            print(f"Proses: Pegawai {id_pegawai} - {file_name}")
+
+            try:
+                # Ambil gambar dari URL
+                response = requests.get(full_url)
+                if response.status_code != 200:
+                    print(f"Gagal unduh gambar: {file_name}")
+                    continue
+
+                image_file = BytesIO(response.content)
+                image_file.name = file_name
+                image_file.seek(0)
+
+                # Buka & ekstraksi embedding dari gambar crop asumsi kamu taruh func ini di utils
+                vector, processed_image = extract_cropped_face(image_file, id_pegawai)
+                if vector is None:
+                    print(f"Gagal ekstrak embedding untuk: {file_name}")
+                    continue
+
+                # Kirim ulang ke endpoint API
+                processed_image.seek(0)
+                files_vector = {
+                    'url_foto': (processed_image.name, processed_image, 'image/jpeg')
+                }
+                data_vector = {
+                    'id_pegawai': id_pegawai,
+                    'face_embeddings': json.dumps(vector.tolist())
+                }
+
+                vektor_response = requests.post(
+                    settings.CI3_API_URL_FACENET,
+                    data=data_vector,
+                    files=files_vector
+                )
+
+                if vektor_response.status_code == 200:
+                    results.append({
+                        'id_pegawai': id_pegawai,
+                        'status': 'success'
+                    })
+                else:
+                    results.append({
+                        'id_pegawai': id_pegawai,
+                        'status': 'failed',
+                        'reason': f'API responded with {vektor_response.status_code}'
+                    })
+
+            except Exception as e:
+                print(f"Error pada {file_name}: {e}")
+                results.append({
+                    'id_pegawai': id_pegawai,
+                    'status': 'error',
+                    'reason': str(e)
+                })
+
+        return JsonResponse({'result': results})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
 def face_verification(request):
