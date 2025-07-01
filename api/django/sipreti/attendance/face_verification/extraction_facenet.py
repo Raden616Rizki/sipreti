@@ -60,7 +60,7 @@ def get_face_embedding(image_np, interpreter, input_details, output_details):
     return embedding, raw_crop
 
 # Fungsi ekstraksi vektor wajah dari Google Drive tanpa menyimpan file lokal
-def face_extraction_gdrive(folder_id, id_pegawai):
+def face_extraction_gdrive_facenet(folder_id, id_pegawai):
     try:
         service = get_drive_service()
         interpreter = load_tflite_model()
@@ -131,7 +131,7 @@ def face_extraction_gdrive(folder_id, id_pegawai):
         return None, None
     
 
-def face_extraction(uploaded_file, id_pegawai):
+def face_extraction_facenet(uploaded_file, id_pegawai):
     try:
         interpreter = load_tflite_model()
         input_details = interpreter.get_input_details()

@@ -5,7 +5,8 @@ import numpy as np
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import VektorPegawai
-from .face_verification.extraction import face_extraction_gdrive, extract_folder_id, face_extraction, face_extraction_facenet, face_extraction_gdrive_facenet
+from .face_verification.extraction import face_extraction_gdrive, extract_folder_id, face_extraction
+from .face_verification.extraction_facenet import face_extraction_gdrive_facenet, face_extraction_facenet
 from voyager import Index, Space
 import time
 from scipy.spatial import distance
