@@ -242,10 +242,10 @@ class Vektor_pegawai_facenet extends CI_Controller
 
 			$this->Vektor_pegawai_facenet_model->update($id, $data);
 			$this->session->set_flashdata('message', 'Delete Record Success');
-			redirect(site_url('vektor_pegawai/read_vektor_pegawai/' . $id_pegawai));
+			redirect(site_url('vektor_pegawai_facenet/read_vektor_pegawai/' . $id_pegawai));
 		} else {
 			$this->session->set_flashdata('message', 'Record Not Found');
-			redirect(site_url('vektor_pegawai/read_vektor_pegawai/' . $id_pegawai));
+			redirect(site_url('vektor_pegawai_facenet/read_vektor_pegawai/' . $id_pegawai));
 		}
 	}
 

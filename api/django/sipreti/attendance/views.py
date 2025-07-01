@@ -4,7 +4,7 @@ import json
 import numpy as np
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import VektorPegawai
+from .models import VektorPegawai, VektorPegawaiFacenet
 from .face_verification.extraction import face_extraction_gdrive, extract_folder_id, face_extraction
 from .face_verification.extraction_facenet import face_extraction_gdrive_facenet, face_extraction_facenet
 from voyager import Index, Space
@@ -576,6 +576,160 @@ def face_verification(request):
 @csrf_exempt
 def evaluate_face_recognition(request):
     queryset = VektorPegawai.objects.filter(deleted_at__isnull=True)
+    embeddings = []
+    labels = []
+    label_counts = defaultdict(int)
+
+    for obj in queryset:
+        try:
+            vector = json.loads(obj.face_embeddings)
+            if isinstance(vector, list):
+                embeddings.append(vector)
+                labels.append(obj.id_pegawai)
+                label_counts[obj.id_pegawai] += 1
+        except json.JSONDecodeError:
+            continue
+
+    embeddings = np.array(embeddings)
+    labels = np.array(labels)
+
+    results = {
+        "statistics": {
+            "total_embeddings": len(embeddings),
+            "total_labels": len(set(labels)),
+            "embeddings_per_label": dict(label_counts)
+        },
+        "euclidean": {},
+        "plots": {}
+    }
+
+    def build_pairs_and_evaluate(method_name, method, thresholds):
+        metrics_by_threshold = {
+            "accuracy": [], "precision": [], "recall": [], "f1": [], "thresholds": []
+        }
+
+        for threshold in thresholds:
+            grouped = defaultdict(list)
+            for i, label in enumerate(labels):
+                grouped[label].append(embeddings[i])
+
+            pos_pairs = []
+            neg_pairs = []
+
+            for vectors in grouped.values():
+                if len(vectors) < 2:
+                    continue
+                for a, b in combinations(vectors, 2):
+                    pos_pairs.append((a, b, 1))  # match
+
+            label_list = list(grouped.keys())
+            for _ in range(len(pos_pairs)):
+                id1, id2 = random.sample(label_list, 2)
+                a = random.choice(grouped[id1])
+                b = random.choice(grouped[id2])
+                neg_pairs.append((a, b, 0))  # non-match
+
+            pairs = pos_pairs + neg_pairs
+            y_true = []
+            y_pred = []
+
+            TP = FP = TN = FN = 0
+
+            for a, b, label in pairs:
+                dist = method(a, b)
+                pred = 1 if dist < threshold else 0
+                y_true.append(label)
+                y_pred.append(pred)
+
+                if label == 1 and pred == 1:
+                    TP += 1
+                elif label == 0 and pred == 1:
+                    FP += 1
+                elif label == 0 and pred == 0:
+                    TN += 1
+                elif label == 1 and pred == 0:
+                    FN += 1
+
+            acc = accuracy_score(y_true, y_pred)
+            prec = precision_score(y_true, y_pred, zero_division=0)
+            rec = recall_score(y_true, y_pred, zero_division=0)
+            f1 = f1_score(y_true, y_pred, zero_division=0)
+
+            results[method_name][str(threshold)] = {
+                "accuracy": round(acc, 4),
+                "precision": round(prec, 4),
+                "recall": round(rec, 4),
+                "f1": round(f1, 4),
+                "true_positive": TP,
+                "false_positive": FP,
+                "true_negative": TN,
+                "false_negative": FN,
+                "total_pairs": len(pairs)
+            }
+
+            metrics_by_threshold["thresholds"].append(threshold)
+            metrics_by_threshold["accuracy"].append(acc)
+            metrics_by_threshold["precision"].append(prec)
+            metrics_by_threshold["recall"].append(rec)
+            metrics_by_threshold["f1"].append(f1)
+
+        # Generate plot
+        fig, ax = plt.subplots()
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["accuracy"], label="Accuracy", marker='o', color="orange")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["precision"], label="Precision", marker='o', color="orangered")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["recall"], label="Recall", marker='o', color="crimson")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["f1"], label="F1 Score", marker='o', color="deeppink")
+        ax.set_xlabel("Threshold")
+        ax.set_ylabel("Score")
+        ax.set_title(f"{method_name.capitalize()} - Metric Scores vs Threshold")
+        ax.legend()
+        ax.grid(True)
+
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        plt.close(fig)
+        buffer.seek(0)
+        img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        results["plots"][method_name] = img_base64
+        
+    build_pairs_and_evaluate("euclidean", distance.euclidean, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+
+    sorted_items = sorted(label_counts.items())  # urutkan berdasarkan label
+    keys = [str(k) for k, v in sorted_items]     # label pegawai sebagai string
+    vals = [v for k, v in sorted_items]
+
+    # Ukuran figure dinamis mengikuti jumlah label
+    fig, ax = plt.subplots(figsize=(max(12, len(keys) * 0.3), 6))
+
+    # Plot bar chart
+    ax.bar(keys, vals, color='skyblue')
+
+    # Label dan judul
+    ax.set_title("Jumlah Embeddings per Label Pegawai", fontsize=16)
+    ax.set_xlabel("Label Pegawai", fontsize=12)
+    ax.set_ylabel("Jumlah Embeddings", fontsize=12)
+
+    # Rotasi dan ukuran label X agar terbaca
+    plt.xticks(rotation=90, fontsize=8)
+
+    # Tambah garis bantu horizontal
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    ax.yaxis.set_major_locator(MultipleLocator(1))
+
+    # Tata letak otomatis agar tidak terpotong
+    plt.tight_layout()
+
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close(fig)
+    buffer.seek(0)
+    embedding_dist_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    results["plots"]["embeddings_per_label"] = embedding_dist_base64
+
+    return JsonResponse(results, json_dumps_params={"indent": 2})
+
+def evaluate_face_recognition_facenet(request):
+    queryset = VektorPegawaiFacenet.objects.filter(deleted_at__isnull=True)
     embeddings = []
     labels = []
     label_counts = defaultdict(int)

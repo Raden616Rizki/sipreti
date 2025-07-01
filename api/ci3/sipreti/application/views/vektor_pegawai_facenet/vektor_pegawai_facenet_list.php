@@ -67,7 +67,7 @@
 			<a href="/sipreti/log_absensi">Absensi</a>
 			<a href="/sipreti/pegawai">Pegawai</a>
 			<a href="/sipreti/user_android">User Android</a>
-			<a class="active" href="/sipreti/vektor_pegawai/list_pegawai">Biometrik Pegawai</a>
+			<a class="active" href="/sipreti/vektor_pegawai_facenet/list_pegawai">Biometrik Pegawai</a>
 		</div>
 	</div>
 
@@ -273,7 +273,7 @@
 		const content = document.getElementById('accuracyContent');
 		content.innerHTML = '<p style="font-size: 12px;">Memuat data akurasi...</p>';
 
-		fetch('http://127.0.0.1:8000/attendance/evaluate-face-recognition/')
+		fetch('http://127.0.0.1:8000/attendance/evaluate-face-recognition-facenet/')
 			.then(response => response.json())
 			.then(data => {
 				const { statistics, manhattan, euclidean, plots } = data;
