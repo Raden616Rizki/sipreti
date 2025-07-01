@@ -19,6 +19,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CI3_API_URL = "http://127.0.0.1/sipreti/vektor_pegawai/create_api"
 CI3_API_URL_FACENET = "http://127.0.0.1/sipreti/vektor_pegawai_facenet/create_api"
 CI3_API_PEGAWAI_URL = 'http://127.0.0.1/sipreti/pegawai/create_api'
+BASE_URL_VEKTOR_FOTO = "http://127.0.0.1/sipreti/uploads/vektor_pegawai/"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
