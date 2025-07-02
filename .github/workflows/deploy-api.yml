@@ -60,6 +60,8 @@ jobs:
 
             sudo sed -i "s|fetch('http://.*:8000/attendance/face-register-facenet/|fetch('http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register-facenet/|g" application/views/vektor_pegawai_facenet/pegawai_vektor_management.php
 
+            sudo sed -i "s|fetch('http://.*:8000/attendance/face-register-ghostfacenet/|fetch('http://${{ secrets.GCP_INSTANCE_IP }}:8000/attendance/face-register-ghostfacenet/|g" application/views/vektor_pegawai_ghostfacenet/pegawai_vektor_management.php
+
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/pegawai_list.php
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai/vektor_pegawai_list.php
@@ -67,6 +69,10 @@ jobs:
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai_facenet/pegawai_list.php
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai_facenet/vektor_pegawai_facenet_list.php
+
+            sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai_ghostfacenet/pegawai_list.php
+
+            sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/vektor_pegawai_ghostfacenet/vektor_pegawai_ghostfacenet_list.php
 
             sudo sed -i "s|http://.*:8000|http://${{ secrets.GCP_INSTANCE_IP }}:8000|g" application/views/pegawai/pegawai_list.php
           EOF
