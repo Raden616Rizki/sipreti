@@ -29,46 +29,17 @@ def load_tflite_model():
     interpreter.allocate_tensors()
     return interpreter
 
-def extract_face(image_np, detector=None, required_size=(112, 112)):
-    if detector is None:
-        detector = MTCNN()
-    
-    faces = detector.detect_faces(image_np)
-    if len(faces) == 0:
-        raise Exception("No face detected.")
-    
-    x, y, w, h = faces[0]['box']
-    x, y = abs(x), abs(y)
-    face = image_np[y:y+h, x:x+w]
-
-    face_resized = Image.fromarray(face).resize(required_size)
-    return np.asarray(face_resized), face  # Return both resized & raw crop
-
-def prewhiten(img):
-    mean, std = img.mean(), img.std()
-    std_adj = np.maximum(std, 1.0 / np.sqrt(img.size))
-    return (img - mean) / std_adj
-
-def get_face_embedding(image_np, interpreter, input_details, output_details):
-    face_resized, raw_crop = extract_face(image_np)
-    face_norm = prewhiten(face_resized)
-    face_norm = np.expand_dims(face_norm.astype(np.float32), axis=0)
-
-    interpreter.set_tensor(input_details[0]['index'], face_norm)
-    interpreter.invoke()
-    embedding = interpreter.get_tensor(output_details[0]['index']).tolist()
-
-    return embedding, raw_crop
-
 # Fungsi ekstraksi vektor wajah dari Google Drive tanpa menyimpan file lokal
 def face_extraction_gdrive_ghostfacenet(folder_id, id_pegawai):
     try:
+        # Inisialisasi service dan model
         service = get_drive_service()
         interpreter = load_tflite_model()
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
         detector = MTCNN()
 
+        # Ambil file gambar dari folder Google Drive
         query = f"'{folder_id}' in parents and mimeType contains 'image/'"
         results = service.files().list(q=query, fields="files(id, name)").execute()
         files = results.get("files", [])
@@ -92,32 +63,36 @@ def face_extraction_gdrive_ghostfacenet(folder_id, id_pegawai):
                 img = Image.open(image_data).convert("RGB")
                 img_array = np.array(img)
 
-                # Ekstrak embedding dan crop wajah
-                try:
-                    vector, raw_crop = get_face_embedding(
-                        img_array, interpreter, input_details, output_details, detector
-                    )
-                except Exception as detect_err:
-                    print(f"Tidak ada wajah terdeteksi di {file_name}: {detect_err}")
+                # Deteksi wajah
+                faces = detector.detect_faces(img_array)
+                if not faces:
+                    print(f"Tidak ada wajah terdeteksi di {file_name}")
                     continue
 
-                # Simpan wajah hasil crop ke BytesIO
+                # Ambil wajah pertama
+                x, y, width, height = faces[0]['box']
+                x, y = max(0, x), max(0, y)
+                face_crop = img_array[y:y+height, x:x+width]
+
+                # Resize ke 112x112 dan normalisasi ke [-1, 1]
+                face_resized = cv2.resize(face_crop, (112, 112))
+                face_normalized = (face_resized.astype(np.float32) - 127.5) / 127.5
+                input_tensor = np.expand_dims(face_normalized, axis=0)
+
+                # Inference
+                interpreter.set_tensor(input_details[0]['index'], input_tensor)
+                interpreter.invoke()
+                embedding = interpreter.get_tensor(output_details[0]['index'])[0]
+
+                # Simpan wajah hasil crop
                 crop_io = BytesIO()
-                crop_image = Image.fromarray(raw_crop)
+                crop_image = Image.fromarray(face_crop)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 crop_io.name = f"{timestamp}_{id_pegawai}_crop_{i+1}.jpg"
                 crop_image.save(crop_io, format='JPEG')
                 crop_io.seek(0)
 
-                # Simpan original juga jika dibutuhkan
-                # (opsional, jika hanya crop yang penting, bisa dihapus)
-                # original_io = BytesIO()
-                # img_format = img.format or 'JPEG'
-                # original_io.name = f"{timestamp}_{id_pegawai}_original_{i+1}.{img_format.lower()}"
-                # img.save(original_io, format=img_format)
-                # original_io.seek(0)
-
-                vectors.append(vector)
+                vectors.append(embedding)
                 cropped_images.append(crop_io)
 
                 print(f"Vektor wajah berhasil diekstrak dari {file_name}")
@@ -128,25 +103,45 @@ def face_extraction_gdrive_ghostfacenet(folder_id, id_pegawai):
         return vectors, cropped_images
 
     except Exception as e:
-        print(f"Error dalam face_extraction_gdrive: {e}")
+        print(f"Error dalam face_extraction_gdrive_ghostfacenet: {e}")
         return None, None
-    
 
 def face_extraction_ghostfacenet(uploaded_file, id_pegawai):
     try:
+        # Load TFLite model
         interpreter = load_tflite_model()
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
 
-        # Baca file gambar
+        # Baca dan konversi gambar
         image_data = BytesIO(uploaded_file.read())
         img = Image.open(image_data).convert("RGB")
         img_array = np.array(img)
 
-        # Ekstraksi embedding dan wajah crop
-        vector, raw_crop = get_face_embedding(img_array, interpreter, input_details, output_details)
+        # Deteksi wajah dengan MTCNN
+        detector = MTCNN()
+        faces = detector.detect_faces(img_array)
 
-        # Simpan ulang file asli
+        if not faces:
+            print("Tidak ada wajah terdeteksi.")
+            return None, None
+
+        # Ambil wajah pertama yang terdeteksi
+        x, y, width, height = faces[0]['box']
+        x, y = max(0, x), max(0, y)
+        face_crop = img_array[y:y+height, x:x+width]
+
+        # Resize ke 112x112 dan normalisasi ke [-1, 1]
+        face_resized = cv2.resize(face_crop, (112, 112))
+        face_normalized = (face_resized.astype(np.float32) - 127.5) / 127.5
+        input_tensor = np.expand_dims(face_normalized, axis=0)
+
+        # Jalankan GhostFaceNet TFLite untuk mendapatkan embedding
+        interpreter.set_tensor(input_details[0]['index'], input_tensor)
+        interpreter.invoke()
+        embedding = interpreter.get_tensor(output_details[0]['index'])[0]
+
+        # Simpan ulang gambar asli (jika dibutuhkan)
         original_io = BytesIO()
         original_format = img.format or 'JPEG'
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -157,51 +152,47 @@ def face_extraction_ghostfacenet(uploaded_file, id_pegawai):
 
         # Simpan wajah hasil crop
         crop_io = BytesIO()
-        crop_image = Image.fromarray(raw_crop)
+        crop_image = Image.fromarray(face_crop)
         crop_io.name = f"{timestamp}_{id_pegawai}_crop.jpg"
         crop_image.save(crop_io, format='JPEG')
         crop_io.seek(0)
 
-        return vector, crop_io
+        return embedding, crop_io
 
     except Exception as e:
-        print(f"Kesalahan saat ekstraksi wajah tunggal: {e}")
-        return None
+        print(f"Kesalahan saat ekstraksi wajah: {e}")
+        return None, None
     
 def extract_cropped_face_ghostfacenet(cropped_file, id_pegawai):
     try:
-        # Load interpreter dan detail
+        # Load TFLite GhostFaceNet interpreter
         interpreter = load_tflite_model()
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
 
-        # Buka gambar dari file upload
+        # Baca file wajah yang sudah ter-crop
         image_data = BytesIO(cropped_file.read())
         img = Image.open(image_data).convert("RGB")
-        img_resized = img.resize((112, 112))  # Sesuaikan dengan input model (bisa juga 112x112)
-        face_np = np.asarray(img_resized)
-        
-        # === Prewhiten (normalisasi) ===
-        mean, std = face_np.mean(), face_np.std()
-        std_adj = np.maximum(std, 1.0 / np.sqrt(face_np.size))
-        face_norm = (face_np - mean) / std_adj
-        face_input = np.expand_dims(face_norm.astype(np.float32), axis=0)
+        img = img.resize((112, 112))  # Ukuran input FaceNet
 
-        # === Ekstraksi embedding wajah ===
-        interpreter.set_tensor(input_details[0]['index'], face_input)
+        # Preprocessing: ubah ke np.array dan normalisasi ke [-1, 1]
+        img_array = np.asarray(img).astype('float32')
+        normalized = (img_array - 127.5) / 127.5
+        input_tensor = np.expand_dims(normalized, axis=0)
+
+        # Set input ke interpreter dan jalankan
+        interpreter.set_tensor(input_details[0]['index'], input_tensor)
         interpreter.invoke()
-        embedding = interpreter.get_tensor(output_details[0]['index'])[0].tolist()
+        embedding = interpreter.get_tensor(output_details[0]['index'])[0]
 
-        # === Simpan ulang file asli ===
-        original_io = BytesIO()
-        original_format = img.format or 'JPEG'
+        # Simpan ulang wajah crop jika perlu
+        processed_io = BytesIO()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        extension = original_format.lower()
-        original_io.name = f"{timestamp}_{id_pegawai}_original.{extension}"
-        img.save(original_io, format=original_format)
-        original_io.seek(0)
+        processed_io.name = f"{timestamp}_{id_pegawai}_processed.jpg"
+        img.save(processed_io, format='JPEG')
+        processed_io.seek(0)
 
-        return embedding, original_io
+        return embedding, processed_io
 
     except Exception as e:
         print(f"Kesalahan saat ekstraksi embedding dari wajah crop: {e}")
