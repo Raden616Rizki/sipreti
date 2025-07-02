@@ -118,6 +118,48 @@ class Pegawai_model extends CI_Model
 
 		return null;
 	}
+	// get data by id api ghostfacenet
+	public function get_by_id_ghostfacenet_api($id)
+	{
+		$this->db->select('
+        pegawai.*, 
+        jabatan.nama_jabatan,
+        unit_kerja.nama_unit_kerja, 
+        unit_kerja.alamat, 
+        unit_kerja.lattitude, 
+        unit_kerja.longitude,
+        radius_absen.ukuran,
+    ');
+		$this->db->from('pegawai');
+		$this->db->join('jabatan', 'jabatan.id_jabatan = pegawai.id_jabatan', 'left');
+		$this->db->join('unit_kerja', 'unit_kerja.id_unit_kerja = pegawai.id_unit_kerja', 'left');
+		$this->db->join('radius_absen', 'radius_absen.id_radius = unit_kerja.id_radius', 'left');
+		$this->db->where('pegawai.id_pegawai', $id);
+		$this->db->where('pegawai.deleted_at IS NULL');
+		$pegawai = $this->db->get()->row_array();
+
+		if ($pegawai) {
+			$this->db->select('face_embeddings');
+			$this->db->from('vektor_pegawai_ghostfacenet');
+			$this->db->where('id_pegawai', $id);
+			$this->db->where('deleted_at IS NULL');
+			$query = $this->db->get();
+			$embeddings = [];
+
+			foreach ($query->result_array() as $row) {
+				$decoded = json_decode($row['face_embeddings'], true);
+				if (is_array($decoded)) {
+					$embeddings[] = $decoded;
+				}
+			}
+
+			$pegawai['face_embeddings'] = $embeddings;
+
+			return $pegawai;
+		}
+
+		return null;
+	}
 
 
 	// get total rows
@@ -184,6 +226,41 @@ class Pegawai_model extends CI_Model
 		$this->db->join('jabatan', 'pegawai.id_jabatan = jabatan.id_jabatan', 'left');
 		$this->db->join('unit_kerja', 'pegawai.id_unit_kerja = unit_kerja.id_unit_kerja', 'left');
 		$this->db->join('vektor_pegawai_facenet', 'pegawai.id_pegawai = vektor_pegawai_facenet.id_pegawai', 'left');
+
+		if (!empty($q)) {
+			$this->db->like('pegawai.nama', $q);
+		}
+
+		if ($onlyActive) {
+			$this->db->where('(pegawai.deleted_at IS NULL OR pegawai.deleted_at = "")');
+		}
+
+		$this->db->group_by('pegawai.id_pegawai');
+		$this->db->order_by('pegawai.nama', 'ASC');
+		$this->db->limit($limit, $start);
+
+		return $this->db->get()->result();
+	}
+
+	// get data with limit and search facenet
+	public function get_limit_data_ghostfacenet($limit, $start = 0, $q = NULL, $onlyActive = FALSE)
+	{
+		$this->db->select('
+        pegawai.*, 
+        jabatan.nama_jabatan, 
+        unit_kerja.nama_unit_kerja, 
+        COUNT(CASE 
+            WHEN vektor_pegawai_ghostfacenet.id_vektor_pegawai IS NOT NULL 
+                 AND (vektor_pegawai_ghostfacenet.deleted_at IS NULL OR vektor_pegawai_ghostfacenet.deleted_at = "") 
+            THEN 1 
+            ELSE NULL 
+        END) AS jumlah_biometrik
+    ');
+		$this->db->from($this->table);
+
+		$this->db->join('jabatan', 'pegawai.id_jabatan = jabatan.id_jabatan', 'left');
+		$this->db->join('unit_kerja', 'pegawai.id_unit_kerja = unit_kerja.id_unit_kerja', 'left');
+		$this->db->join('vektor_pegawai_ghostfacenet', 'pegawai.id_pegawai = vektor_pegawai_ghostfacenet.id_pegawai', 'left');
 
 		if (!empty($q)) {
 			$this->db->like('pegawai.nama', $q);
@@ -281,6 +358,20 @@ class Pegawai_model extends CI_Model
 
 			$this->db->where('id_pegawai', $id_pegawai);
 			$this->db->delete('vektor_pegawai_facenet');
+
+			$this->db->where('nip', $nip);
+			$this->db->delete('pegawai');
+		}
+	}
+	public function delete_by_nip_ghostfacenet($nip)
+	{
+		$pegawai = $this->db->get_where('pegawai', ['nip' => $nip])->row();
+
+		if ($pegawai) {
+			$id_pegawai = $pegawai->id_pegawai;
+
+			$this->db->where('id_pegawai', $id_pegawai);
+			$this->db->delete('vektor_pegawai_ghostfacenet');
 
 			$this->db->where('nip', $nip);
 			$this->db->delete('pegawai');
