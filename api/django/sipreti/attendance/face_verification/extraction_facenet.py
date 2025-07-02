@@ -22,7 +22,7 @@ def get_drive_service():
     )
     return build("drive", "v3", credentials=credentials)
 
-# Fungsi untuk memuat model MobileFaceNet (TFLite)
+# Fungsi untuk memuat model Facenet (TFLite)
 def load_tflite_model():
     model_path = os.path.join(settings.BASE_DIR, "assets/model/facenet.tflite")
     interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -167,33 +167,27 @@ def face_extraction_facenet(uploaded_file, id_pegawai):
         print(f"Kesalahan saat ekstraksi wajah tunggal: {e}")
         return None
     
-def extract_cropped_face(cropped_file, id_pegawai):
+def extract_cropped_face_facenet(cropped_file, id_pegawai):
     try:
-        # Load TFLite FaceNet interpreter
+        # Load interpreter dan detail
         interpreter = load_tflite_model()
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
 
-        # Baca file wajah yang sudah ter-crop
+        # Buka gambar dari file upload
         image_data = BytesIO(cropped_file.read())
         img = Image.open(image_data).convert("RGB")
-        img = img.resize((160, 160))  # Ukuran input FaceNet
+        image_np = np.asarray(img)
 
-        # Preprocessing: ubah ke np.array dan normalisasi ke [-1, 1]
-        img_array = np.asarray(img).astype('float32')
-        normalized = (img_array - 127.5) / 127.5
-        input_tensor = np.expand_dims(normalized, axis=0)
+        # Ekstraksi embedding & raw crop
+        embedding, raw_crop = get_face_embedding(image_np, interpreter, input_details, output_details)
 
-        # Set input ke interpreter dan jalankan
-        interpreter.set_tensor(input_details[0]['index'], input_tensor)
-        interpreter.invoke()
-        embedding = interpreter.get_tensor(output_details[0]['index'])[0]
-
-        # Simpan ulang wajah crop jika perlu
+        # Simpan ulang wajah hasil crop ke memori
         processed_io = BytesIO()
+        crop_img = Image.fromarray(raw_crop)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         processed_io.name = f"{timestamp}_{id_pegawai}_processed.jpg"
-        img.save(processed_io, format='JPEG')
+        crop_img.save(processed_io, format='JPEG')
         processed_io.seek(0)
 
         return embedding, processed_io

@@ -4,9 +4,10 @@ import json
 import numpy as np
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import VektorPegawai, VektorPegawaiFacenet
+from .models import VektorPegawai, VektorPegawaiFacenet, VektorPegawaiGhostfacenet
 from .face_verification.extraction import face_extraction_gdrive, extract_folder_id, face_extraction
-from .face_verification.extraction_facenet import face_extraction_gdrive_facenet, face_extraction_facenet, extract_cropped_face
+from .face_verification.extraction_facenet import face_extraction_gdrive_facenet, face_extraction_facenet, extract_cropped_face_facenet
+from .face_verification.extraction_ghostfacenet import face_extraction_gdrive_ghostfacenet, face_extraction_ghostfacenet, extract_cropped_face_ghostfacenet
 from voyager import Index, Space
 import time
 from scipy.spatial import distance
@@ -163,6 +164,86 @@ def upload_csv_facenet(request):
                             }
 
                             response = requests.post(settings.CI3_API_URL_FACENET, data=data, files=files)
+
+                            if response.status_code == 200:
+                                print(f"Data berhasil dikirim untuk ID Pegawai {id_pegawai}, foto {i+1}")
+                            else:
+                                print(f"Error response dari CI3: {response.text}")
+
+                        except Exception as send_err:
+                            print(f"Gagal mengirim data ke CI3: {send_err}")
+                else:
+                    print(f"Tidak ada vektor wajah yang diekstrak untuk ID pegawai {id_pegawai}")
+
+                current += 1
+                if task_id:
+                    set_progress(task_id, current, total_rows)
+
+            return JsonResponse({'message': 'Data Berhasil Diproses'}, status=200)
+
+        except UnicodeDecodeError:
+            return JsonResponse({'error': 'File tidak dapat dibaca. Pastikan file berformat UTF-8.'}, status=400)
+        except csv.Error:
+            return JsonResponse({'error': 'Format CSV Tidak Valid.'}, status=400)
+
+    return JsonResponse({'error': 'Invalid request. Harus POST dan mengandung file CSV.'}, status=400)
+
+@csrf_exempt
+def upload_csv_ghostfacenet(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        csv_file = request.FILES["file"]
+        task_id = request.GET.get("task_id", "default")
+
+        try:
+            raw_data = csv_file.read().decode("utf-8").splitlines()
+            reader = csv.DictReader(raw_data)
+
+            required_columns = {'id_pegawai', 'url_photo_folder'}
+            if not required_columns.issubset(reader.fieldnames):
+                return JsonResponse({
+                    'error': 'CSV Tidak Valid. Pastikan terdapat kolom: id_pegawai dan url_photo_folder.'
+                }, status=400)
+
+            rows = list(reader)
+            total_rows = len(rows)
+            current = 0
+
+            for row in rows:
+                id_pegawai = row.get("id_pegawai")
+                folder_url = row.get("url_photo_folder")
+
+                if not id_pegawai or not folder_url:
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
+                    continue
+
+                folder_id = extract_folder_id(folder_url)
+                if not folder_id:
+                    print(f"URL folder tidak valid: {folder_url}")
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
+                    continue
+
+                results = face_extraction_gdrive_ghostfacenet(folder_id, id_pegawai)
+                if results:
+                    vectors, originalImages = results
+                    print(f"Berhasil mengekstrak {len(vectors)} vektor wajah untuk ID pegawai {id_pegawai}")
+
+                    for i, vector in enumerate(vectors):
+                        try:
+                            image_file = originalImages[i]
+                            image_file.seek(0)
+                            files = {
+                                'url_foto': (image_file.name, image_file, 'image/jpeg')
+                            }
+                            data = {
+                                'id_pegawai': id_pegawai,
+                                'face_embeddings': json.dumps(vector)
+                            }
+
+                            response = requests.post(settings.CI3_API_URL_GHOSTFACENET, data=data, files=files)
 
                             if response.status_code == 200:
                                 print(f"Data berhasil dikirim untuk ID Pegawai {id_pegawai}, foto {i+1}")
@@ -361,7 +442,7 @@ def upload_csv_pegawai_facenet(request):
                 if folder_url:
                     folder_id = extract_folder_id(folder_url)
                     if folder_id:
-                        results = face_extraction_gdrive(folder_id, nip)
+                        results = face_extraction_gdrive_facenet(folder_id, nip)
                         if results:
                             vectors, originalImages = results
                             print(f"Berhasil mengekstrak {len(vectors)} wajah untuk NIP {nip}")
@@ -421,6 +502,138 @@ def upload_csv_pegawai_facenet(request):
 
                                         vektor_response = requests.post(
                                             settings.CI3_API_URL_FACENET,
+                                            data=data_vector,
+                                            files=files_vector
+                                        )
+
+                                        if vektor_response.status_code == 200:
+                                            print(f"Vektor ke-{i+1} untuk {nip} berhasil dikirim")
+                                        else:
+                                            print(f"CI3 Gagal (vektor): {vektor_response.status_code} - {vektor_response.text}")
+
+                                    except Exception as send_err:
+                                        print(f"Gagal kirim vektor wajah {nip}: {send_err}")
+                            except Exception as parse_err:
+                                print(f"Error parsing response JSON dari CI3: {parse_err}")
+                    else:
+                        print(f"CI3 Gagal (pegawai): {pegawai_response.status_code} - {pegawai_response.text}")
+
+                except Exception as e:
+                    print(f"Gagal mengirim data pegawai {nip}: {e}")
+
+                current += 1
+                if task_id:
+                    set_progress(task_id, current, total_rows)
+
+            return JsonResponse({'message': 'Upload dan ekstraksi pegawai selesai'}, status=200)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Request harus POST dengan file'}, status=400)
+
+@csrf_exempt
+def upload_csv_pegawai_ghostfacenet(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        csv_file = request.FILES["file"]
+        task_id = request.GET.get("task_id", "default")
+
+        try:
+            decoded_file = csv_file.read().decode("utf-8")
+            io_string = io.StringIO(decoded_file)
+
+            reader = csv.DictReader(io_string, delimiter=';')
+
+            required_columns = {'nip', 'nama', 'id_jabatan', 'id_unit_kerja', 'url_photo_folder'}
+            if not required_columns.issubset(reader.fieldnames):
+                return JsonResponse({
+                    'error': 'CSV harus memiliki kolom: nip, nama, id_jabatan, id_unit_kerja, url_photo_folder'
+                }, status=400)
+
+            rows = list(reader)
+            total_rows = len(rows)
+            current = 0
+
+            for row in rows:
+                nip = row.get("nip")
+                nama = row.get("nama")
+                id_jabatan = row.get("id_jabatan")
+                id_unit_kerja = row.get("id_unit_kerja")
+                folder_url = row.get("url_photo_folder")
+
+                if not all([nip, nama, id_jabatan, id_unit_kerja]):
+                    current += 1
+                    if task_id:
+                        set_progress(task_id, current, total_rows)
+                    continue
+
+                url_foto = None
+                vectors = []
+                originalImages = []
+
+                if folder_url:
+                    folder_id = extract_folder_id(folder_url)
+                    if folder_id:
+                        results = face_extraction_gdrive_ghostfacenet(folder_id, nip)
+                        if results:
+                            vectors, originalImages = results
+                            print(f"Berhasil mengekstrak {len(vectors)} wajah untuk NIP {nip}")
+                            if originalImages:
+                                url_foto = originalImages[0]
+                        else:
+                            print(f"Gagal ekstraksi wajah dari folder {folder_url} untuk NIP {nip}")
+                    else:
+                        print(f"URL folder tidak valid: {folder_url}")
+                else:
+                    print(f"Tidak ada URL folder foto untuk NIP {nip}")
+
+                try:
+                    files_pegawai = {}
+                    if url_foto:
+                        files_pegawai['url_foto'] = url_foto
+
+                    data_pegawai = {
+                        'nip': nip,
+                        'nama': nama,
+                        'id_jabatan': id_jabatan,
+                        'id_unit_kerja': id_unit_kerja,
+                    }
+
+                    pegawai_response = requests.post(
+                        settings.CI3_API_PEGAWAI_URL,
+                        data=data_pegawai,
+                        files=files_pegawai if files_pegawai else None
+                    )
+
+                    if pegawai_response.status_code == 200:
+                        print(f"Data pegawai berhasil dikirim: {nip}")
+
+                        if vectors and originalImages:
+                            try:
+                                response_data = pegawai_response.json()
+                                id_pegawai = response_data.get("id_pegawai")
+
+                                if not id_pegawai:
+                                    print(f"Gagal ambil id_pegawai dari response untuk NIP {nip}")
+                                    current += 1
+                                    if task_id:
+                                        set_progress(task_id, current, total_rows)
+                                    continue
+
+                                for i, vector in enumerate(vectors):
+                                    try:
+                                        image_file = originalImages[i]
+                                        image_file.seek(0)
+                                        files_vector = {
+                                            'url_foto': (image_file.name, image_file, 'image/jpeg')
+                                        }
+                                        data_vector = {
+                                            'id_pegawai': id_pegawai,
+                                            'face_embeddings': json.dumps(vector)
+                                        }
+
+                                        vektor_response = requests.post(
+                                            settings.CI3_API_URL_GHOSTFACENET,
                                             data=data_vector,
                                             files=files_vector
                                         )
@@ -526,6 +739,43 @@ def face_register_facenet(request):
     return JsonResponse({'error': 'Metode harus POST'}, status=405)
 
 @csrf_exempt
+def face_register_ghostfacenet(request):
+    if request.method == 'POST':
+        id_pegawai = request.POST.get('id_pegawai')
+        uploaded_file = request.FILES.get('uploaded_file')
+
+        if not id_pegawai or not uploaded_file:
+            return JsonResponse({'error': 'id_pegawai dan file foto wajib diisi'}, status=400)
+
+        try:
+            result = face_extraction_ghostfacenet(uploaded_file, id_pegawai)
+            if not result:
+                return JsonResponse({'error': 'Wajah tidak berhasil diesktraksi'}, status=422)
+
+            vector, original_io = result
+            
+            files = {
+                'url_foto': original_io
+            }
+            data = {
+                'id_pegawai': id_pegawai,
+                'face_embeddings': json.dumps(vector) 
+            }
+
+            ci3_url = settings.CI3_API_URL_GHOSTFACENET
+            response = requests.post(ci3_url, data=data, files=files)
+
+            if response.status_code == 200:
+                return JsonResponse({'message': 'Data berhasil dikirim ke CI3'}, status=200)
+            else:
+                return JsonResponse({'error': f"Error dari CI3: {response.text}"}, status=response.status_code)
+
+        except Exception as e:
+            return JsonResponse({'error': f'Gagal memproses: {e}'}, status=500)
+
+    return JsonResponse({'error': 'Metode harus POST'}, status=405)
+
+@csrf_exempt
 def re_extraction_facenet(request):
     try:
         base_url = settings.BASE_URL_VEKTOR_FOTO
@@ -552,7 +802,7 @@ def re_extraction_facenet(request):
                 image_file.seek(0)
 
                 # Buka & ekstraksi embedding dari gambar crop asumsi kamu taruh func ini di utils
-                vector, processed_image = extract_cropped_face(image_file, id_pegawai)
+                vector, processed_image = extract_cropped_face_facenet(image_file, id_pegawai)
                 if vector is None:
                     print(f"Gagal ekstrak embedding untuk: {file_name}")
                     continue
@@ -569,6 +819,79 @@ def re_extraction_facenet(request):
 
                 vektor_response = requests.post(
                     settings.CI3_API_URL_FACENET,
+                    data=data_vector,
+                    files=files_vector
+                )
+
+                if vektor_response.status_code == 200:
+                    results.append({
+                        'id_pegawai': id_pegawai,
+                        'status': 'success'
+                    })
+                else:
+                    results.append({
+                        'id_pegawai': id_pegawai,
+                        'status': 'failed',
+                        'reason': f'API responded with {vektor_response.status_code}'
+                    })
+
+            except Exception as e:
+                print(f"Error pada {file_name}: {e}")
+                results.append({
+                    'id_pegawai': id_pegawai,
+                    'status': 'error',
+                    'reason': str(e)
+                })
+
+        return JsonResponse({'result': results})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def re_extraction_ghostfacenet(request):
+    try:
+        base_url = settings.BASE_URL_VEKTOR_FOTO
+        queryset = VektorPegawai.objects.filter(deleted_at__isnull=True)
+
+        results = []
+
+        for vektor in queryset:
+            id_pegawai = vektor.id_pegawai
+            file_name = vektor.url_foto
+            full_url = f"{base_url}{id_pegawai}/{file_name}"
+
+            print(f"Proses: Pegawai {id_pegawai} - {file_name}")
+
+            try:
+                # Ambil gambar dari URL
+                response = requests.get(full_url)
+                if response.status_code != 200:
+                    print(f"Gagal unduh gambar: {file_name}")
+                    continue
+
+                image_file = BytesIO(response.content)
+                image_file.name = file_name
+                image_file.seek(0)
+
+                # Buka & ekstraksi embedding dari gambar crop asumsi kamu taruh func ini di utils
+                vector, processed_image = extract_cropped_face_ghostfacenet(image_file, id_pegawai)
+                if vector is None:
+                    print(f"Gagal ekstrak embedding untuk: {file_name}")
+                    continue
+
+                # Kirim ulang ke endpoint API
+                processed_image.seek(0)
+                files_vector = {
+                    'url_foto': (processed_image.name, processed_image, 'image/jpeg')
+                }
+                data_vector = {
+                    'id_pegawai': id_pegawai,
+                    'face_embeddings': json.dumps(vector.tolist())
+                }
+
+                vektor_response = requests.post(
+                    settings.CI3_API_URL_GHOSTFACENET,
                     data=data_vector,
                     files=files_vector
                 )
@@ -803,6 +1126,160 @@ def evaluate_face_recognition(request):
 
 def evaluate_face_recognition_facenet(request):
     queryset = VektorPegawaiFacenet.objects.filter(deleted_at__isnull=True)
+    embeddings = []
+    labels = []
+    label_counts = defaultdict(int)
+
+    for obj in queryset:
+        try:
+            vector = json.loads(obj.face_embeddings)
+            if isinstance(vector, list):
+                embeddings.append(vector)
+                labels.append(obj.id_pegawai)
+                label_counts[obj.id_pegawai] += 1
+        except json.JSONDecodeError:
+            continue
+
+    embeddings = np.array(embeddings)
+    labels = np.array(labels)
+
+    results = {
+        "statistics": {
+            "total_embeddings": len(embeddings),
+            "total_labels": len(set(labels)),
+            "embeddings_per_label": dict(label_counts)
+        },
+        "euclidean": {},
+        "plots": {}
+    }
+
+    def build_pairs_and_evaluate(method_name, method, thresholds):
+        metrics_by_threshold = {
+            "accuracy": [], "precision": [], "recall": [], "f1": [], "thresholds": []
+        }
+
+        for threshold in thresholds:
+            grouped = defaultdict(list)
+            for i, label in enumerate(labels):
+                grouped[label].append(embeddings[i])
+
+            pos_pairs = []
+            neg_pairs = []
+
+            for vectors in grouped.values():
+                if len(vectors) < 2:
+                    continue
+                for a, b in combinations(vectors, 2):
+                    pos_pairs.append((a, b, 1))  # match
+
+            label_list = list(grouped.keys())
+            for _ in range(len(pos_pairs)):
+                id1, id2 = random.sample(label_list, 2)
+                a = random.choice(grouped[id1])
+                b = random.choice(grouped[id2])
+                neg_pairs.append((a, b, 0))  # non-match
+
+            pairs = pos_pairs + neg_pairs
+            y_true = []
+            y_pred = []
+
+            TP = FP = TN = FN = 0
+
+            for a, b, label in pairs:
+                dist = method(a, b)
+                pred = 1 if dist < threshold else 0
+                y_true.append(label)
+                y_pred.append(pred)
+
+                if label == 1 and pred == 1:
+                    TP += 1
+                elif label == 0 and pred == 1:
+                    FP += 1
+                elif label == 0 and pred == 0:
+                    TN += 1
+                elif label == 1 and pred == 0:
+                    FN += 1
+
+            acc = accuracy_score(y_true, y_pred)
+            prec = precision_score(y_true, y_pred, zero_division=0)
+            rec = recall_score(y_true, y_pred, zero_division=0)
+            f1 = f1_score(y_true, y_pred, zero_division=0)
+
+            results[method_name][str(threshold)] = {
+                "accuracy": round(acc, 4),
+                "precision": round(prec, 4),
+                "recall": round(rec, 4),
+                "f1": round(f1, 4),
+                "true_positive": TP,
+                "false_positive": FP,
+                "true_negative": TN,
+                "false_negative": FN,
+                "total_pairs": len(pairs)
+            }
+
+            metrics_by_threshold["thresholds"].append(threshold)
+            metrics_by_threshold["accuracy"].append(acc)
+            metrics_by_threshold["precision"].append(prec)
+            metrics_by_threshold["recall"].append(rec)
+            metrics_by_threshold["f1"].append(f1)
+
+        # Generate plot
+        fig, ax = plt.subplots()
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["accuracy"], label="Accuracy", marker='o', color="orange")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["precision"], label="Precision", marker='o', color="orangered")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["recall"], label="Recall", marker='o', color="crimson")
+        ax.plot(metrics_by_threshold["thresholds"], metrics_by_threshold["f1"], label="F1 Score", marker='o', color="deeppink")
+        ax.set_xlabel("Threshold")
+        ax.set_ylabel("Score")
+        ax.set_title(f"{method_name.capitalize()} - Metric Scores vs Threshold")
+        ax.legend()
+        ax.grid(True)
+
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format='png')
+        plt.close(fig)
+        buffer.seek(0)
+        img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        results["plots"][method_name] = img_base64
+        
+    build_pairs_and_evaluate("euclidean", distance.euclidean, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+
+    sorted_items = sorted(label_counts.items())  # urutkan berdasarkan label
+    keys = [str(k) for k, v in sorted_items]     # label pegawai sebagai string
+    vals = [v for k, v in sorted_items]
+
+    # Ukuran figure dinamis mengikuti jumlah label
+    fig, ax = plt.subplots(figsize=(max(12, len(keys) * 0.3), 6))
+
+    # Plot bar chart
+    ax.bar(keys, vals, color='skyblue')
+
+    # Label dan judul
+    ax.set_title("Jumlah Embeddings per Label Pegawai", fontsize=16)
+    ax.set_xlabel("Label Pegawai", fontsize=12)
+    ax.set_ylabel("Jumlah Embeddings", fontsize=12)
+
+    # Rotasi dan ukuran label X agar terbaca
+    plt.xticks(rotation=90, fontsize=8)
+
+    # Tambah garis bantu horizontal
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    ax.yaxis.set_major_locator(MultipleLocator(1))
+
+    # Tata letak otomatis agar tidak terpotong
+    plt.tight_layout()
+
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    plt.close(fig)
+    buffer.seek(0)
+    embedding_dist_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    results["plots"]["embeddings_per_label"] = embedding_dist_base64
+
+    return JsonResponse(results, json_dumps_params={"indent": 2})
+
+def evaluate_face_recognition_ghostfacenet(request):
+    queryset = VektorPegawaiGhostfacenet.objects.filter(deleted_at__isnull=True)
     embeddings = []
     labels = []
     label_counts = defaultdict(int)
