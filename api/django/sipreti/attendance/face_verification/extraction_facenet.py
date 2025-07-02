@@ -56,8 +56,7 @@ def get_face_embedding(image_np, interpreter, input_details, output_details):
 
     interpreter.set_tensor(input_details[0]['index'], face_norm)
     interpreter.invoke()
-    embedding_raw = interpreter.get_tensor(output_details[0]['index'])
-    embedding = embedding_raw[0] if isinstance(embedding_raw, (np.ndarray, list)) else embedding_raw
+    embedding = interpreter.get_tensor(output_details[0]['index']).tolist()
 
     return embedding, raw_crop
 
@@ -179,20 +178,30 @@ def extract_cropped_face_facenet(cropped_file, id_pegawai):
         # Buka gambar dari file upload
         image_data = BytesIO(cropped_file.read())
         img = Image.open(image_data).convert("RGB")
-        image_np = np.asarray(img)
+        img_resized = img.resize((160, 160))  # Sesuaikan dengan input model (bisa juga 160x160)
+        face_np = np.asarray(img_resized)
+        
+        # === Prewhiten (normalisasi) ===
+        mean, std = face_np.mean(), face_np.std()
+        std_adj = np.maximum(std, 1.0 / np.sqrt(face_np.size))
+        face_norm = (face_np - mean) / std_adj
+        face_input = np.expand_dims(face_norm.astype(np.float32), axis=0)
 
-        # Ekstraksi embedding & raw crop
-        embedding, raw_crop = get_face_embedding(image_np, interpreter, input_details, output_details)
+        # === Ekstraksi embedding wajah ===
+        interpreter.set_tensor(input_details[0]['index'], face_input)
+        interpreter.invoke()
+        embedding = interpreter.get_tensor(output_details[0]['index'])[0].tolist()
 
-        # Simpan ulang wajah hasil crop ke memori
-        processed_io = BytesIO()
-        crop_img = Image.fromarray(raw_crop)
+        # === Simpan ulang file asli ===
+        original_io = BytesIO()
+        original_format = img.format or 'JPEG'
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        processed_io.name = f"{timestamp}_{id_pegawai}_processed.jpg"
-        crop_img.save(processed_io, format='JPEG')
-        processed_io.seek(0)
+        extension = original_format.lower()
+        original_io.name = f"{timestamp}_{id_pegawai}_original.{extension}"
+        img.save(original_io, format=original_format)
+        original_io.seek(0)
 
-        return embedding, processed_io
+        return embedding, original_io
 
     except Exception as e:
         print(f"Kesalahan saat ekstraksi embedding dari wajah crop: {e}")
