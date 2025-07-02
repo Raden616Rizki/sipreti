@@ -56,7 +56,9 @@ def get_face_embedding(image_np, interpreter, input_details, output_details):
 
     interpreter.set_tensor(input_details[0]['index'], face_norm)
     interpreter.invoke()
-    embedding = interpreter.get_tensor(output_details[0]['index'])[0].tolist()
+    embedding_raw = interpreter.get_tensor(output_details[0]['index'])
+    embedding = embedding_raw[0] if isinstance(embedding_raw, (np.ndarray, list)) else embedding_raw
+
     return embedding, raw_crop
 
 # Fungsi ekstraksi vektor wajah dari Google Drive tanpa menyimpan file lokal
