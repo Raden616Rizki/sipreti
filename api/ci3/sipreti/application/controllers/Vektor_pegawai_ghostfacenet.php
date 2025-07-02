@@ -328,7 +328,6 @@ class Vektor_pegawai_ghostfacenet extends CI_Controller
 	{
 		$this->form_validation->set_rules('id_pegawai', 'id pegawai', 'trim|required');
 		$this->form_validation->set_rules('face_embeddings', 'face embeddings', 'trim|required');
-		$this->form_validation->set_rules('url_foto', 'url foto', 'trim|required');
 
 		$this->form_validation->set_rules('id_vektor_pegawai', 'id_vektor_pegawai', 'trim');
 		$this->form_validation->set_error_delimiters('<span class="text-danger">', '</span>');
