@@ -92,7 +92,7 @@ def face_extraction_gdrive_ghostfacenet(folder_id, id_pegawai):
                 crop_image.save(crop_io, format='JPEG')
                 crop_io.seek(0)
 
-                vectors.append(embedding)
+                vectors.append(embedding.tolist())
                 cropped_images.append(crop_io)
 
                 print(f"Vektor wajah berhasil diekstrak dari {file_name}")
@@ -139,7 +139,7 @@ def face_extraction_ghostfacenet(uploaded_file, id_pegawai):
         # Jalankan GhostFaceNet TFLite untuk mendapatkan embedding
         interpreter.set_tensor(input_details[0]['index'], input_tensor)
         interpreter.invoke()
-        embedding = interpreter.get_tensor(output_details[0]['index'])[0]
+        embedding = interpreter.get_tensor(output_details[0]['index'])[0].tolist()
 
         # Simpan ulang gambar asli (jika dibutuhkan)
         original_io = BytesIO()
