@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sipreti/pages/biometric_3_page.dart';
+import 'package:sipreti/pages/biometric_page_facenet.dart';
+import 'package:sipreti/pages/biometric_page_ghostfacenet.dart';
 import 'package:sipreti/pages/document_page.dart';
 import 'package:sipreti/pages/biometric_2_page.dart';
 import 'package:sipreti/pages/biometric_page.dart';
@@ -45,6 +47,9 @@ class MyApp extends StatelessWidget {
         '/biometric': (context) => const BiometricPage(),
         '/biometric2': (context) => const Biometric2Page(),
         '/biometric3': (context) => const Biometric3Page(),
+        '/biometric-facenet': (context) => const BiometricFacenetPage(),
+        '/biometric-ghostfacenet': (context) =>
+            const BiometricGhostfacenetPage(),
         '/option': (context) => const OptionPage(),
         '/login': (context) => const LoginPage(),
         '/nip': (context) => const NIPPage(),

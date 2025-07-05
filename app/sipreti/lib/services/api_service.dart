@@ -110,6 +110,44 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getPegawaiFacenet(String idPegawai) async {
+    final String url = "$baseUrl/pegawai/read_facenet_api/$idPegawai";
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return {
+          "error": true,
+          "message": "Error: ${response.statusCode} - ${response.body}"
+        };
+      }
+    } catch (e) {
+      return {"error": true, "message": "Exception: $e"};
+    }
+  }
+
+  Future<Map<String, dynamic>> getPegawaiGhostfacenet(String idPegawai) async {
+    final String url = "$baseUrl/pegawai/read_ghostfacenet_api/$idPegawai";
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return {
+          "error": true,
+          "message": "Error: ${response.statusCode} - ${response.body}"
+        };
+      }
+    } catch (e) {
+      return {"error": true, "message": "Exception: $e"};
+    }
+  }
+
   Future<Map<String, dynamic>> faceVerification(
     String idPegawai,
     List<double> vektorPresensi,

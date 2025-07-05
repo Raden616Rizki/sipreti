@@ -116,7 +116,7 @@ class _LocationPageState extends State<LocationPage> {
     if (mounted) {
       Navigator.pushNamed(
         context,
-        '/biometric3',
+        '/biometric-ghostfacenet',
       );
     }
   }
