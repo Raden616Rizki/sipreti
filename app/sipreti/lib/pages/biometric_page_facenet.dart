@@ -431,7 +431,7 @@ class _BiometricFacenetPageState extends State<BiometricFacenetPage> {
         appBar: AppBar(
           backgroundColor: Colors.blue,
           title: const Text(
-            "Verifikasi Wajah",
+            "Verifikasi Wajah Facenet",
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),

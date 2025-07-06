@@ -503,6 +503,11 @@ class DashboardPageState extends State<DashboardPage> {
                 if (!context.mounted) return;
 
                 Navigator.of(context).pop();
+
+                await updatePegawaiData();
+
+                if (!context.mounted) return;
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text("Model disimpan: ${selectedModel.name}")),

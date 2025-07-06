@@ -432,7 +432,7 @@ class _BiometricGhostfacenetPageState extends State<BiometricGhostfacenetPage> {
         appBar: AppBar(
           backgroundColor: Colors.blue,
           title: const Text(
-            "Verifikasi Wajah",
+            "Verifikasi Wajah Ghostfacenet",
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),
