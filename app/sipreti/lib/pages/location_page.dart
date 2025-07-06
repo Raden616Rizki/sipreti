@@ -105,6 +105,7 @@ class _LocationPageState extends State<LocationPage> {
     required double longitude,
   }) async {
     final presensiBox = await Hive.openBox('presensi');
+    final settingsBox = await Hive.openBox('settings');
 
     final DateTime now = DateTime.now();
 
@@ -113,11 +114,22 @@ class _LocationPageState extends State<LocationPage> {
     await presensiBox.put('longitude', longitude);
     await presensiBox.put('waktu_absensi', now);
 
+    // Ambil model dari Hive settings
+    final String modelName =
+        settingsBox.get('selected_face_model', defaultValue: 'facenet');
+
+    // Tentukan route berdasarkan model
+    String route;
+    if (modelName == 'facenet') {
+      route = '/biometric-facenet';
+    } else if (modelName == 'ghostfacenet') {
+      route = '/biometric-ghostfacenet';
+    } else {
+      route = '/biometric';
+    }
+
     if (mounted) {
-      Navigator.pushNamed(
-        context,
-        '/biometric-ghostfacenet',
-      );
+      Navigator.pushNamed(context, route);
     }
   }
 

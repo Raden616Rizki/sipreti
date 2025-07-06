@@ -27,9 +27,6 @@ class DashboardPageState extends State<DashboardPage> {
   String checkin = '-';
   String checkout = '-';
 
-  // bool kameraDepan = false;
-  // bool spamAbsensi = false;
-
   @override
   void initState() {
     super.initState();
@@ -69,9 +66,27 @@ class DashboardPageState extends State<DashboardPage> {
 
     var pegawaiBox = Hive.box('pegawai');
     String idPegawai = pegawaiBox.get('id_pegawai');
+
+    // Ambil model dari Hive
+    final modelName = await Hive.box('settings')
+        .get(hiveModelKey, defaultValue: FaceModelType.facenet.name);
+    FaceModelType selectedModel = FaceModelType.values.firstWhere(
+      (e) => e.name == modelName,
+      orElse: () => FaceModelType.facenet,
+    );
+
+    // Kosongkan box pegawai lama
     await pegawaiBox.clear();
 
-    Map<String, dynamic> dataPegawai = await _apiService.getPegawai(idPegawai);
+    // Ambil data sesuai model
+    Map<String, dynamic> dataPegawai;
+    if (selectedModel == FaceModelType.facenet) {
+      dataPegawai = await _apiService.getPegawaiFacenet(idPegawai);
+    } else if (selectedModel == FaceModelType.ghostfacenet) {
+      dataPegawai = await _apiService.getPegawaiGhostfacenet(idPegawai);
+    } else {
+      dataPegawai = await _apiService.getPegawai(idPegawai);
+    }
 
     if (mounted) {
       if (dataPegawai["error"] == true) {
@@ -432,6 +447,75 @@ class DashboardPageState extends State<DashboardPage> {
         ));
   }
 
+  Future<void> saveSelectedModel(FaceModelType model) async {
+    final box = await Hive.openBox('settings');
+    await box.put(hiveModelKey, model.name);
+  }
+
+  Future<FaceModelType> getSelectedModel() async {
+    final box = await Hive.openBox('settings');
+    final name =
+        box.get(hiveModelKey, defaultValue: FaceModelType.facenet.name);
+    return FaceModelType.values
+        .firstWhere((e) => e.name == name, orElse: () => FaceModelType.facenet);
+  }
+
+  Future<void> showModelSelectionDialog(BuildContext context) async {
+    FaceModelType selectedModel = await getSelectedModel();
+
+    if (!context.mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Pilih Model Ekstraksi"),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: FaceModelType.values.map((model) {
+                  return RadioListTile<FaceModelType>(
+                    title: Text(model.name.toUpperCase()),
+                    value: model,
+                    groupValue: selectedModel,
+                    onChanged: (FaceModelType? value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedModel = value;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await saveSelectedModel(selectedModel);
+
+                if (!context.mounted) return;
+
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text("Model disimpan: ${selectedModel.name}")),
+                );
+              },
+              child: const Text("Simpan"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildDrawer(BuildContext context) {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.64,
@@ -488,34 +572,8 @@ class DashboardPageState extends State<DashboardPage> {
                     leading: const Icon(Icons.sync, color: Colors.white),
                     title: const Text("Perbarui Data",
                         style: TextStyle(color: Colors.white)),
-                    onTap: updatePegawaiData,
+                    onTap: () => showModelSelectionDialog(context),
                   ),
-                  // const Divider(color: Colors.white54),
-                  // SwitchListTile(
-                  //   title: const Text("Kamera Depan",
-                  //       style: TextStyle(color: Colors.white)),
-                  //   value: kameraDepan,
-                  //   onChanged: (value) {
-                  //     kameraDepan = value;
-                  //     Hive.box('test').put('kameraDepan', value);
-                  //   },
-                  //   activeColor: Colors.green,
-                  //   inactiveThumbColor: Colors.red,
-                  //   inactiveTrackColor: Colors.red[200],
-                  // ),
-                  // SwitchListTile(
-                  //   title: const Text("Spam Absensi",
-                  //       style: TextStyle(color: Colors.white)),
-                  //   value: spamAbsensi,
-                  //   onChanged: (value) {
-                  //     spamAbsensi = value;
-                  //     spamAbsensi = value;
-                  //     Hive.box('test').put('spamAbsensi', value);
-                  //   },
-                  //   activeColor: Colors.green,
-                  //   inactiveThumbColor: Colors.red,
-                  //   inactiveTrackColor: Colors.red[200],
-                  // ),
                 ],
               ),
             ),
@@ -768,3 +826,7 @@ void _showAbsensiModal(BuildContext context, int checkMode) {
     },
   );
 }
+
+enum FaceModelType { facenet, ghostfacenet, mobilefacenet }
+
+const String hiveModelKey = 'selected_face_model';
