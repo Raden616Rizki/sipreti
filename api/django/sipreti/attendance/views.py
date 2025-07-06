@@ -1396,7 +1396,7 @@ def evaluate_face_recognition_ghostfacenet(request):
         img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         results["plots"][method_name] = img_base64
         
-    build_pairs_and_evaluate("euclidean", distance.euclidean, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+    build_pairs_and_evaluate("euclidean", distance.euclidean, [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 30, 40, 50, 60, 70, 80, 90])
 
     sorted_items = sorted(label_counts.items())  # urutkan berdasarkan label
     keys = [str(k) for k, v in sorted_items]     # label pegawai sebagai string
