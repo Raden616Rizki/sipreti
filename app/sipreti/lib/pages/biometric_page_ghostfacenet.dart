@@ -223,7 +223,7 @@ class _BiometricGhostfacenetPageState extends State<BiometricGhostfacenetPage> {
 
   Future<void> _loadModel() async {
     try {
-      _interpreter = await Interpreter.fromAsset('model/ghostfacenet.tflite');
+      _interpreter = await Interpreter.fromAsset('model/mobilenetv2.tflite');
     } catch (e) {
       if (mounted) {
         showErrorDialog(context, "Error loading model: $e");
@@ -432,7 +432,7 @@ class _BiometricGhostfacenetPageState extends State<BiometricGhostfacenetPage> {
         appBar: AppBar(
           backgroundColor: Colors.blue,
           title: const Text(
-            "Verifikasi Wajah Ghostfacenet",
+            "Verifikasi Wajah MobilenetV2",
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),
